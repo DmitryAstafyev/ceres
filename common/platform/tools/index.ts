@@ -8,8 +8,6 @@ export { LoggerParameters } from './tools.logger';
 export { default as objectValidate } from './tools.object.validator';
 export { ObjectValidateParameters } from './tools.object.validator';
 
-export { default as objectValues } from './tools.object.values';
-
 export { default as guid } from './tools.guid';
 export { default as inspect } from './tools.inspect';
 

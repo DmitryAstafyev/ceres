@@ -1,6 +1,5 @@
 import * as HTTP from 'http';
-import Logger from '../../platform/tools/tools.logger';
-import objectValidate from '../../platform/tools/tools.object.validator';
+import * as Tools from '../../platform/tools/index';
 
 import * as DescConnection from './connection/index';
 import * as DescMiddleware from '../../infrastructure/middleware/index';
@@ -9,29 +8,29 @@ import { Request } from './request';
 
 export class Server {
  
-    private _logger     : Logger                = new Logger('Http.Server');
+    private _logger     : Tools.Logger          = new Tools.Logger('Http.Server');
     private _requests   : Map<symbol, Request>  = new Map();
-    private _parameters : DescConnection.Implementation.ConnectionParameters;
-    private _middleware : DescMiddleware.Implementation.Middleware;
+    private _parameters : DescConnection.ConnectionParameters;
+    private _middleware : DescMiddleware.Middleware;
     private _http       : HTTP.Server;
  
     constructor(
-        parameters: DescConnection.Implementation.ConnectionParameters,
-        middleware?: DescMiddleware.Implementation.Middleware
+        parameters: DescConnection.ConnectionParameters,
+        middleware?: DescMiddleware.Middleware
     ){
  
-        if (!(parameters instanceof DescConnection.Implementation.ConnectionParameters)) {
+        if (!(parameters instanceof DescConnection.ConnectionParameters)) {
             if (parameters !== undefined){
                 this._logger.warn(`Get wrong parameters of connection. Expected <ConnectionParameters>. Gotten: `, parameters);
             }
-            parameters = new DescConnection.Implementation.ConnectionParameters({});
+            parameters = new DescConnection.ConnectionParameters({});
         }
 
-        if (!(middleware instanceof DescMiddleware.Implementation.Middleware)) {
+        if (!(middleware instanceof DescMiddleware.Middleware)) {
             if (middleware !== undefined){
                 this._logger.warn(`Get wrong parameters of connection. Expected <Middleware>. Gotten: `, middleware);
             }
-            middleware = new DescMiddleware.Implementation.Middleware({});
+            middleware = new DescMiddleware.Middleware({});
         }
 
         this._parameters = parameters;

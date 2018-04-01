@@ -1,6 +1,6 @@
 import { IConnectionParameters } from './interfaces';
-import { TRequestType, ERequestTypes } from './types';
-import objectValidate from '../../../platform/tools/tools.object.validator';
+import { TRequestType, ERequestTypes } from '../../../platform/enums/index';
+import * as Tools from '../../../platform/tools/index';
 
 const DEFAULTS = {
     port: 3000,
@@ -14,7 +14,7 @@ export class ConnectionParameters implements IConnectionParameters {
 
     constructor( connection : IConnectionParameters ) {
 
-        connection = objectValidate(connection, {
+        connection = Tools.objectValidate(connection, {
             port: DEFAULTS.port,
             type: DEFAULTS.type
         }) as IConnectionParameters;

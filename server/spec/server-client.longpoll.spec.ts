@@ -3,13 +3,12 @@
 //./node_modules/.bin/jasmine-ts src/something.spec.ts
 
 import { HTTPLongpoll } from '../src/transports/index';
-import { throws } from 'assert';
-import Logger from '../src/platform/tools/tools.logger';
+import * as Tools from '../src/platform/tools/index';
 
 
 describe('[Test][Server <-> Client][longpoll]', () => {
     it('[Basic communication]', (done: Function)=>{
-        const logger = new Logger('Test: longpoll');
+        const logger = new Tools.Logger('Test: longpoll');
 
         logger.debug('Create server');
         const connection = new HTTPLongpoll.ConnectionParameters({});

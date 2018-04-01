@@ -1,5 +1,5 @@
 import * as HTTP from 'http';
-import objectValidate from '../../platform/tools/tools.object.validator';
+import * as Tools from '../../platform/tools/index';
 import { IMiddleware } from './interfaces';
 import { 
     TMiddlewareAfterFunction, 
@@ -14,7 +14,7 @@ export class Middleware implements IMiddleware {
 
     constructor(middleware: IMiddleware){
 
-        middleware = objectValidate(middleware, {
+        middleware = Tools.objectValidate(middleware, {
             auth    : this.auth,
             before  : this.before,
             after   : this.after
