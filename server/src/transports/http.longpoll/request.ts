@@ -1,3 +1,4 @@
+
 import * as HTTP from 'http';
 import { EventEmitter } from 'events';
 import Logger from '../../platform/tools/tools.logger';
@@ -19,6 +20,7 @@ class Lifecircle extends EventEmitter {
 	constructor(duration: number) {
 		super();
 		this._duration 	= duration;
+		this._onEnd 	= this._onEnd.bind(this);
 	}
 
 	public start(){
@@ -69,7 +71,7 @@ export class Request extends EventEmitter {
 	}
 
 	private _lifecircleSubscribe(){
-		this._lifecircle.on(this._lifecircle.EVENTS.onExpired, this._onExpired);
+		this._lifecircle.on(this._lifecircle.EVENTS.onExpired, this._onExpired.bind(this));
 	}
 	
 	private _lifecircleUnsubscribe(){

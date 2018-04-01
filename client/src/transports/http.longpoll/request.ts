@@ -5,7 +5,7 @@ import { IRequest, TRequestBody } from '../../platform/interfaces/interface.requ
 import * as Enums from '../../platform/enums/index';
 
 const SETTINGS = {
-	RESET_TIMEOUT: 3000 //30sec
+	RESET_TIMEOUT: 30000 //30sec
 };
 
 class Lifecircle extends Tools.EventEmitter {

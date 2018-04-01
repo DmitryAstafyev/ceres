@@ -5,6 +5,18 @@ import * as DescMiddleware from '../../infrastructure/middleware/index';
 
 import { Request } from './request';
 
+enum ERepeatTimeout {
+    error = 1000,
+    expired = 5000,
+    done = 0
+};
+
+enum ERepeatReason {
+    error = 'error',
+    expired = 'expired',
+    done = 'done'
+};
+
 export enum EClientStates {
     created = 'created',
     authorized = 'authorized',
@@ -101,15 +113,26 @@ export class Client {
     private _onExpiredRequest(request: Request, error: Error){
         this._logger.debug(`Request guid: ${request.getId()} is expired due error: ${Tools.inspect(error)}`);
         this._unregisterRequest(request);
+        this._repeat(ERepeatReason.expired);
     }
 
     private _onErrorRequest(request: Request, error: Error){
         this._logger.debug(`Request guid: ${request.getId()} is finished due error: ${Tools.inspect(error)}`);
         this._unsubscribeRequest(request);
+        this._repeat(ERepeatReason.error);
     }
 
     private _onDoneRequest(request: Request, response: any){
         this._logger.debug(`Request guid: ${request.getId()} is finished successfuly: ${Tools.inspect(response)}`);
         this._unsubscribeRequest(request);
+        this._repeat(ERepeatReason.done);
     }
+
+    private _repeat(reason: ERepeatReason){
+        if (ERepeatTimeout[reason] !== void 0) {
+            ERepeatTimeout[reason] > 0      && setTimeout(this._proceed.bind(this), ERepeatTimeout[reason]);
+            ERepeatTimeout[reason] === 0    && this._proceed();
+        }
+    }
+
 }

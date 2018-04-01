@@ -58,7 +58,7 @@ export default function objectValidate(obj: Object, defaults: Object, params?: O
 
     let objectValidator = (obj: any, defaults: any) => {
         Object.keys(defaults).forEach((key) => {
-            if (error === null){
+            if (error !== null){
                 return false;
             }
             if (obj[key] === void 0) {
@@ -67,7 +67,7 @@ export default function objectValidate(obj: Object, defaults: Object, params?: O
                 } else {
                     error = new Error(`key [${key}] isn't found in target object.`);
                 }
-            } else if (obj[key] !== void 0 && typeof defaults[key] !== typeof obj[key]){
+            } else if (obj[key] !== void 0 && typeof defaults[key] !== 'undefined' && typeof defaults[key] !== typeof obj[key]){
                 if (parameters.replaceIfWrongType) {
                     obj[key] = defaults[key];
                 } else {

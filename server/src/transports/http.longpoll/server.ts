@@ -36,7 +36,7 @@ export class Server {
         this._parameters = parameters;
         this._middleware = middleware;
 
-        this._http = HTTP.createServer(this._onRequest).listen(this._parameters.port); 
+        this._http = HTTP.createServer(this._onRequest.bind(this)).listen(this._parameters.port); 
     }
 
     /**

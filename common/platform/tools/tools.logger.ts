@@ -1,11 +1,19 @@
 import inspect from './tools.inspect';
 
-const LEVELS = {
-    INFO: Symbol(),
-    DEBUG: Symbol(),
-    WARNING: Symbol(),
-    VERBOS: Symbol(),
-    ERROR: Symbol()
+const DEFAUT_ALLOWED_CONSOLE = {
+    INFO: true,
+    DEBUG: true,
+    WARNING: true,
+    VERBOS: false,
+    ERROR: true
+};
+
+enum ELogLevels {
+    INFO = 'INFO',
+    DEBUG = 'DEBUG',
+    WARNING = 'WARNING',
+    VERBOS = 'VERBOS',
+    ERROR = 'ERROR'
 };
 
 /**
@@ -18,11 +26,22 @@ const LEVELS = {
 export class LoggerParameters {
 
     public console: boolean = true;
+    public allowedConsole: {[key:string]: boolean} = {};
     public output: Function | null = null;
 
-    constructor({ console = true, output = null } : { console?: boolean , output?: Function }){
+    constructor(
+        { 
+            console         = true, 
+            output          = null, 
+            allowedConsole  = DEFAUT_ALLOWED_CONSOLE 
+        } : { 
+            console?        : boolean , 
+            output?         : Function, 
+            allowedConsole? : {[key:string]: boolean} 
+        }){
         this.console = console;
         this.output = output;
+        this.allowedConsole = allowedConsole;
     }
 }
 
@@ -51,7 +70,7 @@ export default class Logger {
      * @returns {string} - Formatted log-string
      */
     info(...args: Array<any>){
-        return this._log(this._getMessage(...args), LEVELS.INFO);
+        return this._log(this._getMessage(...args), ELogLevels.INFO);
     }
 
     /**
@@ -60,7 +79,7 @@ export default class Logger {
      * @returns {string} - Formatted log-string
      */
     warn(...args: Array<any>){
-        return this._log(this._getMessage(...args), LEVELS.WARNING);
+        return this._log(this._getMessage(...args), ELogLevels.WARNING);
     }
 
     /**
@@ -69,7 +88,7 @@ export default class Logger {
      * @returns {string} - Formatted log-string
      */
     verbose(...args: Array<any>){
-        return this._log(this._getMessage(...args), LEVELS.VERBOS);
+        return this._log(this._getMessage(...args), ELogLevels.VERBOS);
     }
 
     /**
@@ -78,7 +97,7 @@ export default class Logger {
      * @returns {string} - Formatted log-string
      */
     error(...args: Array<any>){
-        return this._log(this._getMessage(...args), LEVELS.ERROR);
+        return this._log(this._getMessage(...args), ELogLevels.ERROR);
     }
 
     /**
@@ -87,16 +106,18 @@ export default class Logger {
      * @returns {string} - Formatted log-string
      */
     debug(...args: Array<any>){
-        return this._log(this._getMessage(...args), LEVELS.DEBUG);
+        return this._log(this._getMessage(...args), ELogLevels.DEBUG);
     }
 
-    _console(message: string){
-        this._parameters.console && console.log(message);
+    _console(message: string, level: ELogLevels){
+        if (!this._parameters.console){
+            return false;
+        }
+        this._parameters.allowedConsole[level] && console.log(message);
     }
 
     _output(message: string){
         typeof this._parameters.output === 'function' && this._parameters.output(message);
-
     }
 
     _getMessage(...args: Array<any>){
@@ -114,9 +135,9 @@ export default class Logger {
         return message;
     }
 
-    _log(message: string, level: symbol){
+    _log(message: string, level: ELogLevels){
         message = `[${this._signature}]: ${message}`;
-        this._console(message);
+        this._console(message, level);
         this._output(message);
         return message;
     }
