@@ -121,15 +121,14 @@ export default class ImpXMLHTTPRequest extends Tools.EventEmitter {
                 break;
             case XMLHttpRequest.DONE:
                 if (this._httpRequest.status === 200) {
-                    this._acceptSuccess();
+                    return this._acceptSuccess();
                 } else if (Tools.getTypeOf(this._httpRequest.responseText) === Tools.EPrimitiveTypes.string && this._httpRequest.responseText.trim() !== '') {
-                    this._acceptError(new Error(`Response isn't 200. Response is: ${this._httpRequest.responseText}`));
-                    return false;
+                    logger.verbose(`XMLHttpRequest progress event: `, event);
+                    return this._acceptError(new Error(`Attempt to connect to "${this._url}" is failed. Response status is ${this._httpRequest.status}. Response is: ${this._httpRequest.responseText}`));
                 } else {
-                    this._acceptError(event);
-                    return false;
+                    logger.verbose(`XMLHttpRequest progress event: `, event);
+                    return this._acceptError(new Error(`Attempt to connect to "${this._url}" is failed. Response status is ${this._httpRequest.status}.`));
                 }
-                break;
         }
         this._acceptChange(event);
     }

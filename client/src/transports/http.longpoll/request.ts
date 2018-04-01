@@ -5,7 +5,7 @@ import { IRequest, TRequestBody } from '../../platform/interfaces/interface.requ
 import * as Enums from '../../platform/enums/index';
 
 const SETTINGS = {
-	RESET_TIMEOUT: 30000 //30sec
+	RESET_TIMEOUT: 3000 //30sec
 };
 
 class Lifecircle extends Tools.EventEmitter {
@@ -23,7 +23,7 @@ class Lifecircle extends Tools.EventEmitter {
 	}
 
 	public start(){
-		this._timer = setTimeout(this._onEnd, this._duration);
+		this._timer = setTimeout(this._onEnd.bind(this), this._duration);
 	}
 
 	public drop(){
@@ -55,9 +55,9 @@ export class Request extends Tools.EventEmitter {
 
 	static EVENTS = EVENTS;
 
-    private _logger     : Tools.Logger 	= new Tools.Logger('Http.Server.Request');
-	private _created 	: Date 		= new Date();
-	private _request    : ImpXMLHTTPRequest;
+    private _logger     : Tools.Logger = new Tools.Logger('Http.Server.Request');
+	private _created 	: Date = new Date();
+	private _request    : ImpXMLHTTPRequest | null;
 	private _url 		: string;
 	private _lifecircle : Lifecircle;
 	private _id 		: string;
@@ -85,7 +85,7 @@ export class Request extends Tools.EventEmitter {
 	}
 
 	private _lifecircleSubscribe(){
-		this._lifecircle.subscribe(this._lifecircle.EVENTS.onExpired, this._onExpired);
+		this._lifecircle.subscribe(this._lifecircle.EVENTS.onExpired, this._onExpired.bind(this));
 	}
 	
 	private _lifecircleUnsubscribe(){
@@ -94,11 +94,17 @@ export class Request extends Tools.EventEmitter {
 	}
 
 	private _requestSubscribe(){
+		if (this._request === null) {
+			return false;
+		}
 		this._request.subscribe(TTransportEvents.done, this._onXMLHTTPRequestDone.bind(this));
 		this._request.subscribe(TTransportEvents.error, this._onXMLHTTPRequestError.bind(this));
 	}
 
 	private _requestUnsubscribe(){
+		if (this._request === null) {
+			return false;
+		}
 		this._request.unsubscribeAll(TTransportEvents.done);
 		this._request.unsubscribeAll(TTransportEvents.error);
 	}
@@ -108,18 +114,25 @@ export class Request extends Tools.EventEmitter {
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 	
 	private _onXMLHTTPRequestDone(response: any){
-		this._requestUnsubscribe();
 		this.emit(EVENTS.done, response);
+		this._destroy();
 	}
 
 	private _onXMLHTTPRequestError(error: Error){
-		this._requestUnsubscribe();
 		this.emit(EVENTS.error, error);
+		this._destroy();
 	}
 
 	private _onExpired(){
-		this.close();
 		this.emit(EVENTS.expired);
+		this._destroy();
+	}
+
+	private _destroy(){
+		this._requestUnsubscribe();
+		this._lifecircleUnsubscribe();
+		this._request !== null && this._request.close();
+		this._request = null;
 	}
 
 	public getId(){
@@ -127,10 +140,18 @@ export class Request extends Tools.EventEmitter {
 	}
 
 	public close() {
-		this._request.close();
+		this._destroy();
 	}
 
 	public send(callback?: Function): Promise<void> {
+		if (this._request === null) {
+			return new Promise(( resolve, reject)=>{
+				const error = new Error(this._logger.debug(`XMLHTTPRequest for ${this._url} isn't created.`));
+				this._destroy();
+				this.emit(EVENTS.error, error);
+				reject(error);
+			});
+		}
 		return this._request.send(callback);
 	}
 }
