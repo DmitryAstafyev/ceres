@@ -4,23 +4,23 @@
   "description": "",
   "main": "./src/main.ts",
   "scripts": {
-    "build": "./node_modules/.bin/webpack",
-    "build:watch": "./node_modules/.bin/webpack --watch",
-    "build-ts": "tsc -p src/",
-    "build-ts:watch": "tsc -p src/ -w",
+    "build": "tsc -p ./tsconfig.json",
+    "build:watch": "tsc -p ./tsconfig.json -w",
+    "start:ts": "ts-node ./src/main.ts",
+    "start:js": "node ./build/playground/server/src/main.js",
+    "start:build:js": "concurrently \"npm run build\" \"npm run start:js\""
   },
   "author": "Dmitry Astafyev",
   "license": "MIT",
   "devDependencies": {
+    "concurrently": "^3.5.0",
     "@types/jasmine": "^2.8.6",
     "@types/node": "^9.4.6",
     "jasmine": "^3.1.0",
     "jasmine-core": "^3.1.0",
     "jasmine-ts": "^0.2.1",
-    "source-map-loader": "^0.2.3",
-    "typescript": "^2.5.3",
-    "ts-loader": "^3.0.5",
-    "webpack": "^3.8.1"
+    "ts-node": "^5.0.1",
+    "typescript": "^2.5.3"
   },
   "dependencies": {}
 }

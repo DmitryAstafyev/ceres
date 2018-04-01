@@ -1,4 +1,4 @@
-import { TRequestType } from './types';
+import { TRequestType } from '../../../platform/enums/index';
 
 export interface IConnectionParameters{
     port?: number,

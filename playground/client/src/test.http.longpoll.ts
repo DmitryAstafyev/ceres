@@ -5,7 +5,7 @@ export default function test(){
     //Create parameters for HTTP Longpoll client
     const parameters = new Transports.HTTPLongpollClient.ConnectionParameters({
         host: 'http://localhost',
-        port: 3000,
+        port: 3003,
         type: Enums.ERequestTypes.post
     });
 
