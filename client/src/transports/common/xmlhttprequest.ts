@@ -14,7 +14,8 @@ const EVENTS = {
     done    : Symbol('done'),
     error   : Symbol('error'),
     timeout : Symbol('timeout'),
-    fail    : Symbol('fail')
+    fail    : Symbol('fail'),
+    end     : Symbol('done')
 };
 
 const ATTEMPTS = {
@@ -25,6 +26,11 @@ const ATTEMPTS = {
 const logger = new Tools.Logger('ImpXMLHTTPRequest');
 
 type TRequestHeaders = {[key:string]: string};
+
+export interface IEventDone {
+    status: number
+    response: string | object
+};
 
 export default class ImpXMLHTTPRequest extends Tools.EventEmitter {
 
@@ -73,10 +79,10 @@ export default class ImpXMLHTTPRequest extends Tools.EventEmitter {
                 this._httpRequest.ontimeout          = this._ontimeout.bind(this);
                 this._httpRequest.onerror            = this._onerror.bind(this);
             } else {
-                throw new Error(logger.error(`Method should be defined as value of: ${(<any>Object).values(ERequestTypes).join(', ')}`));
+                throw new Error(logger.env(`Method should be defined as value of: ${(<any>Object).values(ERequestTypes).join(', ')}`));
             }
         } else {
-            throw new Error(logger.error('URL should be defined as STRING.'));
+            throw new Error(logger.env('URL should be defined as STRING.'));
         }
     }
 
@@ -120,17 +126,21 @@ export default class ImpXMLHTTPRequest extends Tools.EventEmitter {
                 this._acceptHeaders();
                 break;
             case XMLHttpRequest.DONE:
-                if (this._httpRequest.status === 0){
-                    return this._acceptChange(event);
-                } else if (this._httpRequest.status === 200) {
+                if (this._httpRequest.status === 200) {
                     return this._acceptSuccess();
-                } else if (Tools.getTypeOf(this._httpRequest.responseText) === Tools.EPrimitiveTypes.string && this._httpRequest.responseText.trim() !== '') {
-                    logger.verbose(`XMLHttpRequest progress event: `, event);
-                    return this._acceptError(new Error(`Attempt to connect to "${this._url}" is failed. Response status is ${this._httpRequest.status}. Response is: ${this._httpRequest.responseText}`));
                 } else {
-                    logger.verbose(`XMLHttpRequest progress event: `, event);
-                    return this._acceptError(new Error(`Attempt to connect to "${this._url}" is failed. Response status is ${this._httpRequest.status}.`));
+                    let responseText = Tools.getTypeOf(this._httpRequest.responseText) === Tools.EPrimitiveTypes.string ? this._httpRequest.responseText : '';
+                    let status = this._httpRequest.status;
+                    logger.env(`XMLHttpRequest progress event: `, event);
+                    logger.env(`Attempt to connect to "${this._url}" is finished. Response status is ${status}. Response is: ${responseText}`);
+                    return this._acceptEnd(
+                        event,
+                        status,
+                        responseText
+                    );
                 }
+            default:
+                return this._acceptChange(event);
         }
     }
 
@@ -168,12 +178,20 @@ export default class ImpXMLHTTPRequest extends Tools.EventEmitter {
 
     private _acceptError(event : Event | Error){
         if (!this._nextAttempt() && this._error === null){
-            const error = new Error(logger.error(`Request finished with error. Was done ${this._attempts} attempts to send. Error:`, event));
+            const error = new Error(logger.env(`Request finished with error. Was done ${this._attempts} attempts to send. Error:`, event));
             this._error = error;
             this.emit(EVENTS.fail, error);
             this.emit(TTransportEvents.error, error);
             this._reject(error);
             this._callback(null, error);
+        }    
+    }
+
+    private _acceptEnd(event : Event | Error, status: number, responseText: string){
+        if (!this._nextAttempt() && this._error === null){
+            this.emit(EVENTS.end, status, responseText);
+            this.emit(TTransportEvents.end, status, responseText);
+            this._callback(null, status, responseText);
         }    
     }
 
@@ -183,7 +201,7 @@ export default class ImpXMLHTTPRequest extends Tools.EventEmitter {
 
     private _acceptTimeout(event : Event){
         if (!this._nextAttempt()){
-            const error = new Error(logger.error(`Request is timeouted. Was done ${this._attempts} attempts to send.`));
+            const error = new Error(logger.env(`Request is timeouted. Was done ${this._attempts} attempts to send.`));
             this.emit(EVENTS.timeout, error);
             this.emit(TTransportEvents.error, error);
             this._reject(error);
@@ -224,7 +242,7 @@ export default class ImpXMLHTTPRequest extends Tools.EventEmitter {
             if (typeof this._requestHeaders[key] === 'string'){
                 this._httpRequest.setRequestHeader(key, this._requestHeaders[key]);
             } else {
-                throw new Error(logger.error(`Value of header should be STRING. Check HEADER [${key}]`));
+                throw new Error(logger.env(`Value of header should be STRING. Check HEADER [${key}]`));
             }
         });
     }
@@ -237,14 +255,14 @@ export default class ImpXMLHTTPRequest extends Tools.EventEmitter {
                 if (typeof param === 'string'){
                     return param.trim();
                 } else {
-                    throw new Error(logger.error('As parameter (in array) can be used only STRING'));
+                    throw new Error(logger.env('As parameter (in array) can be used only STRING'));
                 }
             }).forEach((param)=>{
                 let pair = param.split('=');
                 if (pair.length === 2){
                     params[pair[0]] = pair[1];
                 } else {
-                    throw new Error(logger.error('As parameter (in array) can be used only pair: key=value'));
+                    throw new Error(logger.env('As parameter (in array) can be used only pair: key=value'));
                 }
             });
         } else if (typeof post === 'object' && post !== null){
@@ -267,7 +285,7 @@ export default class ImpXMLHTTPRequest extends Tools.EventEmitter {
                 }
             });
         } else if (typeof post !== 'string'){
-            throw new Error(logger.error('Parameters of request can be: OBJECT[key = value], ARRAY[key,value] or STRING. Type of not valid parameters is: [' + typeof post + ']'))
+            throw new Error(logger.env('Parameters of request can be: OBJECT[key = value], ARRAY[key,value] or STRING. Type of not valid parameters is: [' + typeof post + ']'))
         } else {
             params = post;
         }

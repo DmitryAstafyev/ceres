@@ -5,6 +5,9 @@ import { IRequest, TRequestBody } from '../../platform/interfaces/interface.requ
 import * as Enums from '../../platform/enums/index';
 
 const SETTINGS = {
+	/*
+	* Timeout should be twise less then timeout on client. For example client has 30 sec -> server should have 15 sec.
+	*/
 	RESET_TIMEOUT: 30000 //30sec
 };
 
@@ -118,8 +121,8 @@ export class Request extends Tools.EventEmitter {
 		this._destroy();
 	}
 
-	private _onXMLHTTPRequestError(error: Error){
-		this.emit(EVENTS.error, error);
+	private _onXMLHTTPRequestError(error: Error, status: number, responseText: string){
+		this.emit(EVENTS.error, error, status, responseText);
 		this._destroy();
 	}
 

@@ -1,4 +1,5 @@
 export const TTransportEvents = {
     done    : 'done',
-    error   : 'error'
+    error   : 'error',
+    end     : 'end'
 };

@@ -5,7 +5,8 @@ const DEFAUT_ALLOWED_CONSOLE = {
     DEBUG: true,
     WARNING: true,
     VERBOS: false,
-    ERROR: true
+    ERROR: true,
+    ENV: false
 };
 
 enum ELogLevels {
@@ -13,7 +14,8 @@ enum ELogLevels {
     DEBUG = 'DEBUG',
     WARNING = 'WARNING',
     VERBOS = 'VERBOS',
-    ERROR = 'ERROR'
+    ERROR = 'ERROR',
+    ENV = 'ENV'
 };
 
 /**
@@ -107,6 +109,15 @@ export default class Logger {
      */
     debug(...args: Array<any>){
         return this._log(this._getMessage(...args), ELogLevels.DEBUG);
+    }
+
+    /**
+     * Publish environment logs (low-level stuff, support or tools)
+     * @param {any} args - Any input for logs
+     * @returns {string} - Formatted log-string
+     */
+    env(...args: Array<any>){
+        return this._log(this._getMessage(...args), ELogLevels.ENV);
     }
 
     _console(message: string, level: ELogLevels){

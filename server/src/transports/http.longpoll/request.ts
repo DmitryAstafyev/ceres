@@ -1,11 +1,22 @@
 
 import * as HTTP from 'http';
+import * as Tools from '../../platform/tools/index';
 import { EventEmitter } from 'events';
-import Logger from '../../platform/tools/tools.logger';
-import objectValidate from '../../platform/tools/tools.object.validator';
 
 const SETTINGS = {
-	RESET_TIMEOUT: 30000 //30sec
+	/*
+	* Timeout should be twise less then timeout on client. For example client has 30 sec -> server should have 15 sec.
+	*/
+	RESET_TIMEOUT: 5000 //15sec
+};
+
+const CORS = {
+	key: 'Access-Control-Allow-Origin',
+	value: '*'
+};
+
+const DEFAULT_HEADERS = {
+	"Content-Type": "text/plain" 
 };
 
 class Lifecircle extends EventEmitter {
@@ -53,18 +64,20 @@ export class Request extends EventEmitter {
 		onEnd: Symbol()
 	};
 
-    private _logger     : Logger 	= new Logger('Http.Server.Request');
-	private _created 	: Date 		= new Date();
+    private _logger     : Tools.Logger 	= new Tools.Logger('Http.Server.Request');
+	private _created 	: Date 			= new Date();
     private _request    : HTTP.IncomingMessage;
 	private _response   : HTTP.ServerResponse;
 	private _lifecircle : Lifecircle;
 	private _id 		: symbol;
+	private _CORS 		: boolean;
 
-    constructor(id: symbol, request: HTTP.IncomingMessage, response: HTTP.ServerResponse) {
+    constructor(id: symbol, request: HTTP.IncomingMessage, response: HTTP.ServerResponse, CORS: boolean = true) {
 		super();
 		this._id 			= id;
         this._request   	= request;
 		this._response  	= response;
+		this._CORS 			= CORS;
 		this._lifecircle 	= new Lifecircle(SETTINGS.RESET_TIMEOUT);
 		this._lifecircleSubscribe();
 		this._lifecircle.start();
@@ -83,32 +96,51 @@ export class Request extends EventEmitter {
 		this.close();
 	}
 
+	private _isCORSDefined(headers: { [key: string]: string }): boolean {
+		let result = false;
+		if (Tools.getTypeOf(headers) === Tools.EPrimitiveTypes.object){
+			let alias = CORS.key.toLowerCase();
+			Object.keys(headers).forEach((key: string) => {
+				if (key.toLowerCase() === alias){
+					result = true;
+				}
+			});
+		}
+		return result;
+	}
+
+	private _addCORSToHeaders(headers: { [key: string]: string }) {
+		if (Tools.getTypeOf(headers) === Tools.EPrimitiveTypes.object && this._CORS && !this._isCORSDefined(headers)){ 
+			headers[CORS.key] = CORS.value;
+		}
+		return headers;
+	}
+
 	public getId(){
 		return this._id;
 	}
 
 	public close(): Promise<void> {
 		return new Promise((resolve, reject) => {
+			console.log('finishing ');
 			this._lifecircleUnsubscribe();
-			this._response.writeHead(200, { "Content-Type": "text/plain" });
-			this._response.end(() => {
+			this._response.writeHead(200, this._addCORSToHeaders(DEFAULT_HEADERS));
+			this._response.end('', () => {
 				this.emit(this.EVENTS.onExpired);
 				resolve();
 			});
-		});
+	});
 	}
 
-	public send(_package: { headers?: Array<HTTP.OutgoingHttpHeaders> | null, data: any}): Promise<void> {
+	public send({ headers = {}, data = null} : { headers?: { [key: string]: string }, data?: any}): Promise<void> {
 		return new Promise((resolve, reject) => {
 			this._lifecircleUnsubscribe();
-			if (_package.headers instanceof Array && _package.headers.length > 0){ 
-				_package.headers instanceof Array &&_package.headers.forEach((header: HTTP.OutgoingHttpHeaders) => {
-					this._response.writeHead(200, header);
-				});
+			if (Tools.getTypeOf(headers) === Tools.EPrimitiveTypes.object && Object.keys(headers).length > 0){ 
+				this._response.writeHead(200, this._addCORSToHeaders(headers));
 			} else {
-				this._response.writeHead(200, { "Content-Type": "text/plain" });
+				this._response.writeHead(200, this._addCORSToHeaders(DEFAULT_HEADERS));
 			}
-			this._response.write(_package.data, () => {
+			this._response.write(data, () => {
 				this._response.end(() => {
 					this.emit(this.EVENTS.onEnd);
 					resolve();
