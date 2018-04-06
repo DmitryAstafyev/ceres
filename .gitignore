@@ -3,4 +3,5 @@
 **/*.js.map
 **/package-lock.json
 **/.vscode
+**/.DS_store
 .vscode

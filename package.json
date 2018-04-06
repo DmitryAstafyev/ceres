@@ -1,0 +1,18 @@
+{
+  "name": "ceres",
+  "version": "1.0.0",
+  "description": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DmitryAstafyev/ceres.git"
+  },
+  "author": "Dmitry Astafyev (D.Astafyev@outlook.com)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DmitryAstafyev/ceres/issues"
+  },
+  "homepage": "https://github.com/DmitryAstafyev/ceres#readme",
+  "devDependencies": {
+    "jake": "^8.0.16"
+  }
+}
