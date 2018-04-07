@@ -1,0 +1,1 @@
+export { ProtocolClassValidator } from './protocol.class.validator';
