@@ -84,10 +84,10 @@ namespace('playground', function() {
 
 });
 
-namespace('setup', function() {
+namespace('solution', function() {
     desc('Collection of installation/clearing tasks');
     
-    task('complite', ['setup:clear', 'setup:unlink', 'setup:install']);
+    task('setup', ['solution:clear', 'solution:unlink', 'solution:link', 'solution:install']);
 
     task('clear', ['client:clear', 'server:clear', 'playground:clear']);
     

@@ -1,0 +1,28 @@
+{
+    "default": {
+        "event" : { "in"    : "Events", "required": true },
+        "guid"  : { "type"  : "string", "required": true }
+    },
+
+    "cases":[
+        [{ "event": "MESSAGE_CREATED"}, {
+            "message"   : { "type"  : "string",     "required": true },
+            "time"      : { "type"  : "datetime",   "required": true },
+            "authorId"  : { "type"  : "string",     "required": true }
+        }],
+        [{ "event": "MESSAGE_CHANGED"}, {
+            "messageId" : { "type"  : "number",     "required": true },
+            "message"   : { "type"  : "string",     "required": true },
+            "time"      : { "type"  : "datetime",   "required": true }
+        }],
+        [{ "event": "MESSAGE_REMOVED"}, {
+            "messageId" : { "type"  : "number",     "required": true },
+            "reason"    : { "in"    : "Reasons",    "required": true }
+        }]
+    ],
+
+    "definitions": {
+        "Events"    : ["MESSAGE_CREATED", "MESSAGE_CHANGED", "MESSAGE_REMOVED"],
+        "Reasons"   : ["BY_AUTHOR", "BY_MODERATOR", "BY_ADMINISTRATOR"]
+    }
+}

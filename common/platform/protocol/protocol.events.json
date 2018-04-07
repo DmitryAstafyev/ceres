@@ -1,0 +1,19 @@
+{
+    "default": {
+        "event" : { "in"    : "Events", "required": true },
+        "guid"  : { "type"  : "string", "required": true }
+    },
+
+    "cases":[
+        [{ "event": "HANDSHAKE"}, {
+            "key": { "type"  : "string", "required": true }
+        }],
+        [{ "event": "HANDSHAKE"}, {
+            "token": { "type"  : "string", "required": true }
+        }]
+    ],
+
+    "definitions": {
+        "Events": ["HANDSHAKE", "VERIFICAION"]
+    }
+}

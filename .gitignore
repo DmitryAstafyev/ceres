@@ -4,4 +4,6 @@
 **/package-lock.json
 **/.vscode
 **/.DS_store
+**/server/src/platform
+**/client/src/platform
 .vscode
