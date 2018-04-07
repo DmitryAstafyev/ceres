@@ -12,7 +12,7 @@ export class ProtocolClassValidator {
         SchemeClasses   : any, 
         properties      : any) {
 
-        const logger = new Tools.Logger(`ProtocolClassValidator:[${name}]::`);
+        const logger = new Tools.Logger(`ProtocolClassValidator:${name}`);
 
         if (Tools.getTypeOf(properties) !== Tools.EPrimitiveTypes.object){
             this._errors.push(new Error(logger.error(`Entity "${name}" isn't defined any parameters.`)));

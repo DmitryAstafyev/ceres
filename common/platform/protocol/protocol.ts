@@ -1,6 +1,6 @@
 import * as Tools from '../tools/index';
 import { SCHEME } from './protocol.scheme.definitions';
-
+import { ProtocolClassValidator } from './protocol.class.validator';
 
 
 const logger: Tools.Logger = new Tools.Logger('Protocol');
@@ -99,10 +99,13 @@ const DEMO_EVENT = {
 
 export class Protocol {
 
+    private _implementation: any = null;
     private _scheme: object = null;
     private _url: string = '';
 
-    constructor(){
+    constructor(implementation: any) { 
+        this._implementation = implementation;
+        this._implementation.register(ProtocolClassValidator);
     }
 
     public setSchemeByURL(url: string){
@@ -129,4 +132,8 @@ export class Protocol {
 
 }
 
+import * as Implementation from './protocol.generated';
+const inst = new Protocol(Implementation);
+const event = new Implementation.Event({});
+console.log(inst);
 
