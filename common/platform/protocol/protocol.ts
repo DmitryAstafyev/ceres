@@ -7,80 +7,82 @@ const logger: Tools.Logger = new Tools.Logger('Protocol');
 
 const DEMO = {
 
-    "default": {
-        "event"     : { "type": "Event",   "optional": true },
-        "request"   : { "type": "Request", "optional": true }
-    },
-
-    "cases": {
-
-    },
-
-    "definitions": {
-        "Event":{
-            "default": {
-                "event"     : { "in"    : "Events",     "required": true },
-                "guid"      : { "type"  : "string",     "required": true },
-                "timestamp" : { "type"  : "datetime",   "optional": true }
-            },
-        
-            "cases":{
-                "EventMessageCreated":[{ "event": "MESSAGE_CREATED"}, {
-                    "message"   : { "type"  : "string",     "required": true },
-                    "time"      : { "type"  : "datetime",   "required": true },
-                    "authorId"  : { "type"  : "string",     "required": true }
-                }],
-                "EventMessageChanged":[{ "event": "MESSAGE_CHANGED"}, {
-                    "messageId" : { "type"  : "number",     "required": true },
-                    "message"   : { "type"  : "string",     "required": true },
-                    "time"      : { "type"  : "datetime",   "required": true }
-                }],
-                "EventMessageRemoved":[{ "event": "MESSAGE_REMOVED"}, {
-                    "messageId" : { "type"  : "number",     "required": true },
-                    "reason"    : { "in"    : "Reasons",    "required": true }
-                }]
-            },
-        
-            "definitions": {
-                "Events"    : ["MESSAGE_CREATED", "MESSAGE_CHANGED", "MESSAGE_REMOVED"],
-                "Reasons"   : ["BY_AUTHOR", "BY_MODERATOR", "BY_ADMINISTRATOR"]
-            }
+    "Message": {
+        "default": {
+            "event"     : { "type": "Event",   "optional": true },
+            "request"   : { "type": "Request", "optional": true }
         },
-        "Request": {
-            "default": {
-                "request"   : { "in"    : "Requests",   "required": true },
-                "guid"      : { "type"  : "string",     "required": true }
+    
+        "cases": {
+    
+        },
+    
+        "definitions": {
+            "Event":{
+                "default": {
+                    "event"     : { "in"    : "Events",     "required": true },
+                    "guid"      : { "type"  : "string",     "required": true },
+                    "timestamp" : { "type"  : "datetime",   "optional": true }
+                },
+            
+                "cases":{
+                    "EventMessageCreated":[{ "event": "MESSAGE_CREATED"}, {
+                        "message"   : { "type"  : "string",     "required": true },
+                        "time"      : { "type"  : "datetime",   "required": true },
+                        "authorId"  : { "type"  : "string",     "required": true }
+                    }],
+                    "EventMessageChanged":[{ "event": "MESSAGE_CHANGED"}, {
+                        "messageId" : { "type"  : "number",     "required": true },
+                        "message"   : { "type"  : "string",     "required": true },
+                        "time"      : { "type"  : "datetime",   "required": true }
+                    }],
+                    "EventMessageRemoved":[{ "event": "MESSAGE_REMOVED"}, {
+                        "messageId" : { "type"  : "number",     "required": true },
+                        "reason"    : { "in"    : "Reasons",    "required": true }
+                    }]
+                },
+            
+                "definitions": {
+                    "Events"    : ["MESSAGE_CREATED", "MESSAGE_CHANGED", "MESSAGE_REMOVED"],
+                    "Reasons"   : ["BY_AUTHOR", "BY_MODERATOR", "BY_ADMINISTRATOR"]
+                }
             },
-        
-            "cases":{
-                "RequestGetMessage":[{ "event": "GET_MESSAGES"}, {
-                    "authorId"  : { "type"  : "string",     "required": true }
-                }],
-                "RequestGetProfile":[{ "event": "GET_PROFILE"}, {
-                    "authorId"  : { "type"  : "string",     "required": true }
-                }],
-                "RequestSetProfile":[{ "event": "SET_PROFILE"}, {
-                    "authorId"  : { "type"  : "string",     "required": true },
-                    "nickname"  : { "type"  : "string",     "optional": true },
-                    "firstName" : { "type"  : "string",     "optional": true },
-                    "lastName"  : { "type"  : "string",     "optional": true },
-                    "birthday"  : { "type"  : "datetime",   "optional": true },
-                    "email"     : { "type"  : ["Email"],    "optional": true },
-                    "phone"     : { "type"  : ["Phone"],    "optional": true }
-                }]
-            },
-        
-            "definitions": {
-                "Requests"  : ["GET_MESSAGES", "GET_PROFILE", "SET_PROFILE"],
-                "PhoneTypes": ["HOME", "GSM", "WORK"],
-                "Email"     : { 
-                    "address"   : { "type"  : "string",     "required": true },
-                    "primary"   : { "type"  : "boolean",    "required": true }
-                 },
-                 "Phone"    : { 
-                    "address"   : { "type"  : "string",     "required": true },
-                    "type"      : { "in"    : "PhoneTypes", "required": true }
-                 }
+            "Request": {
+                "default": {
+                    "request"   : { "in"    : "Requests",   "required": true },
+                    "guid"      : { "type"  : "string",     "required": true }
+                },
+            
+                "cases":{
+                    "RequestGetMessage":[{ "request": "GET_MESSAGES"}, {
+                        "authorId"  : { "type"  : "string",     "required": true }
+                    }],
+                    "RequestGetProfile":[{ "request": "GET_PROFILE"}, {
+                        "authorId"  : { "type"  : "string",     "required": true }
+                    }],
+                    "RequestSetProfile":[{ "request": "SET_PROFILE"}, {
+                        "authorId"  : { "type"  : "string",     "required": true },
+                        "nickname"  : { "type"  : "string",     "optional": true },
+                        "firstName" : { "type"  : "string",     "optional": true },
+                        "lastName"  : { "type"  : "string",     "optional": true },
+                        "birthday"  : { "type"  : "datetime",   "optional": true },
+                        "email"     : { "type"  : ["Email"],    "optional": true },
+                        "phone"     : { "type"  : ["Phone"],    "optional": true }
+                    }]
+                },
+            
+                "definitions": {
+                    "Requests"  : ["GET_MESSAGES", "GET_PROFILE", "SET_PROFILE"],
+                    "PhoneTypes": ["HOME", "GSM", "WORK"],
+                    "Email"     : { 
+                        "address"   : { "type"  : "string",     "required": true },
+                        "primary"   : { "type"  : "boolean",    "required": true }
+                     },
+                     "Phone"    : { 
+                        "address"   : { "type"  : "string",     "required": true },
+                        "type"      : { "in"    : "PhoneTypes", "required": true }
+                     }
+                }
             }
         }
     }
@@ -198,127 +200,25 @@ export class ProtocolJSONConvertor{
     private _classes: {[key:string]: string} = {};
     private _enums: {[key:string]: string} = {};
     private _errors: Array<Error> = [];
-
+    private _logger: Tools.Logger = new Tools.Logger('ProtocolJSONConvertor');
     constructor(JSON: any){
-        const logger = new Tools.Logger('ProtocolJSONConvertor');
         
         if (Tools.getTypeOf(JSON) !== Tools.EPrimitiveTypes.object){
-            throw new Error(logger.error(`Expects {object} as parameter, but was gotten: ${Tools.inspect(JSON)}`));
+            throw new Error(this._logger.error(`Expects {object} as parameter, but was gotten: ${Tools.inspect(JSON)}`));
         }
 
         if (Object.keys(JSON).length !== 1){
-            throw new Error(logger.error(`Expects {object} with one root property as parameter, but was gotten: ${Tools.inspect(JSON)}`));
+            throw new Error(this._logger.error(`Expects {object} with one root property as parameter, but was gotten: ${Tools.inspect(JSON)}`));
         }
 
         const className = Object.keys(JSON)[0];
         const root = JSON[className];
 
         if (!this._isComplexEntity(root)){
-            throw new Error(logger.error(`root level should be entity with next sections: ${Object.keys(SCHEME.ENTITY).join(', ')}`));
+            throw new Error(this._logger.error(`root level should be entity with next sections: ${Object.keys(SCHEME.ENTITY).join(', ')}`));
         }
 
-        //Processing definition section first
-        if (Tools.getTypeOf(root[SCHEME.ENTITY.definitions]) === Tools.EPrimitiveTypes.object){            
-            const definitions = root[SCHEME.ENTITY.definitions];
-            //Stage #0. Check for basic errors
-            Object.keys(definitions).forEach((property: string)=>{
-                const description = definitions[property];
-                if (!~[Tools.EPrimitiveTypes.array, Tools.EPrimitiveTypes.object].indexOf(Tools.getTypeOf(description))){
-                    this._errors.push(new Error(logger.error(`Section "${SCHEME.ENTITY.definitions}", property "${property}" has wrong description. Expected: {array} or {object}.`))); 
-                    return false;
-                }
-            });
-            if (this._errors.length > 0) {
-                throw new Error(`Cannot continue parsing due errors: ${this._errors.map((error: Error)=>{ return error.message;}).join('; ')}`);
-            }
-            //Stage #1. Processing only enums first
-            Object.keys(definitions).forEach((property: string)=>{
-                const description = definitions[property];
-                //Enum is detected
-                if (Tools.getTypeOf(description) === Tools.EPrimitiveTypes.array){
-                    if (this._isDeclaredAlready(property)){
-                        return false;
-                    }
-                    this._enums[property] = this._getEnumStr(description, property);
-                    return true;
-                }
-            });
-            //Stage #2. Processing simple classes
-            Object.keys(definitions).forEach((property: string)=>{
-                const description = definitions[property];
-                //Simple entity is detected
-                if (this._isSimpleEntity(description)){
-                    if (this._isDeclaredAlready(property)){
-                        return false;
-                    }
-                    this._classes[property] = this._getClassStr(description, property);
-                    return true;
-                }
-            });
-            //Stage #3. Processing complex classes
-            Object.keys(definitions).forEach((property: string)=>{
-                const description = definitions[property];
-                //Complex entity is detected
-                if (this._isComplexEntity(description)){
-                    if (this._isDeclaredAlready(property)){
-                        return false;
-                    }
-                    //TODO: implementation
-                    return true;
-                }
-            });
-        }
-
-        //Create root class
-        if (this._isDeclaredAlready(className)){
-            return;
-        }
-        
-        this._classes[className] = this._getClassStr(root[SCHEME.ENTITY.default], className);
-
-        //Proccessing cases section
-        if (Tools.getTypeOf(root[SCHEME.ENTITY.cases]) === Tools.EPrimitiveTypes.object){
-            const cases = root[SCHEME.ENTITY.cases];
-            Object.keys(cases).forEach((caseClassName: string) => {
-                if (this._isDeclaredAlready(caseClassName)){
-                    return false;
-                }
-                const caseDesc = cases[caseClassName];
-                if (Tools.getTypeOf(caseDesc) !== Tools.EPrimitiveTypes.array || caseDesc.length !== 2){
-                    this._errors.push(new Error(logger.error(`Section "${SCHEME.ENTITY.cases}", case "${caseClassName}" has wrong description. Expected: array<Object>[2].`))); 
-                    return false;
-                }
-                const conditions = caseDesc[0];
-                const properties = caseDesc[1];
-                let validConditions: any = {};
-                Object.keys(conditions).forEach((condition: string) => {
-                    const references = this._getConditionReferences({[condition]: conditions[condition]}, root[SCHEME.ENTITY.default]);
-                    if (references instanceof Error){
-                        this._errors.push(references);
-                        return false;
-                    }
-                    if (validConditions[references.property] !== void 0){
-                        this._errors.push(new Error(logger.error(`Section "${SCHEME.ENTITY.cases}", case "${caseClassName}" condition "${references.property}" is defined more than once.`))); 
-                        return false;
-                    }
-                    validConditions[references.property] = {
-                        property: references.property,
-                        value: references.value,
-                        type: references.type
-                    } as IConditionDescription;
-                });
-                if (this._errors.length > 0) {
-                    return false;
-                }
-                this._classes[caseClassName] = this._getClassStr(properties, caseClassName, className, validConditions);
-                console.log(validConditions);
-            });
-
-        }
-        if (this._errors.length > 0) {
-            throw new Error(`Cannot continue parsing due errors: ${this._errors.map((error: Error)=>{ return error.message;}).join('; ')}`);
-        }
-
+        this._parseComplexEtity(className, root);
 
         console.log(this._getFullModuleStr());
 
@@ -329,11 +229,11 @@ export class ProtocolJSONConvertor{
 
     private _isDeclaredAlready(property: string){
         if (this._enums[property] !== void 0){
-            this._errors.push(new Error(logger.error(`Section "${SCHEME.ENTITY.definitions}", property "${property}" declared twice as {Enum}.`))); 
+            this._errors.push(new Error(this._logger.error(`Section "${SCHEME.ENTITY.definitions}", property "${property}" declared twice as {Enum}.`))); 
             return true;
         }
         if (this._classes[property] !== void 0){
-            this._errors.push(new Error(logger.error(`Section "${SCHEME.ENTITY.definitions}", property "${property}" declared twice as {Enum} and as {Class}.`))); 
+            this._errors.push(new Error(this._logger.error(`Section "${SCHEME.ENTITY.definitions}", property "${property}" declared twice as {Enum} and as {Class}.`))); 
             return true;
         }
         return false;
@@ -360,13 +260,21 @@ export class ProtocolJSONConvertor{
         return true;
     }
 
-    private _getTypeOfPrimitive(smth: any){
+    private _getTypeOfPrimitive(property: string, smth: any){
         if (Tools.getTypeOf(smth[SCHEME.TYPE_DEF.in]) === Tools.EPrimitiveTypes.string){
             return smth[SCHEME.TYPE_DEF.in];
         }
         if (Tools.getTypeOf(smth[SCHEME.TYPE_DEF.type]) === Tools.EPrimitiveTypes.string){
             return smth[SCHEME.TYPE_DEF.type];
         }
+        if (Tools.getTypeOf(smth[SCHEME.TYPE_DEF.type]) === Tools.EPrimitiveTypes.array){
+            if (smth[SCHEME.TYPE_DEF.type].length !== 1){
+                this._errors.push(new Error(this._logger.error(`Property "${property}" has wrong type definition: as an array it can have only one item, but it has: ${Tools.inspect(smth)}.`)));
+                return;
+            }
+            return `Array<${smth[SCHEME.TYPE_DEF.type][0]}>`;
+        }
+        this._errors.push(new Error(this._logger.error(`Property "${property}" has wrong type definition (not supported): ${Tools.inspect(smth)}.`))); 
     }
 
     private _isSimpleEntity(smth: any){
@@ -423,6 +331,112 @@ export class ProtocolJSONConvertor{
         };
     }
 
+    private _parseComplexEtity(className: string, entity: any){
+        //Processing definition section first
+        if (Tools.getTypeOf(entity[SCHEME.ENTITY.definitions]) === Tools.EPrimitiveTypes.object){            
+            const definitions = entity[SCHEME.ENTITY.definitions];
+            //Stage #0. Check for basic errors
+            Object.keys(definitions).forEach((property: string)=>{
+                const description = definitions[property];
+                if (!~[Tools.EPrimitiveTypes.array, Tools.EPrimitiveTypes.object].indexOf(Tools.getTypeOf(description))){
+                    this._errors.push(new Error(this._logger.error(`Section "${SCHEME.ENTITY.definitions}", property "${property}" has wrong description. Expected: {array} or {object}.`))); 
+                    return false;
+                }
+            });
+            if (this._errors.length > 0) {
+                throw new Error(`Cannot continue parsing due errors: ${this._errors.map((error: Error)=>{ return error.message;}).join('; ')}`);
+            }
+            //Stage #1. Processing only enums first
+            Object.keys(definitions).forEach((property: string)=>{
+                const description = definitions[property];
+                //Enum is detected
+                if (Tools.getTypeOf(description) === Tools.EPrimitiveTypes.array){
+                    if (this._isDeclaredAlready(property)){
+                        return false;
+                    }
+                    this._enums[property] = this._getEnumStr(description, property);
+                    return true;
+                }
+            });
+            //Stage #2. Processing simple classes
+            Object.keys(definitions).forEach((property: string)=>{
+                const description = definitions[property];
+                //Simple entity is detected
+                if (this._isSimpleEntity(description)){
+                    if (this._isDeclaredAlready(property)){
+                        return false;
+                    }
+                    this._classes[property] = this._getClassStr(description, property);
+                    return true;
+                }
+            });
+            //Stage #3. Processing complex classes
+            Object.keys(definitions).forEach((property: string)=>{
+                const description = definitions[property];
+                //Complex entity is detected
+                if (this._isComplexEntity(description)){
+                    if (this._isDeclaredAlready(property)){
+                        return false;
+                    }
+                    this._parseComplexEtity(property, description);
+                    return true;
+                }
+            });
+        }
+        if (this._errors.length > 0) {
+            throw new Error(`Cannot continue parsing due errors: ${this._errors.map((error: Error)=>{ return error.message;}).join('; ')}`);
+        }
+
+        //Create root class
+        if (this._isDeclaredAlready(className)){
+            return;
+        }
+        
+        this._classes[className] = this._getClassStr(entity[SCHEME.ENTITY.default], className);
+
+        //Proccessing cases section
+        if (Tools.getTypeOf(entity[SCHEME.ENTITY.cases]) === Tools.EPrimitiveTypes.object){
+            const cases = entity[SCHEME.ENTITY.cases];
+            Object.keys(cases).forEach((caseClassName: string) => {
+                if (this._isDeclaredAlready(caseClassName)){
+                    return false;
+                }
+                const caseDesc = cases[caseClassName];
+                if (Tools.getTypeOf(caseDesc) !== Tools.EPrimitiveTypes.array || caseDesc.length !== 2){
+                    this._errors.push(new Error(this._logger.error(`Section "${SCHEME.ENTITY.cases}", case "${caseClassName}" has wrong description. Expected: array<Object>[2].`))); 
+                    return false;
+                }
+                const conditions = caseDesc[0];
+                const properties = caseDesc[1];
+                let validConditions: any = {};
+                Object.keys(conditions).forEach((condition: string) => {
+                    const references = this._getConditionReferences({[condition]: conditions[condition]}, entity[SCHEME.ENTITY.default]);
+                    if (references instanceof Error){
+                        this._errors.push(references);
+                        return false;
+                    }
+                    if (validConditions[references.property] !== void 0){
+                        this._errors.push(new Error(this._logger.error(`Section "${SCHEME.ENTITY.cases}", case "${caseClassName}" condition "${references.property}" is defined more than once.`))); 
+                        return false;
+                    }
+                    validConditions[references.property] = {
+                        property: references.property,
+                        value: references.value,
+                        type: references.type
+                    } as IConditionDescription;
+                });
+                if (this._errors.length > 0) {
+                    return false;
+                }
+                this._classes[caseClassName] = this._getClassStr(properties, caseClassName, className, validConditions);
+            });
+
+        }
+        if (this._errors.length > 0) {
+            throw new Error(`Cannot continue parsing due errors: ${this._errors.map((error: Error)=>{ return error.message;}).join('; ')}`);
+        }
+    }
+
     private _getEnumStr(enumArray: Array<string>, property: string){
         return `enum ${property} {
 ${enumArray.map((key: string, index: number)=>{
@@ -435,7 +449,7 @@ ${enumArray.map((key: string, index: number)=>{
 export class ${property} ${parent !== '' ? ('extends ' + parent) : ''}{
 
 ${Object.keys(properties).map((prop) => {
-        return `\tpublic ${prop}: ${this._getTypeOfPrimitive(properties[prop])};`
+        return `\tpublic ${prop}: ${this._getTypeOfPrimitive(prop, properties[prop])};`
     }).join('\n')}
 
     constructor(properties: any) {
@@ -445,10 +459,10 @@ ${Object.keys(properties).map((prop) => {
 ${Object.keys(properties).map((prop) => {
                 const description = properties[prop];
                 return `\t\t\t"${prop}": { ${Object.keys(description).map((prop) => {
-                    if (Tools.getTypeOf(description[prop]) === Tools.EPrimitiveTypes.string){
-                        return `"${prop}": "${description[prop]}"`;
+                    if (Tools.getTypeOf(description[prop]) === Tools.EPrimitiveTypes.array){
+                        return `"${prop}": ["${description[prop][0]}"]`;
                     } else {
-                        return `"${prop}": ${description[prop]}`;
+                        return `"${prop}": "${description[prop]}"`;
                     }
                 }).join(', ')} }`
             }).join(',\n')}
@@ -493,7 +507,7 @@ ${parent !== '' ? this._getConditionsDefinitions(conditions).map((str: string)=>
                     return `super.${prop} = ${description.value};`;
                 }
             }
-            this._errors.push(new Error(logger.error(`Cannot parse next condition: ${Tools.inspect(description)}`)));
+            this._errors.push(new Error(this._logger.error(`Cannot parse next condition: ${Tools.inspect(description)}`)));
             return null;
         }).filter((str: string) => {
             return str !== null;
@@ -542,7 +556,7 @@ ${this._getSchemeOfEnums()}
 }
 
 
-const convertor = new ProtocolJSONConvertor(DEMO_ONE_LEVEL);
+const convertor = new ProtocolJSONConvertor(DEMO);
 /*
 import * as Implementation from './protocol.generated';
 const inst = new Protocol(Implementation);
