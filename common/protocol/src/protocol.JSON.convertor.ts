@@ -1,4 +1,4 @@
-import * as Tools from '../tools/index';
+import * as Tools from '../../platform/tools/index';
 import { SCHEME             } from './protocol.scheme.definitions';
 import { TYPES, getTSType   } from './protocol.types';
 
@@ -11,7 +11,6 @@ interface IConditionDescription {
 
 export class ProtocolJSONConvertor{
 
-    private _JSON           : object;
     private _classes        : {[key:string]: string} = {};
     private _enums          : {[key:string]: string} = {};
     private _errors         : Array<Error> = [];
@@ -271,9 +270,9 @@ ${enumArray.map((key: string, index: number)=>{
                 if (Tools.getTypeOf(description[SCHEME.TYPE_DEF.type]) === Tools.EPrimitiveTypes.string){
                     return `${prop}${optional}: ${this._getTypeOfPrimitive(prop, description)}`;
                 }
-                return null;
+                return '';
             }).filter((str: string) => {
-                return str !== null;
+                return str !== '';
             }));
         }
         return parameters;
@@ -344,9 +343,9 @@ ${Object.keys(properties).map((prop) => {
                 }
             }
             this._errors.push(new Error(this._logger.error(`Cannot parse next condition: ${Tools.inspect(description)}`)));
-            return null;
+            return '';
         }).filter((str: string) => {
-            return str !== null;
+            return str !== '';
         });
     }
 

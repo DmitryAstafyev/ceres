@@ -1,0 +1,8 @@
+{
+
+    "default": {
+        "event"     : { "findin": "protocol.events.json",   "optional": true },
+        "request"   : { "findin": "protocol.requests.json", "optional": true }
+    }
+
+}

@@ -1,4 +1,4 @@
-import * as Tools from '../tools/index';
+import * as Tools from '../../platform/tools/index';
 import { SCHEME } from './protocol.scheme.definitions';
 
 export class ProtocolClassValidator {

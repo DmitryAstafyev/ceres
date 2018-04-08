@@ -1,4 +1,4 @@
-import * as Tools from '../tools/index';
+import * as Tools from '../../platform/tools/index';
 
 const logger: Tools.Logger = new Tools.Logger('ProtocolTypes');
 

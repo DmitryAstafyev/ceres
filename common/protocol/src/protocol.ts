@@ -1,4 +1,4 @@
-import * as Tools from '../tools/index';
+import * as Tools from '../../platform/tools/index';
 import { SCHEME } from './protocol.scheme.definitions';
 import { ProtocolClassValidator } from './protocol.class.validator';
 
@@ -149,7 +149,7 @@ const DEMO_EVENT = {
 export class Protocol {
 
     private _implementation: any = null;
-    private _scheme: object = null;
+    private _scheme: object | null = null;
     private _url: string = '';
 
     constructor(implementation: any) { 
@@ -158,7 +158,6 @@ export class Protocol {
     }
 
     public setSchemeByURL(url: string){
-
     }
 
     public setScheme(scheme: object){
