@@ -258,38 +258,18 @@ ${enumArray.map((key: string, index: number)=>{
     }
 
     private _getParametersDeclaration(properties: any, conditions: { [key:string] : IConditionDescription } = {}, parentProps: { [key:string] : any } = {}){
-        let deafults: any = {};
-        /*
-            constructor({ a, b = 4 } : { a: string; b: number}){
-
-            }
-        */
-        /*
-        Object.keys(conditions).forEach((prop: string) => {
-            const description = conditions[prop];
-            if (Tools.getTypeOf(description.type[SCHEME.TYPE_DEF.in]) === Tools.EPrimitiveTypes.string){
-                deafults[prop] = `${description.type[SCHEME.TYPE_DEF.in]}.${description.value}`;
-            } else if (Tools.getTypeOf(description.type[SCHEME.TYPE_DEF.type]) === Tools.EPrimitiveTypes.string){
-                if (description.type[SCHEME.TYPE_DEF.type] === Tools.EPrimitiveTypes.string) {
-                    deafults[prop] =  `"${description.value}"`;
-                } else {
-                    deafults[prop] =  `${description.value}`;
-                }
-            }
-        });
-        */
         let parameters = Object.keys(properties).map((prop) => {
-            return `${prop}${properties[prop][SCHEME.AVAILABILITY.optional]? (deafults[prop] === void 0 ? '?' : '') :''}:${this._getTypeOfPrimitive(prop, properties[prop])}${deafults[prop] !== void 0 ? (' = ' + deafults[prop]) : ''}`;
+            return `${prop}${properties[prop][SCHEME.AVAILABILITY.optional]? '?' :''}:${this._getTypeOfPrimitive(prop, properties[prop])}`;
         });
         if (Tools.getTypeOf(parentProps) === Tools.EPrimitiveTypes.object){
             parameters.push(...Object.keys(parentProps).map((prop: string) => {
                 const description = parentProps[prop];
-                const optional = parentProps[prop][SCHEME.AVAILABILITY.optional]? (deafults[prop] === void 0 ? '?' : ''):'';
+                const optional = parentProps[prop][SCHEME.AVAILABILITY.optional] ? '?' :'';
                 if (Tools.getTypeOf(description[SCHEME.TYPE_DEF.in]) === Tools.EPrimitiveTypes.string){
-                    return `${prop}${optional}: ${description[SCHEME.TYPE_DEF.in]}${deafults[prop] !== void 0 ? (' = ' + deafults[prop]) : ''}`;
+                    return `${prop}${optional}: ${description[SCHEME.TYPE_DEF.in]}`;
                 }
                 if (Tools.getTypeOf(description[SCHEME.TYPE_DEF.type]) === Tools.EPrimitiveTypes.string){
-                    return `${prop}${optional}: ${this._getTypeOfPrimitive(prop, description)}${deafults[prop] !== void 0 ? (' = ' + deafults[prop]) : ''}`;
+                    return `${prop}${optional}: ${this._getTypeOfPrimitive(prop, description)}`;
                 }
                 return null;
             }).filter((str: string) => {
@@ -308,6 +288,9 @@ ${Object.keys(properties).map((prop) => {
     }).join('\n')}
 
     constructor(properties: { ${this._getParametersDeclaration(properties, conditions, parentProps).join(', ')} }) {
+${parent !== '' ? this._getConditionsDefinitions('properties', conditions).map((str: string)=>{
+            return `\t\t${str}`;
+        }).join('\n') : ''}
         ${parent !== '' ? 'super(properties);' : ''}
         const name  : string = '${property}';
         const rules : {[key:string]: any}   = {
@@ -341,25 +324,23 @@ ${Object.keys(properties).map((prop) => {
 ${Object.keys(properties).map((prop) => {
             return `\t\tthis.${prop} = properties.${prop};`
         }).join('\n')}
-${parent !== '' ? this._getConditionsDefinitions(conditions).map((str: string)=>{
-    return `\t\t${str}`;
-}).join('\n') : ''}
+
     }
 }
 `;
     }
 
-    private _getConditionsDefinitions(conditions: { [key:string] : IConditionDescription }): Array<string> {
+    private _getConditionsDefinitions(alias: string, conditions: { [key:string] : IConditionDescription }): Array<string> {
         return Object.keys(conditions).map((prop: string) => {
             const description = conditions[prop];
             if (Tools.getTypeOf(description.type[SCHEME.TYPE_DEF.in]) === Tools.EPrimitiveTypes.string){
-                return `super.${prop} = ${description.type[SCHEME.TYPE_DEF.in]}.${description.value};`;
+                return `${alias}.${prop} = ${description.type[SCHEME.TYPE_DEF.in]}.${description.value};`;
             }
             if (Tools.getTypeOf(description.type[SCHEME.TYPE_DEF.type]) === Tools.EPrimitiveTypes.string){
                 if (description.type[SCHEME.TYPE_DEF.type] === Tools.EPrimitiveTypes.string) {
-                    return `super.${prop} = "${description.value}";`;
+                    return `${alias}.${prop} = "${description.value}";`;
                 } else {
-                    return `super.${prop} = ${description.value};`;
+                    return `${alias}.${prop} = ${description.value};`;
                 }
             }
             this._errors.push(new Error(this._logger.error(`Cannot parse next condition: ${Tools.inspect(description)}`)));
@@ -391,6 +372,11 @@ ${Object.keys(this._enums).map((enumName: string)=>{
 
     private _getModuleStr(){
         return `
+/*
+* This file generated automaticaly (UTC: ${(new Date()).toUTCString()}). 
+* Do not change it.
+*/
+
 let ProtocolClassValidator: any = null;
 
 export function register(ProtocolClassValidatorRef: any) {
