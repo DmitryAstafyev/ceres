@@ -29,9 +29,9 @@ export class Event {
 
 	public event: Events;
 	public guid: string;
-	public timestamp: datetime;
+	public timestamp: Date;
 
-    constructor(properties: any) {
+    constructor(properties: { event:Events, guid:string, timestamp?:Date }) {
         
         const name  : string = 'Event';
         const rules : {[key:string]: any}   = {
@@ -66,10 +66,10 @@ export class Event {
 export class EventMessageCreated extends Event{
 
 	public message: string;
-	public time: datetime;
+	public time: Date;
 	public authorId: string;
 
-    constructor(properties: any) {
+    constructor(properties: { message:string, time:Date, authorId:string, event: Events, guid: string, timestamp?: Date }) {
         super(properties);
         const name  : string = 'EventMessageCreated';
         const rules : {[key:string]: any}   = {
@@ -105,9 +105,9 @@ export class EventMessageChanged extends Event{
 
 	public messageId: number;
 	public message: string;
-	public time: datetime;
+	public time: Date;
 
-    constructor(properties: any) {
+    constructor(properties: { messageId:number, message:string, time:Date, event: Events, guid: string, timestamp?: Date }) {
         super(properties);
         const name  : string = 'EventMessageChanged';
         const rules : {[key:string]: any}   = {
@@ -144,7 +144,7 @@ export class EventMessageRemoved extends Event{
 	public messageId: number;
 	public reason: Reasons;
 
-    constructor(properties: any) {
+    constructor(properties: { messageId:number, reason:Reasons, event: Events, guid: string, timestamp?: Date }) {
         super(properties);
         const name  : string = 'EventMessageRemoved';
         const rules : {[key:string]: any}   = {
@@ -179,7 +179,7 @@ export class Email {
 	public address: string;
 	public primary: boolean;
 
-    constructor(properties: any) {
+    constructor(properties: { address:string, primary:boolean }) {
         
         const name  : string = 'Email';
         const rules : {[key:string]: any}   = {
@@ -214,7 +214,7 @@ export class Phone {
 	public address: string;
 	public type: PhoneTypes;
 
-    constructor(properties: any) {
+    constructor(properties: { address:string, type:PhoneTypes }) {
         
         const name  : string = 'Phone';
         const rules : {[key:string]: any}   = {
@@ -249,7 +249,7 @@ export class Request {
 	public request: Requests;
 	public guid: string;
 
-    constructor(properties: any) {
+    constructor(properties: { request:Requests, guid:string }) {
         
         const name  : string = 'Request';
         const rules : {[key:string]: any}   = {
@@ -283,7 +283,7 @@ export class RequestGetMessage extends Request{
 
 	public authorId: string;
 
-    constructor(properties: any) {
+    constructor(properties: { authorId:string, request: Requests, guid: string }) {
         super(properties);
         const name  : string = 'RequestGetMessage';
         const rules : {[key:string]: any}   = {
@@ -315,7 +315,7 @@ export class RequestGetProfile extends Request{
 
 	public authorId: string;
 
-    constructor(properties: any) {
+    constructor(properties: { authorId:string, request: Requests, guid: string }) {
         super(properties);
         const name  : string = 'RequestGetProfile';
         const rules : {[key:string]: any}   = {
@@ -341,19 +341,24 @@ export class RequestGetProfile extends Request{
 		super.request = Requests.GET_PROFILE;
     }
 }
+type Argums = { a: string; b: number};
+export class Classssss{
 
+    constructor({ a, b = 4 } : { a: string; b: number}){
 
+    }
+}
 export class RequestSetProfile extends Request{
 
 	public authorId: string;
 	public nickname: string;
 	public firstName: string;
 	public lastName: string;
-	public birthday: datetime;
+	public birthday: Date;
 	public email: Array<Email>;
 	public phone: Array<Phone>;
 
-    constructor(properties: any) {
+    constructor(properties: { authorId:string, nickname?:string, firstName?:string, lastName?:string, birthday?:Date, email?:Array<Email>, phone?:Array<Phone>, request: Requests, guid: string }) {
         super(properties);
         const name  : string = 'RequestSetProfile';
         const rules : {[key:string]: any}   = {
@@ -398,7 +403,7 @@ export class Message {
 	public event: Event;
 	public request: Request;
 
-    constructor(properties: any) {
+    constructor(properties: { event?:Event, request?:Request }) {
         
         const name  : string = 'Message';
         const rules : {[key:string]: any}   = {
