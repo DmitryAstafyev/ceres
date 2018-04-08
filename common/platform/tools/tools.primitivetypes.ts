@@ -8,7 +8,7 @@ export enum ETypes {
     undefined = 'undefined',
     null = 'null',
     error = 'error',
-    datetime = 'datetime'
+    date = 'date'
 };
 
 export function getTypeOf(smth: any){

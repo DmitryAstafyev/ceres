@@ -1,5 +1,5 @@
 export const SCHEME = {
-    SECTIONS: {
+    ENTITY: {
         default     : 'default',
         cases       : 'cases',
         definitions : 'definitions'
