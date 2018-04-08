@@ -67,7 +67,7 @@ export class ProtocolClassValidator {
                     this._errors.push(new Error(logger.error(`Entity "${name}", property "${prop}" defined incorrectly. Value of [type] cannot be empty.`)));
                 }
                 //Check primitive types
-                const PrimitiveTypes = [Tools.EPrimitiveTypes.boolean, Tools.EPrimitiveTypes.number, Tools.EPrimitiveTypes.string, Tools.EPrimitiveTypes.datetime];
+                const PrimitiveTypes = [Tools.EPrimitiveTypes.boolean, Tools.EPrimitiveTypes.number, Tools.EPrimitiveTypes.string, Tools.EPrimitiveTypes.date];
                 if (!~PrimitiveTypes.indexOf(SCHEME.TYPE_DEF.type as any) && SchemeClasses[SCHEME.TYPE_DEF.type] === void 0){
                     this._errors.push(new Error(logger.error(`Entity "${name}", property "${prop}" defined incorrectly. [type] isn't primitive type (${PrimitiveTypes.join(', ')}) and isn't instance of nested types (${Object.keys(SchemeClasses).join(', ')}).`)));
                 }
