@@ -1,8 +1,8 @@
-import * as Tools from '../../../platform/tools/index';
+import * as Tools from '../../platform/tools/index';
 import * as FS from 'fs';
 import * as Path from 'path';
-import { SCHEME                 } from '../../src/protocol.scheme.definitions';
-import { ProtocolJSONConvertor  } from '../../src/protocol.JSON.convertor';
+import { SCHEME                 } from './protocol.scheme.definitions';
+import { ProtocolJSONConvertor  } from './protocol.JSON.convertor';
 
 const logger: Tools.Logger = new Tools.Logger('ProtocolFileLoader');
 

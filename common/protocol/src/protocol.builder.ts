@@ -1,6 +1,6 @@
-import * as Tools from '../../../platform/tools/index';
+import * as Tools from '../../platform/tools/index';
 import * as FS from 'fs';
-import { ProtocolJSONConvertor  } from '../../src/protocol.JSON.convertor';
+import { ProtocolJSONConvertor  } from './protocol.JSON.convertor';
 import { Reader, IReaderResult  } from './protocol.reader';
 
 const logger: Tools.Logger = new Tools.Logger('ProtocolBuilder');
