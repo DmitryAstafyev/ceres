@@ -11,6 +11,9 @@ export const SCHEME = {
     AVAILABILITY: {
         required    : 'required',
         optional    : 'optional'
+    },
+    FIELDS: {
+        findin      : 'findin'
     }
 
 };

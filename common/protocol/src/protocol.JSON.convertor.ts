@@ -283,7 +283,7 @@ ${enumArray.map((key: string, index: number)=>{
 export class ${property} ${parent !== '' ? ('extends ' + parent) : ''}{
 
 ${Object.keys(properties).map((prop) => {
-        return `\tpublic ${prop}: ${this._getTypeOfPrimitive(prop, properties[prop])};`
+        return `\tpublic ${prop}: ${this._getTypeOfPrimitive(prop, properties[prop])}${properties[prop][SCHEME.AVAILABILITY.optional] ? (' | ' + Tools.EPrimitiveTypes.undefined) : ''};`
     }).join('\n')}
 
     constructor(properties: { ${this._getParametersDeclaration(properties, conditions, parentProps).join(', ')} }) {
