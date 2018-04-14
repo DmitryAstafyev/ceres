@@ -8,7 +8,7 @@ import { Builder, Reader, IReaderResult, ProtocolJSONConvertor } from '../src/in
 import * as FS from 'fs';
 
 const TEST_SOURCE_PROTOCOL_FILE = './spec/example/protocol.json';
-const TEST_DEST_PROTOCOL_FILE = './spec/example/protocol.ts';
+const TEST_DEST_PROTOCOL_FILE = './spec/example/example.ts';
 
 describe('[Test][platform][protocol]', () => {
     it('[Reader]', (done: Function)=>{
