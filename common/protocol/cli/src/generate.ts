@@ -58,41 +58,58 @@ const OUTPUTS = {
 
 if (process.argv instanceof Array){
     let commands : { [key: string]: string} = {};
-    process.argv.forEach((arg: string, index: number)=>{
-        Object.keys(ARGUMENTS).forEach((command: string)=>{
-            let description: TArgumentDescription = ARGUMENTS[command];
-            description.args.forEach((_arg: string)=>{
-                if (_arg === arg){
-                    if (description.hasParameter){
-                        if (process.argv[index + 1] !== void 0){
-                            if (!isItArgument(process.argv[index + 1]) && process.argv[index + 1].trim() !== ''){
-                                if (commands[command] === void 0){
-
+    let error = false;
+    try {
+        process.argv.forEach((arg: string, index: number)=>{
+            Object.keys(ARGUMENTS).forEach((command: string)=>{
+                let description: TArgumentDescription = ARGUMENTS[command];
+                description.args.forEach((_arg: string)=>{
+                    if (_arg === arg){
+                        if (description.hasParameter){
+                            if (process.argv[index + 1] !== void 0){
+                                if (!isItArgument(process.argv[index + 1]) && process.argv[index + 1].trim() !== ''){
+                                    if (commands[command] === void 0){
+                                        commands[command] = process.argv[index + 1];
+                                    } else {
+                                        console.log(description.errors[ERRORS.doubleParameter]);
+                                        throw ERRORS.doubleParameter;
+                                    }
                                 } else {
-                                    console.log(description.errors[ERRORS.doubleParameter]);
-                                    throw ERRORS.doubleParameter;
+                                    console.log(description.errors[ERRORS.noParameter]);
+                                    throw ERRORS.noParameter;
                                 }
                             } else {
                                 console.log(description.errors[ERRORS.noParameter]);
                                 throw ERRORS.noParameter;
                             }
-                        } else {
-                            console.log(description.errors[ERRORS.noParameter]);
-                            throw ERRORS.noParameter;
                         }
                     }
-                }
+                });
             });
         });
-    });
-    
-    if (Object.keys(commands).length > 0){
-        if (~Object.keys(commands).indexOf(COMMANDS.help)){
-            OUTPUTS.help();
-        } else if (~Object.keys(commands).indexOf(COMMANDS.source) && ~Object.keys(commands).indexOf(COMMANDS.output)){
-
+    } catch (e){
+        if (typeof e !== 'string'){
+            throw e;
+        } else {
+            error = true;
         }
-    } else {
-        OUTPUTS.help();
     }
+
+    if (!error){
+        if (Object.keys(commands).length > 0){
+            if (~Object.keys(commands).indexOf(COMMANDS.help)){
+                OUTPUTS.help();
+            } else if (~Object.keys(commands).indexOf(COMMANDS.source) && ~Object.keys(commands).indexOf(COMMANDS.output)){
+                try {
+                    let builder = new Builder(commands[COMMANDS.source]);
+                    builder.build(commands[COMMANDS.output]);
+                } catch (e){
+                    console.log(e.message);
+                }
+            }
+        } else {
+            OUTPUTS.help();
+        }
+    }
+    
 }
