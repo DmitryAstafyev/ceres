@@ -1,5 +1,5 @@
 **/node_modules
-**/example.*
+**/example.ts
 **/*.js
 **/*.js.map
 **/package-lock.json
