@@ -16,7 +16,7 @@ export class Builder {
         this._file = file;
     }
 
-    public build(output: string): Promise<boolean> {
+    public build(output: string, replace: boolean = false): Promise<boolean> {
         if (Tools.getTypeOf(output) !== Tools.EPrimitiveTypes.string){
             throw new Error(logger.error(`Argument "output" should be a {string} type, but was gotten: ${Tools.inspect(output)}.`));
         }
@@ -26,7 +26,10 @@ export class Builder {
                 .then((result: IReaderResult) => {
                     try {
                         const convertor = new ProtocolJSONConvertor(result.json);
-                        if (FS.existsSync(output)){
+                        if (FS.existsSync(output) && replace){
+                            FS.unlinkSync(output);
+                            logger.error(`File "${output}" exists. This file will be overwritten.`)
+                        } else if (FS.existsSync(output)){
                             return reject(new Error(logger.error(`File "${output}" already exists`)));
                         }
                         FS.writeFile(output, convertor.getImplementation(), (error) => {

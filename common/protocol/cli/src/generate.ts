@@ -10,6 +10,7 @@ const ERRORS = {
 const COMMANDS = {
     output  : 'output',
     source  : 'source',
+    replace : 'replace',
     help    : 'help',
 };
 
@@ -25,6 +26,12 @@ const ARGUMENTS : {[key:string]: TArgumentDescription } = {
         hasParameter: true,     
         args: ['-s', '--source', '--src'], 
         errors: { [ERRORS.noParameter]: 'Key "-s" (--source, --src) expected file name after.', [ERRORS.doubleParameter]: 'Key "-s" (--source, --src) can be defined twice.'}
+    },
+    [COMMANDS.replace]    : { 
+        description: 'Replace output file if it exists',
+        hasParameter: false,    
+        args: ['-r', '--replace'], 
+        errors: {} 
     },
     [COMMANDS.help]    : { 
         description: 'Show this message',
@@ -83,6 +90,8 @@ if (process.argv instanceof Array){
                                 console.log(description.errors[ERRORS.noParameter]);
                                 throw ERRORS.noParameter;
                             }
+                        } else {
+                            commands[command] = '';
                         }
                     }
                 });
@@ -103,7 +112,7 @@ if (process.argv instanceof Array){
             } else if (~Object.keys(commands).indexOf(COMMANDS.source) && ~Object.keys(commands).indexOf(COMMANDS.output)){
                 try {
                     let builder = new Builder(commands[COMMANDS.source]);
-                    builder.build(commands[COMMANDS.output])
+                    builder.build(commands[COMMANDS.output], ~Object.keys(commands).indexOf(COMMANDS.replace) ? true : false)
                         .then(()=>{
                             let finished = (new Date()).getTime();
                             console.log(`File "${commands[COMMANDS.output]}" generated for ${((finished - started) / 1000).toFixed(2)} s.`);
