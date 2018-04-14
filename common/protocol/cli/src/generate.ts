@@ -59,6 +59,7 @@ const OUTPUTS = {
 if (process.argv instanceof Array){
     let commands : { [key: string]: string} = {};
     let error = false;
+    let started = (new Date()).getTime();
     try {
         process.argv.forEach((arg: string, index: number)=>{
             Object.keys(ARGUMENTS).forEach((command: string)=>{
@@ -102,7 +103,14 @@ if (process.argv instanceof Array){
             } else if (~Object.keys(commands).indexOf(COMMANDS.source) && ~Object.keys(commands).indexOf(COMMANDS.output)){
                 try {
                     let builder = new Builder(commands[COMMANDS.source]);
-                    builder.build(commands[COMMANDS.output]);
+                    builder.build(commands[COMMANDS.output])
+                        .then(()=>{
+                            let finished = (new Date()).getTime();
+                            console.log(`File "${commands[COMMANDS.output]}" generated for ${((finished - started) / 1000).toFixed(2)} s.`);
+                        })
+                        .catch((e)=>{
+                            console.log(e.message);
+                        });
                 } catch (e){
                     console.log(e.message);
                 }
