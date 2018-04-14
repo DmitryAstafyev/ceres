@@ -256,6 +256,19 @@ ${enumArray.map((key: string, index: number)=>{
         }).join('\n')}\n};`;
     }
 
+    private _getSignature(className: string, parent: string = ''): string {
+        let input = className + parent;
+        let hash = 0, i, chr;
+        if (input.length === 0) return input;
+        for (i = 0; i < input.length; i++) {
+            chr   = input.charCodeAt(i);
+            hash  = ((hash << 5) - hash) + chr;
+            hash |= 0; 
+        }
+        return hash + '';
+        //source of code of this method: http://werxltd.com/wp/2010/05/13/javascript-implementation-of-javas-string-hashcode-method/
+    }
+
     private _getParametersDeclaration(properties: any, conditions: { [key:string] : IConditionDescription } = {}, parentProps: { [key:string] : any } = {}){
         let parameters = Object.keys(properties).map((prop) => {
             return `${prop}${properties[prop][SCHEME.AVAILABILITY.optional]? '?' :''}:${this._getTypeOfPrimitive(prop, properties[prop])}`;
@@ -285,12 +298,14 @@ export class ${property} ${parent !== '' ? ('extends ' + parent) : ''}{
 ${Object.keys(properties).map((prop) => {
         return `\tpublic ${prop}: ${this._getTypeOfPrimitive(prop, properties[prop])}${properties[prop][SCHEME.AVAILABILITY.optional] ? (' | ' + Tools.EPrimitiveTypes.undefined) : ''};`
     }).join('\n')}
-
+    static signature: string = '${this._getSignature(property, parent)}';
     constructor(properties: { ${this._getParametersDeclaration(properties, conditions, parentProps).join(', ')} }) {
-${parent !== '' ? this._getConditionsDefinitions('properties', conditions).map((str: string)=>{
-            return `\t\t${str}`;
-        }).join('\n') : ''}
-        ${parent !== '' ? 'super(properties);' : ''}
+        ${parent === '' ? '' : `super(Object.assign(properties, { 
+        ${this._getConditionsDefinitions('properties', conditions).map((str: string)=>{
+            return `\t${str}`;
+        }).join(',\n')}
+        }));`}
+
         const name  : string = '${property}';
         const rules : {[key:string]: any}   = {
 ${Object.keys(properties).map((prop) => {
@@ -308,6 +323,7 @@ ${Object.keys(properties).map((prop) => {
         if (ProtocolClassValidator === null) {
             throw new Error(\`Instance of "\${name}" cannot be initialized due ProtocolClassValidator isn't defined.\`);
         }
+
         const protocolClassValidator = new ProtocolClassValidator(
             name,
             rules,
@@ -333,13 +349,13 @@ ${Object.keys(properties).map((prop) => {
         return Object.keys(conditions).map((prop: string) => {
             const description = conditions[prop];
             if (Tools.getTypeOf(description.type[SCHEME.TYPE_DEF.in]) === Tools.EPrimitiveTypes.string){
-                return `${alias}.${prop} = ${description.type[SCHEME.TYPE_DEF.in]}.${description.value};`;
+                return `${prop}: ${description.type[SCHEME.TYPE_DEF.in]}.${description.value}`;
             }
             if (Tools.getTypeOf(description.type[SCHEME.TYPE_DEF.type]) === Tools.EPrimitiveTypes.string){
                 if (description.type[SCHEME.TYPE_DEF.type] === Tools.EPrimitiveTypes.string) {
-                    return `${alias}.${prop} = "${description.value}";`;
+                    return `${prop}: "${description.value}"`;
                 } else {
-                    return `${alias}.${prop} = ${description.value};`;
+                    return `${prop}: ${description.value}`;
                 }
             }
             this._errors.push(new Error(this._logger.error(`Cannot parse next condition: ${Tools.inspect(description)}`)));
@@ -369,6 +385,21 @@ ${Object.keys(this._enums).map((enumName: string)=>{
         `;
     }
 
+    private _getProtocolDescription(){
+        return `
+export const Protocol : {[key:string]: any} = {
+    //Classes
+${Object.keys(this._classes).map((className: string)=>{
+        return `\t${className}: ${className}`;
+    }).join(',\n')}${Object.keys(this._enums).length > 0 ? ', ' : ''}
+    ${Object.keys(this._enums).length > 0 ? '//Enums' : ''}
+${Object.keys(this._enums).map((enumName: string)=>{
+        return `\t${enumName}: ${enumName}`;
+    }).join(',\n')}
+}     
+        `;
+    }
+
     private _getModuleStr(){
         return `
 /*
@@ -390,6 +421,7 @@ ${Object.keys(this._classes).map((className: string)=>{
         }).join('\n')}
 ${this._getSchemeOfClasses()}
 ${this._getSchemeOfEnums()}
+${this._getProtocolDescription()}
         `;
     }
 
