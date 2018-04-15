@@ -68,20 +68,21 @@ export class ProtocolClassValidator {
                 }
                 //Check primitive types
                 const PrimitiveTypes = [Tools.EPrimitiveTypes.boolean, Tools.EPrimitiveTypes.number, Tools.EPrimitiveTypes.string, Tools.EPrimitiveTypes.date];
-                if (!~PrimitiveTypes.indexOf(SCHEME.TYPE_DEF.type as any) && SchemeClasses[SCHEME.TYPE_DEF.type] === void 0){
+                if (!~PrimitiveTypes.indexOf(rule[SCHEME.TYPE_DEF.type]) && SchemeClasses[rule[SCHEME.TYPE_DEF.type]] === void 0){
                     this._errors.push(new Error(logger.error(`Entity "${name}", property "${prop}" defined incorrectly. [type] isn't primitive type (${PrimitiveTypes.join(', ')}) and isn't instance of nested types (${Object.keys(SchemeClasses).join(', ')}).`)));
                 }
-                if (~PrimitiveTypes.indexOf(SCHEME.TYPE_DEF.type as any)){
+                if (~PrimitiveTypes.indexOf(rule[SCHEME.TYPE_DEF.type])){
                     if (Tools.getTypeOf(properties[prop]) !== rule[SCHEME.TYPE_DEF.type]){
                         this._errors.push(new Error(logger.error(`Entity "${name}", property "${prop}" defined incorrectly. Expected type of property is: ${'{' + rule[SCHEME.TYPE_DEF.type] + '}'}, but actual type is: ${Tools.inspect(properties[prop])}`)));
                     }
                     return true;
-                } else if (SchemeClasses[SCHEME.TYPE_DEF.type] !== void 0){
+                } else if (SchemeClasses[rule[SCHEME.TYPE_DEF.type]] !== void 0){
                     let found = false;
+                    //console.log(SchemeClasses);
                     Object.keys(SchemeClasses).forEach((schemeClass: any)=>{
-                        properties[prop] instanceof schemeClass && (found = true);
+                        SchemeClasses[schemeClass].name === properties[prop].constructor.name && (found = true);
                     });
-                    if (~found){
+                    if (!found){
                         this._errors.push(new Error(logger.error(`Entity "${name}", property "${prop}" defined incorrectly. Expected property will be an instance of nested types (${Object.keys(SchemeClasses).join(', ')}), but actual type is: ${Tools.inspect(properties[prop])}.`)));
                     }
                     return true;

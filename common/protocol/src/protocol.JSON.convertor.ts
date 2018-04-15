@@ -313,8 +313,10 @@ ${Object.keys(properties).map((prop) => {
                 return `\t\t\t"${prop}": { ${Object.keys(description).map((prop) => {
                     if (Tools.getTypeOf(description[prop]) === Tools.EPrimitiveTypes.array){
                         return `"${prop}": ["${description[prop][0]}"]`;
-                    } else {
+                    } else if (Tools.getTypeOf(description[prop]) === Tools.EPrimitiveTypes.string) {
                         return `"${prop}": "${description[prop]}"`;
+                    } else {
+                        return `"${prop}": ${description[prop]}`;
                     }
                 }).join(', ')} }`
             }).join(',\n')}
