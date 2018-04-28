@@ -21,6 +21,7 @@ class __Generic {
 const __generic = new __Generic();
 
 export default {
-    getClassString: __Generic.toString(),
-    getInitializationString: 'const __generic = new __Generic();'
+    definitions: '',
+    classString: __Generic.toString(),
+    initializationString: 'const __generic = new __Generic();'
 }

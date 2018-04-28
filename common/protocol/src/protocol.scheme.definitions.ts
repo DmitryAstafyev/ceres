@@ -15,5 +15,4 @@ export const SCHEME = {
     FIELDS: {
         findin      : 'findin'
     }
-
 };

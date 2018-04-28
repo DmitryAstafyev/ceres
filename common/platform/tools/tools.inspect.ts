@@ -1,4 +1,7 @@
-import * as PrimitiveTypes from './tools.primitivetypes';
+import { 
+    getTypeOf, 
+    EPrimitiveTypes
+} from '../../platform/tools/index';
 
 const DEFAULT_MAX_DEEP = 4;
 
@@ -9,7 +12,7 @@ function renderPrimitive(type: string, value: string){
 
 export default function inspect(smth: any, maxDeep = DEFAULT_MAX_DEEP, deep = 0): string {
     try {
-        const type = PrimitiveTypes.getTypeOf(smth);
+        const type = getTypeOf(smth);
     
         maxDeep <= 0 && (maxDeep = DEFAULT_MAX_DEEP);
         
@@ -17,35 +20,35 @@ export default function inspect(smth: any, maxDeep = DEFAULT_MAX_DEEP, deep = 0)
             return `maximum deep reached (${maxDeep})`;
         }
     
-        if (~[PrimitiveTypes.ETypes.number, PrimitiveTypes.ETypes.boolean].indexOf(type)){
+        if (~[EPrimitiveTypes.number, EPrimitiveTypes.boolean].indexOf(type)){
             return renderPrimitive(type, smth); 
-        } else if (type === PrimitiveTypes.ETypes.string) {
+        } else if (type === EPrimitiveTypes.string) {
             return renderPrimitive(type, `"${smth}"`); 
-        } else if (type === PrimitiveTypes.ETypes.array) {
+        } else if (type === EPrimitiveTypes.array) {
             let items = smth.map((smth: any, i: number) => {
                 return `${i}: ${inspect(smth, maxDeep, (deep + 1))}`;
             });
             return `${type}[${smth.length}]: [${items.join(',')}]`;
-        } else if (type === PrimitiveTypes.ETypes.null) {
+        } else if (type === EPrimitiveTypes.null) {
             return renderPrimitive(type, 'null'); 
-        } else if (type === PrimitiveTypes.ETypes.function) {
+        } else if (type === EPrimitiveTypes.function) {
             return `${type}: ${smth.constructor.name}`
-        } else if (type === PrimitiveTypes.ETypes.undefined) {
-            return PrimitiveTypes.ETypes.undefined;
-        } else if (PrimitiveTypes.getTypeOf(smth.map) === PrimitiveTypes.ETypes.function) {
+        } else if (type === EPrimitiveTypes.undefined) {
+            return EPrimitiveTypes.undefined;
+        } else if (getTypeOf(smth.map) === EPrimitiveTypes.function) {
             let items = smth.map((smth: any, i: number) => {
                 return `${i}: ${inspect(smth, maxDeep, (deep + 1))}`;
             });
             return `${type}: [${items.join(',')}]`;
-        } else if (type === PrimitiveTypes.ETypes.error && PrimitiveTypes.getTypeOf(smth.message) === PrimitiveTypes.ETypes.string){
+        } else if (type === EPrimitiveTypes.error && getTypeOf(smth.message) === EPrimitiveTypes.string){
             return `${type}: {${smth.message}}`;
-        } else if (type === PrimitiveTypes.ETypes.object || typeof smth === 'object') {
+        } else if (type === EPrimitiveTypes.object || typeof smth === 'object') {
             let properties = [];
             for (let prop in smth){
                 properties.push(`${prop}: ${inspect(smth[prop], maxDeep, (deep + 1))}`);
             }
             return `${type}: {${properties.join(',')}}`;
-        } else if (PrimitiveTypes.getTypeOf(smth.toString) === PrimitiveTypes.ETypes.function) {
+        } else if (getTypeOf(smth.toString) === EPrimitiveTypes.function) {
             return `${type}: ${smth.toString()}`;
         } else {
             return `${type}`;

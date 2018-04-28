@@ -2,6 +2,7 @@ import * as Tools from '../../platform/tools/index';
 import { SCHEME } from './protocol.scheme.definitions';
 import { TYPES, GENERIC_TYPES, getTSType } from './protocol.types';
 import InjectionGeneric from './protocol.inject.generic';
+import InjectionClassValidator from './protocol.inject.validator';
 
 interface IConditionDescription {
     value   : any,
@@ -365,20 +366,14 @@ ${Object.keys(properties).map((prop) => {
             }).filter(x => x !== null).join(',\n')}
         }; 
 
-        if (ProtocolClassValidator === null) {
-            throw new Error(\`Instance of "\${name}" cannot be initialized due ProtocolClassValidator isn't defined.\`);
-        }
-
-        const protocolClassValidator = new ProtocolClassValidator(
-            name,
+        const errors = getInstanceErrors(name,
             rules,
             __SchemeEnums,
             __SchemeClasses,
-            properties
-        );
-
-        if (protocolClassValidator.getErrors().length > 0){
-            throw new Error(\`Cannot initialize \${name} due errors: \${protocolClassValidator.getErrors().map((error: Error)=>{ return error.message; }).join(', ')}\`);
+            properties);
+        
+        if (errors !== null){
+            throw new Error(\`Cannot initialize \${name} due errors: \${errors.map((error: Error)=>{ return error.message; }).join(', ')}\`);
         }
 
 ${Object.keys(properties).map((prop) => {
@@ -451,11 +446,19 @@ ${Object.keys(this._enums).map((enumName: string)=>{
 
     private _getInjections(){
         return `
-//======================== Generic values: begin ========================
-${InjectionGeneric.getClassString}
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+* Validation tools
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+${InjectionClassValidator.definitions}
+${InjectionClassValidator.classString}
+${InjectionClassValidator.initializationString}
 
-${InjectionGeneric.getInitializationString}
-//======================== Generic values: end   ========================
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+* Generic values stuff
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+${InjectionGeneric.definitions}
+${InjectionGeneric.classString}
+${InjectionGeneric.initializationString}
 `;
     }
 
@@ -468,12 +471,9 @@ ${InjectionGeneric.getInitializationString}
 
 ${this._getInjections()}
 
-let ProtocolClassValidator: any = null;
-
-export function register(ProtocolClassValidatorRef: any) {
-    ProtocolClassValidator = ProtocolClassValidatorRef;
-};
-
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+* Protocol implementation
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 ${Object.keys(this._enums).map((enumName: string)=>{
             return this._enums[enumName];
         }).join('\n')}
