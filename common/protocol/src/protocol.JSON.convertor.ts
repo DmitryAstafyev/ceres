@@ -1,7 +1,7 @@
 import * as Tools from '../../platform/tools/index';
-import { SCHEME             } from './protocol.scheme.definitions';
-import { TYPES, getTSType   } from './protocol.types';
-
+import { SCHEME } from './protocol.scheme.definitions';
+import { TYPES, GENERIC_TYPES, getTSType } from './protocol.types';
+import InjectionGeneric from './protocol.inject.generic';
 
 interface IConditionDescription {
     value   : any,
@@ -13,12 +13,13 @@ export class ProtocolJSONConvertor{
 
     private _classes        : {[key:string]: string} = {};
     private _enums          : {[key:string]: string} = {};
+    private _enumsValues    : {[key:string]: Array<string>} = {};
     private _errors         : Array<Error> = [];
     private _logger         : Tools.Logger = new Tools.Logger('ProtocolJSONConvertor');
     private _implementation : string = '';
+    private _hashes         : Array<string> = [];
 
     constructor(JSON: any){
-        
         if (Tools.getTypeOf(JSON) !== Tools.EPrimitiveTypes.object){
             throw new Error(this._logger.error(`Expects {object} as parameter, but was gotten: ${Tools.inspect(JSON)}`));
         }
@@ -35,7 +36,6 @@ export class ProtocolJSONConvertor{
         }
 
         this._parseComplexEtity(className, root);
-
         this._implementation = this._getModuleStr();
     }
 
@@ -72,12 +72,39 @@ export class ProtocolJSONConvertor{
         return true;
     }
 
+    private _isGeneric(smth: any){
+        if (!this._isPremitive(smth)){
+            return false;
+        }
+        if (GENERIC_TYPES[smth[SCHEME.TYPE_DEF.type]] === void 0){
+            return false;
+        }
+        return true;
+    }
+
+    private _getGenericType(smth: any){
+        return GENERIC_TYPES[smth[SCHEME.TYPE_DEF.type]].alias;
+    }
+
+    private _getGenericValue(smth: any){
+        return GENERIC_TYPES[smth[SCHEME.TYPE_DEF.type]].value;
+    }
+
     private _getTypeOfPrimitive(property: string, smth: any){
         if (Tools.getTypeOf(smth[SCHEME.TYPE_DEF.in]) === Tools.EPrimitiveTypes.string){
             return smth[SCHEME.TYPE_DEF.in];
         }
         if (Tools.getTypeOf(smth[SCHEME.TYPE_DEF.type]) === Tools.EPrimitiveTypes.string){
-            return getTSType(smth[SCHEME.TYPE_DEF.type]);
+            const error = this._validatePrimitive(smth);
+            if (error instanceof Error){
+                this._errors.push(error);
+            } else {
+                if (this._isGeneric(smth)){
+                    return this._getGenericType(smth);
+                } else {
+                    return getTSType(smth[SCHEME.TYPE_DEF.type]);
+                }
+            }
         }
         if (Tools.getTypeOf(smth[SCHEME.TYPE_DEF.type]) === Tools.EPrimitiveTypes.array){
             if (smth[SCHEME.TYPE_DEF.type].length !== 1){
@@ -114,9 +141,12 @@ export class ProtocolJSONConvertor{
         if (Tools.getTypeOf(smth[SCHEME.TYPE_DEF.in]) === Tools.EPrimitiveTypes.string && this._enums[smth[SCHEME.TYPE_DEF.in]] === void 0){
             return new Error(`Enum "${smth[SCHEME.TYPE_DEF.in]}" isn't defined.`);
         }
-        if (Tools.getTypeOf(smth[SCHEME.TYPE_DEF.type]) === Tools.EPrimitiveTypes.string && TYPES[smth[SCHEME.TYPE_DEF.type]] === void 0){
+        if (Tools.getTypeOf(smth[SCHEME.TYPE_DEF.type]) === Tools.EPrimitiveTypes.string && 
+            TYPES[smth[SCHEME.TYPE_DEF.type]] === void 0 && 
+            GENERIC_TYPES[smth[SCHEME.TYPE_DEF.type]] === void 0){
             return new Error(`Type "${smth[SCHEME.TYPE_DEF.type]}" is unknown.`);
         }
+        return true;
     }
 
     private _getConditionReferences(condition: any, rootProperties: any) : IConditionDescription | Error {
@@ -135,6 +165,14 @@ export class ProtocolJSONConvertor{
         }
         if (!this._isPremitive(rootProperties[property])){
             return new Error(`Condition has wrong description: property "${property}" in root class has complex type, but conditions are supported only primitive types.`);
+        }
+        if (rootProperties[property][SCHEME.TYPE_DEF.in] !== void 0){
+            if (!(this._enumsValues[rootProperties[property][SCHEME.TYPE_DEF.in]] instanceof Array)){
+                return new Error(`Cannot find definition for "${rootProperties[property][SCHEME.TYPE_DEF.in]}".`);
+            }
+            if (!~this._enumsValues[rootProperties[property][SCHEME.TYPE_DEF.in]].indexOf(condition[property])){
+                return new Error(`Definition of "${rootProperties[property][SCHEME.TYPE_DEF.in]}" doesn't have value "${condition[property]}".`);
+            }
         }
         return {
             property: property,
@@ -167,6 +205,7 @@ export class ProtocolJSONConvertor{
                         return false;
                     }
                     this._enums[property] = this._getEnumStr(description, property);
+                    this._enumsValues[property] = description;
                     return true;
                 }
             });
@@ -249,7 +288,7 @@ export class ProtocolJSONConvertor{
         }
     }
 
-    private _getEnumStr(enumArray: Array<string>, property: string){
+    private _getEnumStr(enumArray: Array<string>, property: string): string{
         return `enum ${property} {
 ${enumArray.map((key: string, index: number)=>{
             return `\t${key} = ${index},`;
@@ -257,16 +296,12 @@ ${enumArray.map((key: string, index: number)=>{
     }
 
     private _getSignature(className: string, parent: string = ''): string {
-        let input = className + parent;
-        let hash = 0, i, chr;
-        if (input.length === 0) return input;
-        for (i = 0; i < input.length; i++) {
-            chr   = input.charCodeAt(i);
-            hash  = ((hash << 5) - hash) + chr;
-            hash |= 0; 
+        const hash = Tools.hash(className + parent, true);
+        if (~this._hashes.indexOf(hash)) {
+            throw new Error(`Name conflict (match of hashes) for class: ${className} (parent: ${parent}). Cannot create unique signature. Try to change name of class.`);
         }
-        return hash + '';
-        //source of code of this method: http://werxltd.com/wp/2010/05/13/javascript-implementation-of-javas-string-hashcode-method/
+        this._hashes.push(hash);
+        return hash;
     }
 
     private _getParametersDeclaration(properties: any, conditions: { [key:string] : IConditionDescription } = {}, parentProps: { [key:string] : any } = {}){
@@ -296,7 +331,11 @@ ${enumArray.map((key: string, index: number)=>{
 export class ${property} ${parent !== '' ? ('extends ' + parent) : ''}{
 
 ${Object.keys(properties).map((prop) => {
-        return `\tpublic ${prop}: ${this._getTypeOfPrimitive(prop, properties[prop])}${properties[prop][SCHEME.AVAILABILITY.optional] ? (' | ' + Tools.EPrimitiveTypes.undefined) : ''};`
+        if (this._isGeneric(properties[prop])){
+            return `\tpublic readonly ${prop}: ${this._getGenericType(properties[prop])} = ${this._getGenericValue(properties[prop])};`
+        } else {
+            return `\tpublic ${prop}: ${this._getTypeOfPrimitive(prop, properties[prop])}${properties[prop][SCHEME.AVAILABILITY.optional] ? (' | ' + Tools.EPrimitiveTypes.undefined) : ''};`
+        }
     }).join('\n')}
     static signature: string = '${this._getSignature(property, parent)}';
     constructor(properties: { ${this._getParametersDeclaration(properties, conditions, parentProps).join(', ')} }) {
@@ -310,16 +349,20 @@ ${Object.keys(properties).map((prop) => {
         const rules : {[key:string]: any}   = {
 ${Object.keys(properties).map((prop) => {
                 const description = properties[prop];
-                return `\t\t\t"${prop}": { ${Object.keys(description).map((prop) => {
-                    if (Tools.getTypeOf(description[prop]) === Tools.EPrimitiveTypes.array){
-                        return `"${prop}": ["${description[prop][0]}"]`;
-                    } else if (Tools.getTypeOf(description[prop]) === Tools.EPrimitiveTypes.string) {
-                        return `"${prop}": "${description[prop]}"`;
-                    } else {
-                        return `"${prop}": ${description[prop]}`;
-                    }
-                }).join(', ')} }`
-            }).join(',\n')}
+                if (this._isGeneric(description)){
+                    return null;//Do not declare generic values
+                } else {
+                    return `\t\t\t"${prop}": { ${Object.keys(description).map((prop) => {
+                        if (Tools.getTypeOf(description[prop]) === Tools.EPrimitiveTypes.array){
+                            return `"${prop}": ["${description[prop][0]}"]`;
+                        } else if (Tools.getTypeOf(description[prop]) === Tools.EPrimitiveTypes.string) {
+                            return `"${prop}": "${description[prop]}"`;
+                        } else {
+                            return `"${prop}": ${description[prop]}`;
+                        }
+                    }).join(', ')} }`
+                }
+            }).filter(x => x !== null).join(',\n')}
         }; 
 
         if (ProtocolClassValidator === null) {
@@ -339,8 +382,12 @@ ${Object.keys(properties).map((prop) => {
         }
 
 ${Object.keys(properties).map((prop) => {
-            return `\t\tthis.${prop} = properties.${prop};`
-        }).join('\n')}
+            if (this._isGeneric(properties[prop])){
+                return null;
+            } else {
+                return `\t\tthis.${prop} = properties.${prop};`
+            }
+        }).filter(x => x !== null).join('\n')}
 
     }
 }
@@ -402,12 +449,24 @@ ${Object.keys(this._enums).map((enumName: string)=>{
         `;
     }
 
+    private _getInjections(){
+        return `
+//======================== Generic values: begin ========================
+${InjectionGeneric.getClassString}
+
+${InjectionGeneric.getInitializationString}
+//======================== Generic values: end   ========================
+`;
+    }
+
     private _getModuleStr(){
         return `
 /*
 * This file generated automaticaly (UTC: ${(new Date()).toUTCString()}). 
 * Do not change it.
 */
+
+${this._getInjections()}
 
 let ProtocolClassValidator: any = null;
 

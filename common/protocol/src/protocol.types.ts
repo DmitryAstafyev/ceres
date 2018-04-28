@@ -8,7 +8,8 @@ export const TYPES: any = {
     boolean     : 'boolean',
     datetime    : 'datetime',
     date        : 'date',
-    time        : 'time'
+    time        : 'time',
+    any         : 'any'
 }
 
 export const TYPES_CONVERTING: any = {
@@ -16,6 +17,10 @@ export const TYPES_CONVERTING: any = {
     date    : { alias: 'Date' },
     time    : { alias: 'Date' }
 }
+
+export const GENERIC_TYPES: any = {
+    guid: { alias: 'string', value: '__generic.guid()' }
+};
 
 export function getTSType(protocolType: string){
     if (TYPES_CONVERTING[protocolType] !== void 0){

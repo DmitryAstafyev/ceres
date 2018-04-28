@@ -3,7 +3,7 @@ import * as PrimitiveTypes from './tools.primitivetypes';
 const DEFAULT_MAX_DEEP = 4;
 
 function renderPrimitive(type: string, value: string){
-    return `{${type}}: ${value}`; 
+    return `<${type}>: ${value}`; 
 
 }
 
@@ -17,8 +17,10 @@ export default function inspect(smth: any, maxDeep = DEFAULT_MAX_DEEP, deep = 0)
             return `maximum deep reached (${maxDeep})`;
         }
     
-        if (~[PrimitiveTypes.ETypes.string, PrimitiveTypes.ETypes.number, PrimitiveTypes.ETypes.boolean].indexOf(type)){
+        if (~[PrimitiveTypes.ETypes.number, PrimitiveTypes.ETypes.boolean].indexOf(type)){
             return renderPrimitive(type, smth); 
+        } else if (type === PrimitiveTypes.ETypes.string) {
+            return renderPrimitive(type, `"${smth}"`); 
         } else if (type === PrimitiveTypes.ETypes.array) {
             let items = smth.map((smth: any, i: number) => {
                 return `${i}: ${inspect(smth, maxDeep, (deep + 1))}`;

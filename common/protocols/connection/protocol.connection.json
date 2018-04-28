@@ -1,0 +1,32 @@
+{
+    "message": {
+                "default": {
+                    "request"   : { "in"    : "Requests",   "optional": true },
+                    "response"  : { "in"    : "Responses",  "optional": true },
+                    "guid"      : { "type"  : "guid",       "required": true }
+                },
+            
+                "cases":{
+                    "RequestHandshake":[{ "request": "HANDSHAKE"}, {
+                        "clientId"  : { "type"  : "string",     "required": true }
+                    }],
+                    "RequestAuth":[{ "request": "AUTH"}, {
+                        "clientId"  : { "type"  : "string",     "required": true },
+                        "obj"       : { "type"  : "any",        "required": true }
+                    }],
+                    "ResponseHandshake":[{ "response": "HANDSHAKE"}, {
+                        "clientId"  : { "type"  : "string",     "required": true },
+                        "status"    : { "type"  : "boolean",    "required": true }
+                    }],
+                    "ResponseAuth":[{ "response": "AUTH"}, {
+                        "clientId"  : { "type"  : "string",     "required": true },
+                        "status"    : { "type"  : "boolean",    "required": true }
+                    }]
+                },
+            
+                "definitions": {
+                    "Requests"  : ["HANDSHAKE", "AUTH"],
+                    "Responses" : ["HANDSHAKE", "AUTH"]
+                }
+            }
+}
