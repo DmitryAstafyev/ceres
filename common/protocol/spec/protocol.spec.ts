@@ -15,7 +15,7 @@ describe('[Test][platform][protocol]', () => {
     it('[Reader]', (done: Function)=>{
         const logger = new Logger('Test: Reader');
         const reader: Reader = new Reader(TEST_SOURCE_PROTOCOL_FILE);
-        reader.read()
+        return reader.read()
             .then((results: IReaderResult) => {
                 expect(typeof results).toBe('object');
                 expect(typeof results.body).toBe('object');
@@ -32,50 +32,54 @@ describe('[Test][platform][protocol]', () => {
                 expect(typeof results.json.Message.definitions.Request).toBe('object');
                 expect(typeof results.json.Message.definitions.Event.cases).toBe('object');
                 expect(typeof results.json.Message.definitions.Request.cases).toBe('object');
-                done();
+                return done();
             }).catch((e)=>{
+                logger.error(e.message);
                 fail(e);
-                done();
-        });
+                return done();
+            });
     });
     it('[Convertor]', (done: Function)=>{
         const logger = new Logger('Test: Convertor');
         const reader: Reader = new Reader(TEST_SOURCE_PROTOCOL_FILE);
-        reader.read()
+        return reader.read()
             .then((results: IReaderResult) => {
                 try{
                     const convertor: ProtocolJSONConvertor = new ProtocolJSONConvertor(results.json);
                     const classStr = convertor.getImplementation();
                     expect(typeof classStr).toBe('string');
                     expect(classStr.length).toBeGreaterThan(0);
-                    done();
+                    return done();
                 } catch(e){
+                    logger.error(e.message);
                     fail(e);
-                    done();
+                    return done();
                 }
             }).catch((e)=>{
+                logger.error(e.message);
                 fail(e);
-                done();
-        });
+                return done();
+            });
     });
 
     it('[Builder]', (done: Function)=>{
         const logger = new Logger('Test: Builder');
         const builder: Builder = new Builder(TEST_SOURCE_PROTOCOL_FILE);
-        builder.build(TEST_DEST_PROTOCOL_FILE, true)
+        return builder.build(TEST_DEST_PROTOCOL_FILE, true)
             .then(() => {
                 expect(FS.existsSync(TEST_DEST_PROTOCOL_FILE)).toBe(true);
-                done();
+                return done();
             }).catch((e)=>{
+                logger.error(e.message);
                 fail(e);
-                done();
-        });
+                return done();
+            });
     });
 
     it('[Validation]', (done: Function)=>{
         const logger = new Logger('Test: Validation');
         const builder: Builder = new Builder(TEST_SOURCE_PROTOCOL_FILE);
-        builder.build(TEST_DEST_PROTOCOL_FILE, true)
+        return builder.build(TEST_DEST_PROTOCOL_FILE, true)
             .then(() => {
                 expect(FS.existsSync(TEST_DEST_PROTOCOL_FILE)).toBe(true);
                 import(TEST_DEST_PROTOCOL_MODULE_REF)
@@ -90,16 +94,18 @@ describe('[Test][platform][protocol]', () => {
                     });
                     expect(event instanceof Protocol.Event).toBe(true);
                     expect(message instanceof Protocol.Message).toBe(true);
-                    done();
+                    return done();
                 })
                 .catch((e)=>{
+                    logger.error(e.message);
                     fail(e);
-                    done();
+                    return done();
                 });
             }).catch((e)=>{
+                logger.error(e.message);
                 fail(e);
-                done();
-        });
+                return done();
+            });
 
     });
     
