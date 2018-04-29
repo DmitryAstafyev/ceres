@@ -3,9 +3,11 @@ import * as Tools from '../../platform/tools/index';
 import { IMiddleware } from './interfaces';
 import { 
     TMiddlewareAfterFunction, 
+    TMiddlewareValidFunction,
     TMiddlewareBeforeFunction, 
     TMiddlewareAuthFunction,
     TMiddlewareAuthReturn,
+    TMiddlewareValidReturn,
     TMiddlewareBeforeReturn,
     TMiddlewareAfterReturn
 } from './types';
@@ -16,11 +18,13 @@ export class Middleware implements IMiddleware {
 
         middleware = Tools.objectValidate(middleware, {
             auth    : this.auth,
+            valid   : this.valid,
             before  : this.before,
             after   : this.after
         }) as IMiddleware;
 
         this.auth   = middleware.auth   as TMiddlewareAuthFunction;
+        this.valid  = middleware.valid  as TMiddlewareValidFunction;
         this.before = middleware.before as TMiddlewareBeforeFunction;
         this.after  = middleware.after  as TMiddlewareAfterFunction;
 
@@ -31,6 +35,12 @@ export class Middleware implements IMiddleware {
      */
 
     public auth(GUID: symbol, request: HTTP.IncomingMessage): TMiddlewareAuthReturn {
+        return new Promise((resolve, reject) => {
+            return resolve();
+        });
+    }
+
+    public valid(GUID: symbol, request: HTTP.IncomingMessage): TMiddlewareValidReturn {
         return new Promise((resolve, reject) => {
             return resolve();
         });
