@@ -1,5 +1,4 @@
-import * as Tools from '../../platform/tools/index';
-
+import { ETypes, getTypeOf } from './tools.primitivetypes';
 const DEFAULT_MAX_DEEP = 4;
 
 function renderPrimitive(type: string, value: string){
@@ -9,7 +8,7 @@ function renderPrimitive(type: string, value: string){
 
 export default function inspect(smth: any, maxDeep = DEFAULT_MAX_DEEP, deep = 0): string {
     try {
-        const type = Tools.getTypeOf(smth);
+        const type = getTypeOf(smth);
     
         maxDeep <= 0 && (maxDeep = DEFAULT_MAX_DEEP);
         
@@ -17,35 +16,35 @@ export default function inspect(smth: any, maxDeep = DEFAULT_MAX_DEEP, deep = 0)
             return `maximum deep reached (${maxDeep})`;
         }
     
-        if (~[Tools.EPrimitiveTypes.number, Tools.EPrimitiveTypes.boolean].indexOf(type)){
+        if (~[ETypes.number, ETypes.boolean].indexOf(type)){
             return renderPrimitive(type, smth); 
-        } else if (type === Tools.EPrimitiveTypes.string) {
+        } else if (type === ETypes.string) {
             return renderPrimitive(type, `"${smth}"`); 
-        } else if (type === Tools.EPrimitiveTypes.array) {
+        } else if (type === ETypes.array) {
             let items = smth.map((smth: any, i: number) => {
                 return `${i}: ${inspect(smth, maxDeep, (deep + 1))}`;
             });
             return `${type}[${smth.length}]: [${items.join(',')}]`;
-        } else if (type === Tools.EPrimitiveTypes.null) {
+        } else if (type === ETypes.null) {
             return renderPrimitive(type, 'null'); 
-        } else if (type === Tools.EPrimitiveTypes.function) {
+        } else if (type === ETypes.function) {
             return `${type}: ${smth.constructor.name}`
-        } else if (type === Tools.EPrimitiveTypes.undefined) {
-            return Tools.EPrimitiveTypes.undefined;
-        } else if (Tools.getTypeOf(smth.map) === Tools.EPrimitiveTypes.function) {
+        } else if (type === ETypes.undefined) {
+            return ETypes.undefined;
+        } else if (getTypeOf(smth.map) === ETypes.function) {
             let items = smth.map((smth: any, i: number) => {
                 return `${i}: ${inspect(smth, maxDeep, (deep + 1))}`;
             });
             return `${type}: [${items.join(',')}]`;
-        } else if (type === Tools.EPrimitiveTypes.error && Tools.getTypeOf(smth.message) === Tools.EPrimitiveTypes.string){
+        } else if (type === ETypes.error && getTypeOf(smth.message) === ETypes.string){
             return `${type}: {${smth.message}}`;
-        } else if (type === Tools.EPrimitiveTypes.object || typeof smth === 'object') {
+        } else if (type === ETypes.object || typeof smth === 'object') {
             let properties = [];
             for (let prop in smth){
                 properties.push(`${prop}: ${inspect(smth[prop], maxDeep, (deep + 1))}`);
             }
             return `${type}: {${properties.join(',')}}`;
-        } else if (Tools.getTypeOf(smth.toString) === Tools.EPrimitiveTypes.function) {
+        } else if (getTypeOf(smth.toString) === ETypes.function) {
             return `${type}: ${smth.toString()}`;
         } else {
             return `${type}`;

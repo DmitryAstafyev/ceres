@@ -13,7 +13,7 @@ const TEST_DEST_PROTOCOL_MODULE_REF = './example/example.ts';
 
 describe('[Test][platform][protocol]', () => {
     it('[Reader]', (done: Function)=>{
-        //const logger = new Logger('Test: Reader');
+        const logger = new Logger('Test: Reader');
         const reader: Reader = new Reader(TEST_SOURCE_PROTOCOL_FILE);
         reader.read()
             .then((results: IReaderResult) => {
@@ -39,15 +39,20 @@ describe('[Test][platform][protocol]', () => {
         });
     });
     it('[Convertor]', (done: Function)=>{
-        //const logger = new Logger('Test: Convertor');
+        const logger = new Logger('Test: Convertor');
         const reader: Reader = new Reader(TEST_SOURCE_PROTOCOL_FILE);
         reader.read()
             .then((results: IReaderResult) => {
-                const convertor: ProtocolJSONConvertor = new ProtocolJSONConvertor(results.json);
-                const classStr = convertor.getImplementation();
-                expect(typeof classStr).toBe('string');
-                expect(classStr.length).toBeGreaterThan(0);
-                done();
+                try{
+                    const convertor: ProtocolJSONConvertor = new ProtocolJSONConvertor(results.json);
+                    const classStr = convertor.getImplementation();
+                    expect(typeof classStr).toBe('string');
+                    expect(classStr.length).toBeGreaterThan(0);
+                    done();
+                } catch(e){
+                    fail(e);
+                    done();
+                }
             }).catch((e)=>{
                 fail(e);
                 done();
@@ -55,7 +60,7 @@ describe('[Test][platform][protocol]', () => {
     });
 
     it('[Builder]', (done: Function)=>{
-        //const logger = new Logger('Test: Builder');
+        const logger = new Logger('Test: Builder');
         const builder: Builder = new Builder(TEST_SOURCE_PROTOCOL_FILE);
         builder.build(TEST_DEST_PROTOCOL_FILE, true)
             .then(() => {
@@ -68,7 +73,7 @@ describe('[Test][platform][protocol]', () => {
     });
 
     it('[Validation]', (done: Function)=>{
-        //const logger = new Logger('Test: Validation');
+        const logger = new Logger('Test: Validation');
         const builder: Builder = new Builder(TEST_SOURCE_PROTOCOL_FILE);
         builder.build(TEST_DEST_PROTOCOL_FILE, true)
             .then(() => {
@@ -97,4 +102,5 @@ describe('[Test][platform][protocol]', () => {
         });
 
     });
+    
 });
