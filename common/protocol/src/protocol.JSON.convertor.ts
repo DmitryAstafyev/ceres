@@ -1,13 +1,48 @@
+import * as FS from 'fs';
+import * as Path from 'path';
 import * as Tools from '../../platform/tools/index';
 import { SCHEME } from './protocol.scheme.definitions';
 import { TYPES, GENERIC_TYPES, getTSType } from './protocol.types';
-import InjectionGeneric from './protocol.inject.generic';
-import InjectionClassValidator from './protocol.inject.validator';
 
 interface IConditionDescription {
     value   : any,
     property: string,
     type    : any
+}
+
+const INJECTIONS_MODULES = [
+    'protocol.inject.generic.ts',
+    'protocol.inject.validator.ts'
+];
+
+class Injections {
+
+    get(){
+        let error: Error | null = null;
+        let result: Array<string> = [];
+        //Check files
+        INJECTIONS_MODULES.forEach((fileName: string) => {
+            if (!FS.existsSync(Path.join(__dirname, fileName))) {
+                error = new Error(`Injectable file "${fileName}" doesn't exsist.`);
+            }
+        });
+
+        if (error !== null){
+            return error;
+        }
+
+        //Read files
+        INJECTIONS_MODULES.forEach((fileName: string) => {
+            const buffer: Buffer = FS.readFileSync(Path.join(__dirname, fileName));
+            const str = buffer.toString('utf8');
+            if (str !== ''){
+                result.push(str);
+            }
+        });
+
+        return result;
+    }
+
 }
 
 export class ProtocolJSONConvertor{
@@ -19,8 +54,9 @@ export class ProtocolJSONConvertor{
     private _logger         : Tools.Logger = new Tools.Logger('ProtocolJSONConvertor');
     private _implementation : string = '';
     private _hashes         : Array<string> = [];
+    private _injections     : Array<string> = [];
 
-    constructor(JSON: any){
+    constructor(JSON: any, injections: Array<string> = []){
         if (Tools.getTypeOf(JSON) !== Tools.EPrimitiveTypes.object){
             throw new Error(this._logger.error(`Expects {object} as parameter, but was gotten: ${Tools.inspect(JSON)}`));
         }
@@ -35,8 +71,18 @@ export class ProtocolJSONConvertor{
         if (!this._isComplexEntity(root)){
             throw new Error(this._logger.error(`root level should be entity with next sections: ${Object.keys(SCHEME.ENTITY).join(', ')}`));
         }
-
         this._parseComplexEtity(className, root);
+
+        if (injections instanceof Array && injections.length > 0){
+            this._injections = injections;
+        } else {
+            const injectionsLoader = new Injections();
+            const results = injectionsLoader.get();
+            if (results instanceof Error){
+                throw results;
+            }
+            this._injections = results;
+        }
         this._implementation = this._getModuleStr();
     }
 
@@ -96,7 +142,7 @@ export class ProtocolJSONConvertor{
             return smth[SCHEME.TYPE_DEF.in];
         }
         if (Tools.getTypeOf(smth[SCHEME.TYPE_DEF.type]) === Tools.EPrimitiveTypes.string){
-            const error = this._validatePrimitive(smth);
+            const error = this._validateType(smth);
             if (error instanceof Error){
                 this._errors.push(error);
             } else {
@@ -114,6 +160,7 @@ export class ProtocolJSONConvertor{
             }
             return `Array<${getTSType(smth[SCHEME.TYPE_DEF.type][0])}>`;
         }
+
         this._errors.push(new Error(this._logger.error(`Property "${property}" has wrong type definition (not supported): ${Tools.inspect(smth)}.`))); 
     }
 
@@ -128,7 +175,7 @@ export class ProtocolJSONConvertor{
         return result;
     }
 
-    private _validatePrimitive(smth: any){
+    private _validateType(smth: any){
         if (!this._isPremitive(smth)){
             return new Error(`Property isn't premitive.`);
         }
@@ -142,7 +189,9 @@ export class ProtocolJSONConvertor{
         if (Tools.getTypeOf(smth[SCHEME.TYPE_DEF.in]) === Tools.EPrimitiveTypes.string && this._enums[smth[SCHEME.TYPE_DEF.in]] === void 0){
             return new Error(`Enum "${smth[SCHEME.TYPE_DEF.in]}" isn't defined.`);
         }
+
         if (Tools.getTypeOf(smth[SCHEME.TYPE_DEF.type]) === Tools.EPrimitiveTypes.string && 
+            this._classes[smth[SCHEME.TYPE_DEF.type]] === void 0 &&
             TYPES[smth[SCHEME.TYPE_DEF.type]] === void 0 && 
             GENERIC_TYPES[smth[SCHEME.TYPE_DEF.type]] === void 0){
             return new Error(`Type "${smth[SCHEME.TYPE_DEF.type]}" is unknown.`);
@@ -372,7 +421,7 @@ ${Object.keys(properties).map((prop) => {
             __SchemeClasses,
             properties);
         
-        if (errors !== null){
+        if (errors instanceof Array){
             throw new Error(\`Cannot initialize \${name} due errors: \${errors.map((error: Error)=>{ return error.message; }).join(', ')}\`);
         }
 
@@ -445,20 +494,13 @@ ${Object.keys(this._enums).map((enumName: string)=>{
     }
 
     private _getInjections(){
-        return `
+        return this._injections.length === 0 ? '' : `
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-* Validation tools
+* Injections. This part of code is injected automaticaly. This functionlity is needed for normal 
+* work of validation functionlity and for generic values.
+* Do not remove or change this code.
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-${InjectionClassValidator.definitions}
-${InjectionClassValidator.classString}
-${InjectionClassValidator.initializationString}
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-* Generic values stuff
-* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-${InjectionGeneric.definitions}
-${InjectionGeneric.classString}
-${InjectionGeneric.initializationString}
+${this._injections.join('\n')}
 `;
     }
 
@@ -466,7 +508,7 @@ ${InjectionGeneric.initializationString}
         return `
 /*
 * This file generated automaticaly (UTC: ${(new Date()).toUTCString()}). 
-* Do not change it.
+* Do not remove or change this code.
 */
 
 ${this._getInjections()}

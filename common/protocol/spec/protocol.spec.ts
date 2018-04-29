@@ -4,7 +4,7 @@
 //./node_modules/.bin/jasmine-ts src/something.spec.ts
 
 import Logger from '../../platform/tools/tools.logger';
-import { Builder, Reader, IReaderResult, ProtocolJSONConvertor, ProtocolClassValidator } from '../src/index';
+import { Builder, Reader, IReaderResult, ProtocolJSONConvertor } from '../src/index';
 import * as FS from 'fs';
 
 const TEST_SOURCE_PROTOCOL_FILE = './spec/example/protocol.json';
@@ -13,7 +13,7 @@ const TEST_DEST_PROTOCOL_MODULE_REF = './example/example.ts';
 
 describe('[Test][platform][protocol]', () => {
     it('[Reader]', (done: Function)=>{
-        const logger = new Logger('Test: Reader');
+        //const logger = new Logger('Test: Reader');
         const reader: Reader = new Reader(TEST_SOURCE_PROTOCOL_FILE);
         reader.read()
             .then((results: IReaderResult) => {
@@ -39,7 +39,7 @@ describe('[Test][platform][protocol]', () => {
         });
     });
     it('[Convertor]', (done: Function)=>{
-        const logger = new Logger('Test: Convertor');
+        //const logger = new Logger('Test: Convertor');
         const reader: Reader = new Reader(TEST_SOURCE_PROTOCOL_FILE);
         reader.read()
             .then((results: IReaderResult) => {
@@ -53,8 +53,9 @@ describe('[Test][platform][protocol]', () => {
                 done();
         });
     });
+
     it('[Builder]', (done: Function)=>{
-        const logger = new Logger('Test: Builder');
+        //const logger = new Logger('Test: Builder');
         const builder: Builder = new Builder(TEST_SOURCE_PROTOCOL_FILE);
         builder.build(TEST_DEST_PROTOCOL_FILE, true)
             .then(() => {
@@ -65,15 +66,15 @@ describe('[Test][platform][protocol]', () => {
                 done();
         });
     });
+
     it('[Validation]', (done: Function)=>{
-        const logger = new Logger('Test: Validation');
+        //const logger = new Logger('Test: Validation');
         const builder: Builder = new Builder(TEST_SOURCE_PROTOCOL_FILE);
         builder.build(TEST_DEST_PROTOCOL_FILE, true)
             .then(() => {
                 expect(FS.existsSync(TEST_DEST_PROTOCOL_FILE)).toBe(true);
                 import(TEST_DEST_PROTOCOL_MODULE_REF)
                 .then((module)=>{
-                    module.register(ProtocolClassValidator);
                     const Protocol = module.Protocol;
                     let event = new Protocol.Event({
                         event: Protocol.Events.MESSAGE_CREATED,

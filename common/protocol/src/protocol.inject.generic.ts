@@ -19,9 +19,3 @@ class __Generic {
 }
 
 const __generic = new __Generic();
-
-export default {
-    definitions: '',
-    classString: __Generic.toString(),
-    initializationString: 'const __generic = new __Generic();'
-}

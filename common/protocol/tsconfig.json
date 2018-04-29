@@ -7,6 +7,7 @@
     "target": "es6",
     "strict": true,
     "baseUrl": ".",
+    "lib": ["es6"],
     "paths": {
       "*": [
           "./node_modules/*"

@@ -1,15 +1,46 @@
-import { 
-    getTypeOf as _getTypeOf, 
-    EPrimitiveTypes, 
-    enumToString,
-    objectToString
-} from '../../platform/tools/index';
+const __SCHEME = {
+    ENTITY: {
+        default     : 'default',
+        cases       : 'cases',
+        definitions : 'definitions'
+    },
+    TYPE_DEF: {
+        in          : 'in',
+        type        : 'type'
+    },
+    AVAILABILITY: {
+        required    : 'required',
+        optional    : 'optional'
+    },
+    FIELDS: {
+        findin      : 'findin'
+    }
+};
 
-import { SCHEME as _SCHEME } from './protocol.scheme.definitions';
+enum __ETypes {
+    string = 'string',
+    number = 'number',
+    function = 'function',
+    array = 'array',
+    object = 'object',
+    boolean = 'boolean',
+    undefined = 'undefined',
+    null = 'null',
+    error = 'error',
+    date = 'date'
+};
 
-const SCHEME = _SCHEME;
-const getTypeOf = _getTypeOf;
-const ETypes = EPrimitiveTypes;
+function __getTypeOf(smth: any){
+    if (typeof smth === __ETypes.undefined) {
+        return __ETypes.undefined;
+    } else if (smth === null) {
+        return __ETypes.null;
+    } else if (smth.constructor !== void 0 && typeof smth.constructor.name === __ETypes.string){
+        return smth.constructor.name.toLowerCase();
+    } else {
+        return (typeof smth);
+    }
+}
 
 function getInstanceErrors(
     name            : string, 
@@ -25,7 +56,7 @@ function getInstanceErrors(
 
         let _errors: Array<Error> = [];
         
-        if (getTypeOf(properties) !== ETypes.object){
+        if (__getTypeOf(properties) !== __ETypes.object){
             _errors.push(new Error(logger(`Entity "${name}" isn't defined any parameters.`)));
         }
         if (Object.keys(rules).length === 0){
@@ -37,32 +68,32 @@ function getInstanceErrors(
         Object.keys(rules).forEach((prop)=>{
             const rule = rules[prop];
             //Check availablity
-            if (getTypeOf(rule[SCHEME.AVAILABILITY.required]) !== ETypes.boolean && 
-                getTypeOf(rule[SCHEME.AVAILABILITY.optional]) !== ETypes.boolean) {
+            if (__getTypeOf(rule[__SCHEME.AVAILABILITY.required]) !== __ETypes.boolean && 
+                __getTypeOf(rule[__SCHEME.AVAILABILITY.optional]) !== __ETypes.boolean) {
                 _errors.push(new Error(logger(`Entity "${name}", property "${prop}" not defined availability (required or optional)`)));
             }
-            if (rule[SCHEME.AVAILABILITY.required] === rule[SCHEME.AVAILABILITY.optional]){
+            if (rule[__SCHEME.AVAILABILITY.required] === rule[__SCHEME.AVAILABILITY.optional]){
                 _errors.push(new Error(logger(`Entity "${name}", property "${prop}" an availability defined incorrectly`)));
             }
-            if (rule[SCHEME.AVAILABILITY.required] && properties[prop] === void 0){
+            if (rule[__SCHEME.AVAILABILITY.required] && properties[prop] === void 0){
                 _errors.push(new Error(logger(`Entity "${name}", property "${prop}" is required, but not defined.`)));
             }
-            if (rule[SCHEME.AVAILABILITY.optional] && properties[prop] === void 0){
+            if (rule[__SCHEME.AVAILABILITY.optional] && properties[prop] === void 0){
                 return true;
             }
             //Check availability of types
-            if (rule[SCHEME.TYPE_DEF.in] === void 0 && rule[SCHEME.TYPE_DEF.type] === void 0){
+            if (rule[__SCHEME.TYPE_DEF.in] === void 0 && rule[__SCHEME.TYPE_DEF.type] === void 0){
                 _errors.push(new Error(logger(`Entity "${name}", property "${prop}" is defined incorrectly. Not [type] not [in] aren't defined.`)));
             }
             //Check type / value
-            if (rule[SCHEME.TYPE_DEF.in] !== void 0) {
-                if (getTypeOf(rule[SCHEME.TYPE_DEF.in]) !== ETypes.string) {
+            if (rule[__SCHEME.TYPE_DEF.in] !== void 0) {
+                if (__getTypeOf(rule[__SCHEME.TYPE_DEF.in]) !== __ETypes.string) {
                     _errors.push(new Error(logger(`Entity "${name}", property "${prop}" defined incorrectly. Expected [in] {string}.`)));
                 }
-                if (rule[SCHEME.TYPE_DEF.in].trim() === '') {
+                if (rule[__SCHEME.TYPE_DEF.in].trim() === '') {
                     _errors.push(new Error(logger(`Entity "${name}", property "${prop}" defined incorrectly. Value of [in] cannot be empty.`)));
                 }
-                const list = rule[SCHEME.TYPE_DEF.in].trim();
+                const list = rule[__SCHEME.TYPE_DEF.in].trim();
                 if (SchemeEnums[list] === void 0){
                     _errors.push(new Error(logger(`Entity "${name}", enum "${list}" isn't defined. Property "${prop}" cannot be intialized.`)));
                 }
@@ -70,24 +101,24 @@ function getInstanceErrors(
                     _errors.push(new Error(logger(`Entity "${name}", property "${prop}" should have value from enum "${list}".`)));
                 }
                 return true;
-            } else if (rule[SCHEME.TYPE_DEF.type] !== void 0){
-                if (getTypeOf(rule[SCHEME.TYPE_DEF.type]) !== ETypes.string){
+            } else if (rule[__SCHEME.TYPE_DEF.type] !== void 0){
+                if (__getTypeOf(rule[__SCHEME.TYPE_DEF.type]) !== __ETypes.string){
                     _errors.push(new Error(logger(`Entity "${name}", property "${prop}" defined incorrectly. Expected [type] {string}.`)));
                 }
-                if (rule[SCHEME.TYPE_DEF.type].trim() === '') {
+                if (rule[__SCHEME.TYPE_DEF.type].trim() === '') {
                     _errors.push(new Error(logger(`Entity "${name}", property "${prop}" defined incorrectly. Value of [type] cannot be empty.`)));
                 }
                 //Check primitive types
-                const PrimitiveTypes = [ETypes.boolean, ETypes.number, ETypes.string, ETypes.date];
-                if (!~PrimitiveTypes.indexOf(rule[SCHEME.TYPE_DEF.type]) && SchemeClasses[rule[SCHEME.TYPE_DEF.type]] === void 0){
+                const PrimitiveTypes = [__ETypes.boolean, __ETypes.number, __ETypes.string, __ETypes.date];
+                if (!~PrimitiveTypes.indexOf(rule[__SCHEME.TYPE_DEF.type]) && SchemeClasses[rule[__SCHEME.TYPE_DEF.type]] === void 0){
                     _errors.push(new Error(logger(`Entity "${name}", property "${prop}" defined incorrectly. [type] isn't primitive type (${PrimitiveTypes.join(', ')}) and isn't instance of nested types (${Object.keys(SchemeClasses).join(', ')}).`)));
                 }
-                if (~PrimitiveTypes.indexOf(rule[SCHEME.TYPE_DEF.type])){
-                    if (getTypeOf(properties[prop]) !== rule[SCHEME.TYPE_DEF.type]){
-                        _errors.push(new Error(logger(`Entity "${name}", property "${prop}" defined incorrectly. Expected type of property is: ${'{' + rule[SCHEME.TYPE_DEF.type] + '}'}.`)));
+                if (~PrimitiveTypes.indexOf(rule[__SCHEME.TYPE_DEF.type])){
+                    if (__getTypeOf(properties[prop]) !== rule[__SCHEME.TYPE_DEF.type]){
+                        _errors.push(new Error(logger(`Entity "${name}", property "${prop}" defined incorrectly. Expected type of property is: ${'{' + rule[__SCHEME.TYPE_DEF.type] + '}'}.`)));
                     }
                     return true;
-                } else if (SchemeClasses[rule[SCHEME.TYPE_DEF.type]] !== void 0){
+                } else if (SchemeClasses[rule[__SCHEME.TYPE_DEF.type]] !== void 0){
                     let found = false;
                     //console.log(SchemeClasses);
                     Object.keys(SchemeClasses).forEach((schemeClass: any)=>{
@@ -101,15 +132,4 @@ function getInstanceErrors(
             }
         });
         return _errors.length === 0 ? null : _errors;
-}
-
-
-export default {
-    definitions: `${objectToString('const', 'SCHEME', SCHEME)}
-${enumToString('ETypes', ETypes)}`,
-    classString: `
-${getTypeOf.toString()}
-
-${getInstanceErrors.toString()}`,
-    initializationString: ''
 }
