@@ -10,6 +10,10 @@ interface IConditionDescription {
     type    : any
 }
 
+const DEFAULT_FIELDS : { [key: string]: any } = {
+    __key: { type: 'string', required: false, default: '""', setter: 'setKey', getter: 'getKey' }
+};
+
 const INJECTIONS_MODULES = [
     'protocol.inject.generic.ts',
     'protocol.inject.validator.ts'
@@ -381,12 +385,16 @@ ${enumArray.map((key: string, index: number)=>{
 export class ${property} ${parent !== '' ? ('extends ' + parent) : ''}{
 
 ${Object.keys(properties).map((prop) => {
-        if (this._isGeneric(properties[prop])){
-            return `\tpublic readonly ${prop}: ${this._getGenericType(properties[prop])} = ${this._getGenericValue(properties[prop])};`
-        } else {
-            return `\tpublic ${prop}: ${this._getTypeOfPrimitive(prop, properties[prop])}${properties[prop][SCHEME.AVAILABILITY.optional] ? (' | ' + Tools.EPrimitiveTypes.undefined) : ''};`
-        }
-    }).join('\n')}
+    if (this._isGeneric(properties[prop])){
+        return `\tpublic readonly ${prop}: ${this._getGenericType(properties[prop])} = ${this._getGenericValue(properties[prop])};`
+    } else {
+        return `\tpublic ${prop}: ${this._getTypeOfPrimitive(prop, properties[prop])}${properties[prop][SCHEME.AVAILABILITY.optional] ? (' | ' + Tools.EPrimitiveTypes.undefined) : ''};`
+    }
+}).join('\n')}
+${Object.keys(DEFAULT_FIELDS).map((prop: string) => {
+    const description: any = DEFAULT_FIELDS[prop];
+    return `\tpublic ${prop}${(description.required ? '' : '?')}: ${description.type} = ${description.default};`;
+}).join('\n')}
     static signature: string = '${this._getSignature(property, parent)}';
     constructor(properties: { ${this._getParametersDeclaration(properties, conditions, parentProps).join(', ')} }) {
         ${parent === '' ? '' : `super(Object.assign(properties, { 
@@ -434,6 +442,23 @@ ${Object.keys(properties).map((prop) => {
         }).filter(x => x !== null).join('\n')}
 
     }
+
+    ${Object.keys(DEFAULT_FIELDS).map((prop: string) => {
+        const description: any = DEFAULT_FIELDS[prop];
+        let str = '';
+        if (description.getter !== void 0){
+            str += `public ${description.getter}() {
+        return this.${prop};
+    }`
+        }
+        if (description.setter !== void 0){
+            str += `${str !== '' ? '\n\n\t' : ''}public ${description.setter}(value: ${description.type}) {
+        this.${prop} = value;
+    }`
+        }
+        return str === '' ? null : str;
+    }).filter(x => x !== null).join('\n')}
+
 }
 `;
     }
