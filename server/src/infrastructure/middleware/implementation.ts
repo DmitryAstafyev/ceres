@@ -36,19 +36,19 @@ export class Middleware implements IMiddleware {
 
     public auth(GUID: symbol, request: HTTP.IncomingMessage): TMiddlewareAuthReturn {
         return new Promise((resolve, reject) => {
-            return resolve();
+            return resolve(Tools.guid());
         });
     }
 
     public valid(GUID: symbol, request: HTTP.IncomingMessage): TMiddlewareValidReturn {
         return new Promise((resolve, reject) => {
-            return resolve();
+            return resolve(true);
         });
     }
 
     public before(GUID: symbol, request: HTTP.IncomingMessage, response: HTTP.ServerResponse): TMiddlewareBeforeReturn {
         return new Promise((resolve, reject) => {
-            resolve({ request: request, response: response});
+            resolve();
         });
     }
 

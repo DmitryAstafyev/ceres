@@ -1,14 +1,14 @@
 import * as HTTP from 'http';
 
-export type TToken = string;
+export type TKey = string;
 /**
  * Returns of middleware functions
  */
-export type TMiddlewareAuthReturn       = Promise<TToken>;
+export type TMiddlewareAuthReturn       = Promise<TKey>;
 
-export type TMiddlewareValidReturn      = Promise<void>;
+export type TMiddlewareValidReturn      = Promise<boolean>;
 
-export type TMiddlewareBeforeReturn     = Promise<{ request: HTTP.IncomingMessage, response: HTTP.ServerResponse}>;
+export type TMiddlewareBeforeReturn     = Promise<void>;
 
 export type TMiddlewareAfterReturn      = Promise<void>;
 

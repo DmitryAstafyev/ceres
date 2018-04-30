@@ -1,6 +1,6 @@
 
 /*
-* This file generated automaticaly (UTC: Mon, 30 Apr 2018 20:29:15 GMT). 
+* This file generated automaticaly (UTC: Mon, 30 Apr 2018 20:34:12 GMT). 
 * Do not remove or change this code.
 */
 
@@ -182,17 +182,17 @@ enum Responses {
 	AUTH = 1,
 };
 
-export class message {
+export class Message {
 
 	public request: Requests | undefined;
 	public response: Responses | undefined;
 	public readonly guid: string = __generic.guid();
 	public __key?: string = "";
-    static signature: string = '38EB0007';
+    static signature: string = '63DC6819';
     constructor(properties: { request?:Requests, response?:Responses, guid:string }) {
         
 
-        const name  : string = 'message';
+        const name  : string = 'Message';
         const rules : {[key:string]: any}   = {
 			"request": { "in": "Requests", "optional": true },
 			"response": { "in": "Responses", "optional": true }
@@ -224,11 +224,11 @@ export class message {
 }
 
 
-export class RequestHandshake extends message{
+export class RequestHandshake extends Message{
 
 	public clientId: string;
 	public __key?: string = "";
-    static signature: string = '599A7F41';
+    static signature: string = '99E189F';
     constructor(properties: { clientId:string, request?: Requests, response?: Responses, guid: string }) {
         super(Object.assign(properties, { 
         	request: Requests.HANDSHAKE
@@ -264,12 +264,12 @@ export class RequestHandshake extends message{
 }
 
 
-export class RequestAuth extends message{
+export class RequestAuth extends Message{
 
 	public clientId: string;
 	public obj: any;
 	public __key?: string = "";
-    static signature: string = '394E8770';
+    static signature: string = '6378E0B0';
     constructor(properties: { clientId:string, obj:any, request?: Requests, response?: Responses, guid: string }) {
         super(Object.assign(properties, { 
         	request: Requests.AUTH
@@ -307,12 +307,12 @@ export class RequestAuth extends message{
 }
 
 
-export class ResponseHandshake extends message{
+export class ResponseHandshake extends Message{
 
 	public clientId: string;
 	public status: boolean;
 	public __key?: string = "";
-    static signature: string = '42894AB1';
+    static signature: string = '5A3E1D6F';
     constructor(properties: { clientId:string, status:boolean, request?: Requests, response?: Responses, guid: string }) {
         super(Object.assign(properties, { 
         	response: Responses.HANDSHAKE
@@ -350,12 +350,12 @@ export class ResponseHandshake extends message{
 }
 
 
-export class ResponseAuth extends message{
+export class ResponseAuth extends Message{
 
 	public clientId: string;
 	public status: boolean;
 	public __key?: string = "";
-    static signature: string = '655331C2';
+    static signature: string = '21A99E2';
     constructor(properties: { clientId:string, status:boolean, request?: Requests, response?: Responses, guid: string }) {
         super(Object.assign(properties, { 
         	response: Responses.AUTH
@@ -394,7 +394,7 @@ export class ResponseAuth extends message{
 
 
 const __SchemeClasses : {[key:string]: any} = {
-	message: message,
+	Message: Message,
 	RequestHandshake: RequestHandshake,
 	RequestAuth: RequestAuth,
 	ResponseHandshake: ResponseHandshake,
@@ -410,7 +410,7 @@ const __SchemeEnums : {[key:string]: any} = {
 
 export const Protocol : {[key:string]: any} = {
     //Classes
-	message: message,
+	Message: Message,
 	RequestHandshake: RequestHandshake,
 	RequestAuth: RequestAuth,
 	ResponseHandshake: ResponseHandshake,
