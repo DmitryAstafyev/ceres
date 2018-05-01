@@ -10,23 +10,18 @@
                     "RequestHandshake":[{ "request": "HANDSHAKE"}, {
                         "clientId"  : { "type"  : "string",     "required": true }
                     }],
-                    "RequestAuth":[{ "request": "AUTH"}, {
-                        "clientId"  : { "type"  : "string",     "required": true },
-                        "obj"       : { "type"  : "any",        "required": true }
-                    }],
                     "ResponseHandshake":[{ "response": "HANDSHAKE"}, {
                         "clientId"  : { "type"  : "string",     "required": true },
-                        "status"    : { "type"  : "boolean",    "required": true }
-                    }],
-                    "ResponseAuth":[{ "response": "AUTH"}, {
-                        "clientId"  : { "type"  : "string",     "required": true },
-                        "status"    : { "type"  : "boolean",    "required": true }
+                        "allowed"   : { "type"  : "boolean",    "required": true },
+                        "token"     : { "type"  : "string",     "optional": true },
+                        "reason"    : { "in"    : "Reasons",    "optional": true }
                     }]
                 },
             
                 "definitions": {
                     "Requests"  : ["HANDSHAKE", "AUTH"],
-                    "Responses" : ["HANDSHAKE", "AUTH"]
+                    "Responses" : ["HANDSHAKE", "AUTH"],
+                    "Reasons"   : ["FAIL_AUTH"]
                 }
             }
 }

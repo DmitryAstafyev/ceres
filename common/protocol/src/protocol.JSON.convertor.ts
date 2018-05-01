@@ -11,12 +11,17 @@ interface IConditionDescription {
 }
 
 const DEFAULT_FIELDS : { [key: string]: any } = {
-    __key: { type: 'string', required: false, default: '""', setter: 'setKey', getter: 'getKey' }
+    __token: { type: 'string', required: false, default: '""', setter: 'setToken', getter: 'getToken' }
 };
 
 const INJECTIONS_MODULES = [
     'protocol.inject.generic.ts',
-    'protocol.inject.validator.ts'
+    'protocol.inject.validator.ts',
+    'protocol.inject.parser.ts'
+];
+
+const INJECTIONS_COMMENT_OUT = [
+    { reg: /declare var/g, replaceTo: '// declare var' }
 ];
 
 class Injections {
@@ -38,8 +43,11 @@ class Injections {
         //Read files
         INJECTIONS_MODULES.forEach((fileName: string) => {
             const buffer: Buffer = FS.readFileSync(Path.join(__dirname, fileName));
-            const str = buffer.toString('utf8');
+            let str = buffer.toString('utf8');
             if (str !== ''){
+                INJECTIONS_COMMENT_OUT.forEach((toComment: { reg: RegExp, replaceTo: string}) => {
+                    str = str.replace(toComment.reg, toComment.replaceTo)
+                });
                 result.push(str);
             }
         });
@@ -513,7 +521,8 @@ ${Object.keys(this._classes).map((className: string)=>{
     ${Object.keys(this._enums).length > 0 ? '//Enums' : ''}
 ${Object.keys(this._enums).map((enumName: string)=>{
         return `\t${enumName}: ${enumName}`;
-    }).join(',\n')}
+    }).join(',\n')},
+    extract: __parser.convert
 }     
         `;
     }
