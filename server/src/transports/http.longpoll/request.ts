@@ -122,7 +122,6 @@ export class Request extends EventEmitter {
 
 	public close(): Promise<void> {
 		return new Promise((resolve, reject) => {
-			console.log('finishing ');
 			this._lifecircleUnsubscribe();
 			this._response.writeHead(200, this._addCORSToHeaders(DEFAULT_HEADERS));
 			this._response.end('', () => {

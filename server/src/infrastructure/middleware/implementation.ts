@@ -1,32 +1,24 @@
-import * as HTTP from 'http';
 import * as Tools from '../../platform/tools/index';
-import { IMiddleware } from './interfaces';
-import { 
-    TMiddlewareAfterFunction, 
-    TMiddlewareValidFunction,
-    TMiddlewareBeforeFunction, 
-    TMiddlewareAuthFunction,
-    TMiddlewareAuthReturn,
-    TMiddlewareValidReturn,
-    TMiddlewareBeforeReturn,
-    TMiddlewareAfterReturn
-} from './types';
 
-export class Middleware implements IMiddleware {
+export interface IMiddleware<TRequest, TResponse> {
+    auth?    : (GUID: symbol, request: TRequest)                        => Promise<boolean>,
+    before?  : (GUID: symbol, request: TRequest, response: TResponse)   => Promise<void>,
+    after?   : (GUID: symbol)                                           => Promise<void>
+}
 
-    constructor(middleware: IMiddleware){
+export class Middleware<TRequest, TResponse> implements IMiddleware<TRequest, TResponse> {
+
+    constructor(middleware: IMiddleware<TRequest, TResponse>){
 
         middleware = Tools.objectValidate(middleware, {
             auth    : this.auth,
-            valid   : this.valid,
             before  : this.before,
             after   : this.after
-        }) as IMiddleware;
+        }) as IMiddleware<TRequest, TResponse>;
 
-        this.auth   = middleware.auth   as TMiddlewareAuthFunction;
-        this.valid  = middleware.valid  as TMiddlewareValidFunction;
-        this.before = middleware.before as TMiddlewareBeforeFunction;
-        this.after  = middleware.after  as TMiddlewareAfterFunction;
+        typeof middleware.auth      === 'function' && (this.auth    = middleware.auth);
+        typeof middleware.before    === 'function' && (this.before  = middleware.before);
+        typeof middleware.after     === 'function' && (this.after   = middleware.after);
 
     }
 
@@ -34,25 +26,19 @@ export class Middleware implements IMiddleware {
      * Dummy implementation of middleware functions
      */
 
-    public auth(GUID: symbol, request: HTTP.IncomingMessage): TMiddlewareAuthReturn {
-        return new Promise((resolve, reject) => {
-            return resolve(Tools.guid());
-        });
-    }
-
-    public valid(GUID: symbol, request: HTTP.IncomingMessage): TMiddlewareValidReturn {
+    public auth(GUID: symbol, request: TRequest): Promise<boolean> {
         return new Promise((resolve, reject) => {
             return resolve(true);
         });
     }
 
-    public before(GUID: symbol, request: HTTP.IncomingMessage, response: HTTP.ServerResponse): TMiddlewareBeforeReturn {
+    public before(GUID: symbol, request: TRequest, response: TResponse): Promise<void> {
         return new Promise((resolve, reject) => {
             resolve();
         });
     }
 
-    public after(GUID: symbol): TMiddlewareAfterReturn{
+    public after(GUID: symbol): Promise<void>{
         return new Promise((resolve, reject) => {
             return resolve();
         });

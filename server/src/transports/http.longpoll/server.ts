@@ -2,7 +2,7 @@ import * as HTTP from 'http';
 import * as Tools from '../../platform/tools/index';
 
 import * as DescConnection from './connection/index';
-import * as DescMiddleware from '../../infrastructure/middleware/index';
+import * as DescMiddleware from '../../infrastructure/middleware/implementation';
 
 import { Request } from './request';
 
@@ -11,12 +11,12 @@ export class Server {
     private _logger     : Tools.Logger          = new Tools.Logger('Http.Server');
     private _requests   : Map<symbol, Request>  = new Map();
     private _parameters : DescConnection.ConnectionParameters;
-    private _middleware : DescMiddleware.Middleware;
+    private _middleware : DescMiddleware.Middleware<HTTP.IncomingMessage, HTTP.ServerResponse>;
     private _http       : HTTP.Server;
  
     constructor(
         parameters: DescConnection.ConnectionParameters,
-        middleware?: DescMiddleware.Middleware
+        middleware?: DescMiddleware.Middleware<HTTP.IncomingMessage, HTTP.ServerResponse>
     ){
  
         if (!(parameters instanceof DescConnection.ConnectionParameters)) {
@@ -50,10 +50,16 @@ export class Server {
     }
 
     private _onRequest(request: HTTP.IncomingMessage, response: HTTP.ServerResponse){
-        const _request  = new Request(Symbol(), request, response);
+        const _request  = new Request(Symbol(Tools.guid()), request, response);
         //Authorization of request
         this._middleware.auth(_request.getId(), request)
-            .then(() => {
+            .then((auth: boolean) => {
+                if (!auth){
+                    //Close request immediately 
+                    _request.close();
+                    this._logger.debug(`Request ${_request.getId().toString()} was closed, because athorization was failed on midleware level.`);
+                    return;
+                }
                 //Add request to storage
                 this._requests.set(_request.getId(), _request);
                 //Subscribe on request's events
