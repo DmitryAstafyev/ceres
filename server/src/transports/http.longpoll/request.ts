@@ -61,7 +61,8 @@ export class Request extends EventEmitter {
 
 	public EVENTS = {
 		onExpired: Symbol(),
-		onEnd: Symbol()
+		onSent: Symbol(),
+		onClose: Symbol()
 	};
 
     private _logger     : Tools.Logger 	= new Tools.Logger('Http.Server.Request');
@@ -93,6 +94,7 @@ export class Request extends EventEmitter {
 	}
 
 	private _onExpired(){
+		this.emit(this.EVENTS.onExpired);
 		this.close();
 	}
 
@@ -125,10 +127,10 @@ export class Request extends EventEmitter {
 			this._lifecircleUnsubscribe();
 			this._response.writeHead(200, this._addCORSToHeaders(DEFAULT_HEADERS));
 			this._response.end('', () => {
-				this.emit(this.EVENTS.onExpired);
+				this.emit(this.EVENTS.onClose);
 				resolve();
 			});
-	});
+		});
 	}
 
 	public send({ headers = {}, data = null} : { headers?: { [key: string]: string }, data?: any}): Promise<void> {
@@ -141,7 +143,8 @@ export class Request extends EventEmitter {
 			}
 			this._response.write(data, () => {
 				this._response.end(() => {
-					this.emit(this.EVENTS.onEnd);
+					this.emit(this.EVENTS.onSent);
+					this.emit(this.EVENTS.onClose);
 					resolve();
 				});
 			});

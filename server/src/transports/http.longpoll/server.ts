@@ -6,6 +6,10 @@ import * as DescMiddleware from '../../infrastructure/middleware/implementation'
 
 import { Request } from './request';
 
+const SETTINGS = {
+    NOT_AUTH_REQUEST_CLOSE_TIMEOUT: 3000 //ms
+};
+
 export class Server {
  
     private _logger     : Tools.Logger          = new Tools.Logger('Http.Server');
@@ -55,10 +59,7 @@ export class Server {
         this._middleware.auth(_request.getId(), request)
             .then((auth: boolean) => {
                 if (!auth){
-                    //Close request immediately 
-                    _request.close();
-                    this._logger.debug(`Request ${_request.getId().toString()} was closed, because athorization was failed on midleware level.`);
-                    return;
+                    return this._closeNotAuthRequest(_request);
                 }
                 //Add request to storage
                 this._requests.set(_request.getId(), _request);
@@ -71,6 +72,16 @@ export class Server {
             });
     }
 
+    private _closeNotAuthRequest(request: Request){
+        setTimeout(() => {
+            if (!(request instanceof Request)) {
+                return false;
+            }
+            request.close();
+            this._logger.debug(`Request ${request.getId().toString()} was closed, because athorization was failed on midleware level.`);
+        }, SETTINGS.NOT_AUTH_REQUEST_CLOSE_TIMEOUT);
+    }
+
     private _send(message: string){
         this._requests.forEach((request: Request, ID: symbol) => {
             request.send({ data: message });
@@ -78,21 +89,14 @@ export class Server {
     }
 
     private _subscribeRequest(_request: Request){
-        _request.on(_request.EVENTS.onExpired,  this._onExpiredRequest.bind(this, _request));
-        _request.on(_request.EVENTS.onEnd,      this._onEndRequest.bind(this, _request));
+        _request.on(_request.EVENTS.onClose, this._onCloseRequest.bind(this, _request));
     }
 
     private _unsubscribeRequest(_request: Request){
-        _request.removeAllListeners(_request.EVENTS.onExpired);
-        _request.removeAllListeners(_request.EVENTS.onEnd);
+        _request.removeAllListeners(_request.EVENTS.onClose);
     }
 
-    private _onExpiredRequest(_request: Request){
-        this._unsubscribeRequest(_request);
-        this._requests.delete(_request.getId());
-    }
-
-    private _onEndRequest(_request: Request){
+    private _onCloseRequest(_request: Request){
         this._unsubscribeRequest(_request);
         this._requests.delete(_request.getId());
     }
