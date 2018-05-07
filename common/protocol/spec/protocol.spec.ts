@@ -108,5 +108,40 @@ describe('[Test][platform][protocol]', () => {
             });
 
     });
+
+
+    it('[Parsing]', (done: Function)=>{
+        const logger = new Logger('Test: Parsing');
+        const builder: Builder = new Builder(TEST_SOURCE_PROTOCOL_FILE);
+        return builder.build(TEST_DEST_PROTOCOL_FILE, true)
+            .then(() => {
+                expect(FS.existsSync(TEST_DEST_PROTOCOL_FILE)).toBe(true);
+                import(TEST_DEST_PROTOCOL_MODULE_REF)
+                .then((module)=>{
+                    const Protocol = module.Protocol;
+                    let message = new Protocol.Message({ 
+                        event: new Protocol.Event({
+                            event: Protocol.Events.MESSAGE_CREATED,
+                            guid: 'xxx'
+                        })
+                    });
+                    const json = JSON.stringify(message);
+                    const instance = Protocol.extract(json);
+                    expect(instance instanceof Protocol.Message).toBe(true);
+                    expect(instance.event instanceof Protocol.Event).toBe(true);
+                    return done();
+                })
+                .catch((e)=>{
+                    logger.error(e.message);
+                    fail(e);
+                    return done();
+                });
+            }).catch((e)=>{
+                logger.error(e.message);
+                fail(e);
+                return done();
+            });
+
+    });
     
 });

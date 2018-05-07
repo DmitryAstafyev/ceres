@@ -404,6 +404,7 @@ ${Object.keys(DEFAULT_FIELDS).map((prop: string) => {
     return `\tpublic ${prop}${(description.required ? '' : '?')}: ${description.type} = ${description.default};`;
 }).join('\n')}
     static signature: string = '${this._getSignature(property, parent)}';
+    public signature: string = ${property}.signature;
     constructor(properties: { ${this._getParametersDeclaration(properties, conditions, parentProps).join(', ')} }) {
         ${parent === '' ? '' : `super(Object.assign(properties, { 
         ${this._getConditionsDefinitions('properties', conditions).map((str: string)=>{
@@ -522,7 +523,7 @@ ${Object.keys(this._classes).map((className: string)=>{
 ${Object.keys(this._enums).map((enumName: string)=>{
         return `\t${enumName}: ${enumName}`;
     }).join(',\n')},
-    extract: __parser.convert
+    extract: __parser.convert.bind(__parser)
 }     
         `;
     }
