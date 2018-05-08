@@ -26,8 +26,8 @@ enum __ETypes {
     boolean = 'boolean',
     undefined = 'undefined',
     null = 'null',
-    error = 'error',
-    date = 'date'
+    Error = 'Error',
+    Date = 'Date'
 };
 
 function __getTypeOf(smth: any){
@@ -36,7 +36,7 @@ function __getTypeOf(smth: any){
     } else if (smth === null) {
         return __ETypes.null;
     } else if (smth.constructor !== void 0 && typeof smth.constructor.name === __ETypes.string){
-        return smth.constructor.name.toLowerCase();
+        return __ETypes[smth.constructor.name.toLowerCase()] !== void 0 ? smth.constructor.name.toLowerCase() : smth.constructor.name;
     } else {
         return (typeof smth);
     }
@@ -109,7 +109,7 @@ function getInstanceErrors(
                     _errors.push(new Error(logger(`Entity "${name}", property "${prop}" defined incorrectly. Value of [type] cannot be empty.`)));
                 }
                 //Check primitive types
-                const PrimitiveTypes = [__ETypes.boolean, __ETypes.number, __ETypes.string, __ETypes.date];
+                const PrimitiveTypes = [__ETypes.boolean, __ETypes.number, __ETypes.string, __ETypes.Date];
                 if (!~PrimitiveTypes.indexOf(rule[__SCHEME.TYPE_DEF.type]) && SchemeClasses[rule[__SCHEME.TYPE_DEF.type]] === void 0){
                     _errors.push(new Error(logger(`Entity "${name}", property "${prop}" defined incorrectly. [type] isn't primitive type (${PrimitiveTypes.join(', ')}) and isn't instance of nested types (${Object.keys(SchemeClasses).join(', ')}).`)));
                 }

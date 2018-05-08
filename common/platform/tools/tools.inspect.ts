@@ -36,7 +36,7 @@ export default function inspect(smth: any, maxDeep = DEFAULT_MAX_DEEP, deep = 0)
                 return `${i}: ${inspect(smth, maxDeep, (deep + 1))}`;
             });
             return `${type}: [${items.join(',')}]`;
-        } else if (type === ETypes.error && getTypeOf(smth.message) === ETypes.string){
+        } else if (type === ETypes.Error && getTypeOf(smth.message) === ETypes.string){
             return `${type}: {${smth.message}}`;
         } else if (type === ETypes.object || typeof smth === 'object') {
             let properties = [];

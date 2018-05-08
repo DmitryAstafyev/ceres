@@ -120,15 +120,18 @@ describe('[Test][platform][protocol]', () => {
                 .then((module)=>{
                     const Protocol = module.Protocol;
                     let message = new Protocol.Message({ 
-                        event: new Protocol.Event({
-                            event: Protocol.Events.MESSAGE_CREATED,
-                            guid: 'xxx'
+                        event: new Protocol.EventMessageCreated({
+                            guid: 'xxx',
+                            message: 'message',
+                            time: new Date(),
+                            authorId: 'yyy'
                         })
                     });
-                    const json = JSON.stringify(message);
+                    const json: any = JSON.stringify(message);
                     const instance = Protocol.extract(json);
                     expect(instance instanceof Protocol.Message).toBe(true);
-                    expect(instance.event instanceof Protocol.Event).toBe(true);
+                    expect(instance.event instanceof Protocol.EventMessageCreated).toBe(true);
+                    console.log(instance);
                     return done();
                 })
                 .catch((e)=>{

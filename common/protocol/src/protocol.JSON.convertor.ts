@@ -403,8 +403,31 @@ ${Object.keys(DEFAULT_FIELDS).map((prop: string) => {
     const description: any = DEFAULT_FIELDS[prop];
     return `\tpublic ${prop}${(description.required ? '' : '?')}: ${description.type} = ${description.default};`;
 }).join('\n')}
-    static signature: string = '${this._getSignature(property, parent)}';
-    public signature: string = ${property}.signature;
+    static __signature: string = '${this._getSignature(property, parent)}';
+    public __signature: string = ${property}.__signature;
+    static __rules : {[key:string]: any}   = {
+${Object.keys(properties).map((prop) => {
+    const description = properties[prop];
+    if (this._isGeneric(description)){
+        return null;//Do not declare generic values
+    } else {
+        return `\t\t"${prop}": { ${Object.keys(description).map((prop) => {
+            let convertor = (target: any) => target;
+            if (prop === SCHEME.TYPE_DEF.type){
+                convertor = getTSType;
+            }
+            if (Tools.getTypeOf(description[prop]) === Tools.EPrimitiveTypes.array){
+                return `"${prop}": ["${convertor(description[prop][0])}"]`;
+            } else if (Tools.getTypeOf(description[prop]) === Tools.EPrimitiveTypes.string) {
+                return `"${prop}": "${convertor(description[prop])}"`;
+            } else {
+                return `"${prop}": ${description[prop]}`;
+            }
+        }).join(', ')} }`
+    }
+}).filter(x => x !== null).join(',\n')}
+    };
+    
     constructor(properties: { ${this._getParametersDeclaration(properties, conditions, parentProps).join(', ')} }) {
         ${parent === '' ? '' : `super(Object.assign(properties, { 
         ${this._getConditionsDefinitions('properties', conditions).map((str: string)=>{
@@ -413,27 +436,9 @@ ${Object.keys(DEFAULT_FIELDS).map((prop: string) => {
         }));`}
 
         const name  : string = '${property}';
-        const rules : {[key:string]: any}   = {
-${Object.keys(properties).map((prop) => {
-                const description = properties[prop];
-                if (this._isGeneric(description)){
-                    return null;//Do not declare generic values
-                } else {
-                    return `\t\t\t"${prop}": { ${Object.keys(description).map((prop) => {
-                        if (Tools.getTypeOf(description[prop]) === Tools.EPrimitiveTypes.array){
-                            return `"${prop}": ["${description[prop][0]}"]`;
-                        } else if (Tools.getTypeOf(description[prop]) === Tools.EPrimitiveTypes.string) {
-                            return `"${prop}": "${description[prop]}"`;
-                        } else {
-                            return `"${prop}": ${description[prop]}`;
-                        }
-                    }).join(', ')} }`
-                }
-            }).filter(x => x !== null).join(',\n')}
-        }; 
 
         const errors = getInstanceErrors(name,
-            rules,
+            ${property}.__rules,
             __SchemeEnums,
             __SchemeClasses,
             properties);

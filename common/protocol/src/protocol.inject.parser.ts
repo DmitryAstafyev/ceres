@@ -1,9 +1,33 @@
-const __SIGNATURE = 'signature';
+const __SIGNATURE = '__signature';
+const __RULES = '__rules';
 const __TOKEN = { prop: '__token', setter: 'setToken' };
 
 declare var __SchemeClasses:any;
 
+class __ProtocolTypes {
+
+    Date(smth: any): Date | Error {
+        if (smth instanceof Date) {
+            return smth;
+        }
+        if (~['number', 'string'].indexOf(typeof smth)){
+            try {
+                const result = new Date(smth);
+                if (~result.toString().toLowerCase().indexOf('invalid date')){
+                    throw `Invalid Date is defined due value = "${smth}"`;
+                }
+                return result;
+            } catch (e){
+                return e;
+            }
+        }
+        return new Error(`Cannot covert value of type = "${(typeof smth)}" to Date`);
+    }
+}
+
 class __Parser {
+    
+    private types: __ProtocolTypes = new __ProtocolTypes();
 
     validate(json: any) {
         if (typeof json === 'string') {
@@ -59,6 +83,18 @@ class __Parser {
         if (classImpl === null){
             return new Error(`Implementation of class for target isn't found.`);
         }
+        //Convert values to types
+        Object.keys(json).forEach((prop: string) => {
+            if (classImpl[__RULES][prop] === void 0){
+                return;
+            }
+            if (typeof classImpl[__RULES][prop].type === 'string' && (this.types as any)[classImpl[__RULES][prop].type] !== void 0) {
+                json[prop] = (this.types as any)[classImpl[__RULES][prop].type](json[prop]);
+                if (json[prop] instanceof Error){
+                    return new Error(`Cannot create convert values of target property "${prop}" due error: ${json[prop].message}`);
+                }
+            }
+        });
         //Check nested implementations
         try {
             Object.keys(json).forEach((prop: string) => {
