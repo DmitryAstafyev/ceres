@@ -109,7 +109,6 @@ describe('[Test][platform][protocol]', () => {
 
     });
 
-
     it('[Parsing]', (done: Function)=>{
         const logger = new Logger('Test: Parsing');
         const builder: Builder = new Builder(TEST_SOURCE_PROTOCOL_FILE);
@@ -131,7 +130,6 @@ describe('[Test][platform][protocol]', () => {
                     const instance = Protocol.extract(json);
                     expect(instance instanceof Protocol.Message).toBe(true);
                     expect(instance.event instanceof Protocol.EventMessageCreated).toBe(true);
-                    console.log(instance);
                     return done();
                 })
                 .catch((e)=>{
