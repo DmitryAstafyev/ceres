@@ -1,6 +1,6 @@
 
 /*
-* This file generated automaticaly (UTC: Tue, 01 May 2018 21:55:55 GMT). 
+* This file generated automaticaly (UTC: Fri, 11 May 2018 07:17:55 GMT). 
 * Do not remove or change this code.
 */
 
@@ -60,8 +60,8 @@ enum __ETypes {
     boolean = 'boolean',
     undefined = 'undefined',
     null = 'null',
-    error = 'error',
-    date = 'date'
+    Error = 'Error',
+    Date = 'Date'
 };
 
 function __getTypeOf(smth: any){
@@ -70,7 +70,7 @@ function __getTypeOf(smth: any){
     } else if (smth === null) {
         return __ETypes.null;
     } else if (smth.constructor !== void 0 && typeof smth.constructor.name === __ETypes.string){
-        return smth.constructor.name.toLowerCase();
+        return __ETypes[smth.constructor.name.toLowerCase()] !== void 0 ? smth.constructor.name.toLowerCase() : smth.constructor.name;
     } else {
         return (typeof smth);
     }
@@ -131,7 +131,7 @@ function getInstanceErrors(
                 if (SchemeEnums[list] === void 0){
                     _errors.push(new Error(logger(`Entity "${name}", enum "${list}" isn't defined. Property "${prop}" cannot be intialized.`)));
                 }
-                if (SchemeEnums[list][properties[prop]] === void 0){
+                if (SchemeEnums[list][properties[prop]] === void 0 && rule[__SCHEME.AVAILABILITY.required]){
                     _errors.push(new Error(logger(`Entity "${name}", property "${prop}" should have value from enum "${list}".`)));
                 }
                 return true;
@@ -143,7 +143,7 @@ function getInstanceErrors(
                     _errors.push(new Error(logger(`Entity "${name}", property "${prop}" defined incorrectly. Value of [type] cannot be empty.`)));
                 }
                 //Check primitive types
-                const PrimitiveTypes = [__ETypes.boolean, __ETypes.number, __ETypes.string, __ETypes.date];
+                const PrimitiveTypes = [__ETypes.boolean, __ETypes.number, __ETypes.string, __ETypes.Date];
                 if (!~PrimitiveTypes.indexOf(rule[__SCHEME.TYPE_DEF.type]) && SchemeClasses[rule[__SCHEME.TYPE_DEF.type]] === void 0){
                     _errors.push(new Error(logger(`Entity "${name}", property "${prop}" defined incorrectly. [type] isn't primitive type (${PrimitiveTypes.join(', ')}) and isn't instance of nested types (${Object.keys(SchemeClasses).join(', ')}).`)));
                 }
@@ -168,14 +168,38 @@ function getInstanceErrors(
         return _errors.length === 0 ? null : _errors;
 }
 
-const __SIGNATURE = 'signature';
+const __SIGNATURE = '__signature';
+const __RULES = '__rules';
 const __TOKEN = { prop: '__token', setter: 'setToken' };
 
 // declare var __SchemeClasses:any;
 
-class __Parser {
+class __ProtocolTypes {
 
-    find(json: any) {
+    Date(smth: any): Date | Error {
+        if (smth instanceof Date) {
+            return smth;
+        }
+        if (~['number', 'string'].indexOf(typeof smth)){
+            try {
+                const result = new Date(smth);
+                if (~result.toString().toLowerCase().indexOf('invalid date')){
+                    throw `Invalid Date is defined due value = "${smth}"`;
+                }
+                return result;
+            } catch (e){
+                return e;
+            }
+        }
+        return new Error(`Cannot covert value of type = "${(typeof smth)}" to Date`);
+    }
+}
+
+class __Parser {
+    
+    private types: __ProtocolTypes = new __ProtocolTypes();
+
+    validate(json: any) {
         if (typeof json === 'string') {
             try {
                 json = JSON.parse(json);
@@ -183,6 +207,10 @@ class __Parser {
                 return new Error(`Cannot parse target due error: ${e.message}`);
             }
         }
+        return json;
+    }
+
+    find(json: any) {
         if (typeof __SchemeClasses !== 'object' || __SchemeClasses === null) {
             return new Error(`Cannot find classes description.`);
         }
@@ -208,18 +236,55 @@ class __Parser {
         return null;
     }
 
-    convert(json: any){
+    convert(json: any, root: boolean = true){
+        //Conver to object
+        json = this.validate(json);
+        if (json instanceof Error){
+            return json;
+        }
+        if (json === null || typeof json !== 'object'){
+            return new Error(`Target should be an object and don't null.`);
+        }
+        //Try to find implementation
         const classImpl = this.find(json);
-        if (classImpl instanceof Error || classImpl === null){
+        if (classImpl instanceof Error){
             return classImpl;
         }
+        if (classImpl === null){
+            return new Error(`Implementation of class for target isn't found.`);
+        }
+        //Convert values to types
+        Object.keys(json).forEach((prop: string) => {
+            if (classImpl[__RULES][prop] === void 0){
+                return;
+            }
+            if (typeof classImpl[__RULES][prop].type === 'string' && (this.types as any)[classImpl[__RULES][prop].type] !== void 0) {
+                json[prop] = (this.types as any)[classImpl[__RULES][prop].type](json[prop]);
+                if (json[prop] instanceof Error){
+                    return new Error(`Cannot create convert values of target property "${prop}" due error: ${json[prop].message}`);
+                }
+            }
+        });
+        //Check nested implementations
+        try {
+            Object.keys(json).forEach((prop: string) => {
+                const smth = json[prop];
+                if (typeof smth === 'object' && smth !== null && typeof smth[__SIGNATURE] === 'string' && smth[__SIGNATURE].trim() !== ''){
+                    //Probably it's implementation
+                    json[prop] = this.convert(json[prop], false);
+                }
+            });
+        } catch(e){
+            return new Error(`Cannot create a nested instance of target due error: ${e.message}`);
+        }
+        //Try to make an instance
         let classInst;
         try {
             classInst = new classImpl(json);
         } catch(e){
             return new Error(`Cannot create instance of target due error: ${e.message}`);
         }
-        if (json[__TOKEN.prop] !== void 0) {
+        if (root && json[__TOKEN.prop] !== void 0) {
             try {
                 classInst[__TOKEN.setter](json[__TOKEN.prop]);
             } catch(e){
@@ -233,22 +298,42 @@ class __Parser {
 
 const __parser = new __Parser();
 
+export const extract = __parser.convert.bind(__parser);
+
+export function getToken(smth: any): string | Error {
+    if (typeof smth === 'string') {
+        try {
+            smth = JSON.parse(smth);
+        } catch (e){
+            return e;
+        }
+    }
+    if (typeof smth.getToken === 'function') {
+        const token = smth.getToken();
+        return typeof token === 'string' ? token.trim() : new Error('Wrong type of token.');
+    }
+    if (typeof smth.__token === 'string') {
+        return smth.__token.trim();
+    }
+    return new Error(`No token found.`);
+}
 
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 * Protocol implementation
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-enum Requests {
+export enum Requests {
 	HANDSHAKE = 0,
 	AUTH = 1,
 };
-enum Responses {
+export enum Responses {
 	HANDSHAKE = 0,
 	AUTH = 1,
 };
-enum Reasons {
+export enum Reasons {
 	FAIL_AUTH = 0,
+	NO_TOKEN_FOUND = 1,
 };
 
 export class Message {
@@ -257,18 +342,20 @@ export class Message {
 	public response: Responses | undefined;
 	public readonly guid: string = __generic.guid();
 	public __token?: string = "";
-    static signature: string = '63DC6819';
-    constructor(properties: { request?:Requests, response?:Responses, guid:string }) {
+    static __signature: string = '63DC6819';
+    public __signature: string = Message.__signature;
+    static __rules : {[key:string]: any}   = {
+		"request": { "in": "Requests", "optional": true },
+		"response": { "in": "Responses", "optional": true }
+    };
+    
+    constructor(properties: { request?:Requests, response?:Responses, guid?:string }) {
         
 
         const name  : string = 'Message';
-        const rules : {[key:string]: any}   = {
-			"request": { "in": "Requests", "optional": true },
-			"response": { "in": "Responses", "optional": true }
-        }; 
 
         const errors = getInstanceErrors(name,
-            rules,
+            Message.__rules,
             __SchemeEnums,
             __SchemeClasses,
             properties);
@@ -297,19 +384,21 @@ export class RequestHandshake extends Message{
 
 	public clientId: string;
 	public __token?: string = "";
-    static signature: string = '99E189F';
-    constructor(properties: { clientId:string, request?: Requests, response?: Responses, guid: string }) {
+    static __signature: string = '99E189F';
+    public __signature: string = RequestHandshake.__signature;
+    static __rules : {[key:string]: any}   = {
+		"clientId": { "type": "string", "required": true }
+    };
+    
+    constructor(properties: { clientId:string, request?: Requests, response?: Responses, guid?: string }) {
         super(Object.assign(properties, { 
         	request: Requests.HANDSHAKE
         }));
 
         const name  : string = 'RequestHandshake';
-        const rules : {[key:string]: any}   = {
-			"clientId": { "type": "string", "required": true }
-        }; 
 
         const errors = getInstanceErrors(name,
-            rules,
+            RequestHandshake.__rules,
             __SchemeEnums,
             __SchemeClasses,
             properties);
@@ -339,23 +428,27 @@ export class ResponseHandshake extends Message{
 	public allowed: boolean;
 	public token: string | undefined;
 	public reason: Reasons | undefined;
+	public error: string | undefined;
 	public __token?: string = "";
-    static signature: string = '5A3E1D6F';
-    constructor(properties: { clientId:string, allowed:boolean, token?:string, reason?:Reasons, request?: Requests, response?: Responses, guid: string }) {
+    static __signature: string = '5A3E1D6F';
+    public __signature: string = ResponseHandshake.__signature;
+    static __rules : {[key:string]: any}   = {
+		"clientId": { "type": "string", "required": true },
+		"allowed": { "type": "boolean", "required": true },
+		"token": { "type": "string", "optional": true },
+		"reason": { "in": "Reasons", "optional": true },
+		"error": { "type": "string", "optional": true }
+    };
+    
+    constructor(properties: { clientId:string, allowed:boolean, token?:string, reason?:Reasons, error?:string, request?: Requests, response?: Responses, guid?: string }) {
         super(Object.assign(properties, { 
         	response: Responses.HANDSHAKE
         }));
 
         const name  : string = 'ResponseHandshake';
-        const rules : {[key:string]: any}   = {
-			"clientId": { "type": "string", "required": true },
-			"allowed": { "type": "boolean", "required": true },
-			"token": { "type": "string", "optional": true },
-			"reason": { "in": "Reasons", "optional": true }
-        }; 
 
         const errors = getInstanceErrors(name,
-            rules,
+            ResponseHandshake.__rules,
             __SchemeEnums,
             __SchemeClasses,
             properties);
@@ -368,6 +461,7 @@ export class ResponseHandshake extends Message{
 		this.allowed = properties.allowed;
 		this.token = properties.token;
 		this.reason = properties.reason;
+		this.error = properties.error;
 
     }
 
@@ -405,7 +499,7 @@ export const Protocol : {[key:string]: any} = {
 	Requests: Requests,
 	Responses: Responses,
 	Reasons: Reasons,
-    extract: __parser.convert
+    extract: __parser.convert.bind(__parser)
 }     
         
         

@@ -97,7 +97,7 @@ function getInstanceErrors(
                 if (SchemeEnums[list] === void 0){
                     _errors.push(new Error(logger(`Entity "${name}", enum "${list}" isn't defined. Property "${prop}" cannot be intialized.`)));
                 }
-                if (SchemeEnums[list][properties[prop]] === void 0){
+                if (SchemeEnums[list][properties[prop]] === void 0 && rule[__SCHEME.AVAILABILITY.required]){
                     _errors.push(new Error(logger(`Entity "${name}", property "${prop}" should have value from enum "${list}".`)));
                 }
                 return true;

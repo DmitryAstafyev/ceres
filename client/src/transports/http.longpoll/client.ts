@@ -2,8 +2,8 @@ import * as Tools from '../../platform/tools/index';
 import * as Enums from '../../platform/enums/index';
 import * as DescConnection from './connection/index';
 import * as DescMiddleware from '../../infrastructure/middleware/index';
-
 import { Request } from './request';
+import * as Protocol from '../../protocols/connection/protocol.connection';
 
 enum ERepeatTimeout {
     error = 1000,
@@ -75,7 +75,10 @@ export class Client {
     private _proceed(){
         switch(this._state){
             case EClientStates.created:
-                const request = new Request(this._clientGUID, this._parameters.getURL(), Enums.ERequestTypes.post, {});
+                const requestHandshake = new Protocol.RequestHandshake({
+                    clientId: this._clientGUID
+                });
+                const request = new Request(this._clientGUID, this._parameters.getURL(), Enums.ERequestTypes.post, requestHandshake);
                 this._registerRequest(request);
                 request.send();
                 break;

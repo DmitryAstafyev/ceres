@@ -1,7 +1,6 @@
 import * as Tools from '../../platform/tools/index';
 import ImpXMLHTTPRequest from '../common/xmlhttprequest';
 import { TTransportEvents } from '../../infrastructure/transport.events';
-import { IRequest, TRequestBody } from '../../platform/interfaces/interface.request';
 import * as Enums from '../../platform/enums/index';
 
 const SETTINGS = {
@@ -67,7 +66,7 @@ export class Request extends Tools.EventEmitter {
 	private _clientGUID : string;
 	private _method 	: Enums.ERequestTypes;
 
-    constructor(clientGUID: string, url: string, method: Enums.ERequestTypes, post: TRequestBody) {
+    constructor(clientGUID: string, url: string, method: Enums.ERequestTypes, post: any) {
 		super();
 		this._clientGUID 	= clientGUID;
 		this._method 		= method;
@@ -78,10 +77,7 @@ export class Request extends Tools.EventEmitter {
 		this._request   	= new ImpXMLHTTPRequest({
 			url: this._url,
 			method: this._method,
-			post: {
-				clientGUID: this._clientGUID,
-				request: post
-			} as IRequest
+			post: post
 		});
 		this._requestSubscribe();
 		this._lifecircle.start();

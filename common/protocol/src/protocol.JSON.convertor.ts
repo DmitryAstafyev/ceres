@@ -17,7 +17,8 @@ const DEFAULT_FIELDS : { [key: string]: any } = {
 const INJECTIONS_MODULES = [
     'protocol.inject.generic.ts',
     'protocol.inject.validator.ts',
-    'protocol.inject.parser.ts'
+    'protocol.inject.parser.ts',
+    'protocol.inject.token.ts'
 ];
 
 const INJECTIONS_COMMENT_OUT = [
@@ -351,7 +352,7 @@ export class ProtocolJSONConvertor{
     }
 
     private _getEnumStr(enumArray: Array<string>, property: string): string{
-        return `enum ${property} {
+        return `export enum ${property} {
 ${enumArray.map((key: string, index: number)=>{
             return `\t${key} = ${index},`;
         }).join('\n')}\n};`;

@@ -14,12 +14,18 @@ namespace('client', function() {
     task('unlink', function(){
         sh(this, '.', 
             'unlink ./client/src/platform & exit 0', 
-            'rm -r ./client/src/platform & exit 0'
+            'rm -r ./client/src/platform & exit 0',
+            'unlink ./client/src/protocol & exit 0', 
+            'rm -r ./client/src/protocol & exit 0',
+            'unlink ./client/src/protocols & exit 0', 
+            'rm -r ./client/src/protocols & exit 0',
         );
     }, {async: true});
     task('link', function(){
         sh(this, '.', 
-            `ln -s ${path.normalize(__dirname + '/common/platform')} ${path.normalize(__dirname + '/client/src/platform')}`
+            `ln -s ${path.normalize(__dirname + '/common/platform')} ${path.normalize(__dirname + '/client/src/platform')}`,
+            `ln -s ${path.normalize(__dirname + '/common/protocol')} ${path.normalize(__dirname + '/client/src/protocol')}`,
+            `ln -s ${path.normalize(__dirname + '/common/protocols')} ${path.normalize(__dirname + '/client/src/protocols')}`
         );
     }, {async: true});
     task('clear', function(){
@@ -39,12 +45,18 @@ namespace('server', function() {
     task('unlink', function() {
         sh(this, '.', 
             'unlink ./server/src/platform & exit 0', 
-            'rm -r ./server/src/platform & exit 0'
+            'rm -r ./server/src/platform & exit 0',
+            'unlink ./server/src/protocol & exit 0', 
+            'rm -r ./server/src/protocol & exit 0',
+            'unlink ./server/src/protocols & exit 0', 
+            'rm -r ./server/src/protocols & exit 0',
         );
     }, {async: true});
     task('link', function() {
         sh(this, '.',
-            `ln -s ${path.normalize(__dirname + '/common/platform')} ${path.normalize(__dirname + '/server/src/platform')}`
+            `ln -s ${path.normalize(__dirname + '/common/platform')} ${path.normalize(__dirname + '/server/src/platform')}`,
+            `ln -s ${path.normalize(__dirname + '/common/protocol')} ${path.normalize(__dirname + '/server/src/protocol')}`,
+            `ln -s ${path.normalize(__dirname + '/common/protocols')} ${path.normalize(__dirname + '/server/src/protocols')}`,
         );
     }, {async: true});
     task('clear', function() {

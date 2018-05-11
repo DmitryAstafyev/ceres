@@ -3,7 +3,7 @@
                 "default": {
                     "request"   : { "in"    : "Requests",   "optional": true },
                     "response"  : { "in"    : "Responses",  "optional": true },
-                    "guid"      : { "type"  : "guid",       "required": true }
+                    "guid"      : { "type"  : "guid",       "optional": true }
                 },
             
                 "cases":{
@@ -14,14 +14,15 @@
                         "clientId"  : { "type"  : "string",     "required": true },
                         "allowed"   : { "type"  : "boolean",    "required": true },
                         "token"     : { "type"  : "string",     "optional": true },
-                        "reason"    : { "in"    : "Reasons",    "optional": true }
+                        "reason"    : { "in"    : "Reasons",    "optional": true },
+                        "error"     : { "type"  : "string",     "optional": true }
                     }]
                 },
             
                 "definitions": {
                     "Requests"  : ["HANDSHAKE", "AUTH"],
                     "Responses" : ["HANDSHAKE", "AUTH"],
-                    "Reasons"   : ["FAIL_AUTH"]
+                    "Reasons"   : ["FAIL_AUTH", "NO_TOKEN_FOUND"]
                 }
             }
 }

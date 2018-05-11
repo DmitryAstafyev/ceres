@@ -6,8 +6,16 @@ import * as DescMiddleware from '../../infrastructure/middleware/implementation'
 
 import { Request } from './request';
 
+import * as Protocol from '../../protocols/connection/protocol.connection';
+
 const SETTINGS = {
-    NOT_AUTH_REQUEST_CLOSE_TIMEOUT: 3000 //ms
+    NOT_AUTH_REQUEST_CLOSE_TIMEOUT: 3000, //ms
+    POST_REQUEST_MAX_LENGTH: 100000
+};
+
+const REQUEST_EVENTS = {
+    data    : 'data',
+    end     : 'end'
 };
 
 export class Server {
@@ -53,23 +61,81 @@ export class Server {
         });
     }
 
-    private _onRequest(request: HTTP.IncomingMessage, response: HTTP.ServerResponse){
-        const _request  = new Request(Symbol(Tools.guid()), request, response);
-        //Authorization of request
-        this._middleware.auth(_request.getId(), request)
-            .then((auth: boolean) => {
-                if (!auth){
-                    return this._closeNotAuthRequest(_request);
+    private _getPOSTData(request: HTTP.IncomingMessage): Promise<any> {
+        const querystring = require('querystring');
+        let str = '';
+        let error: Error | null = null;
+        return new Promise((resolve: (request: any) => any, reject: (error: Error) => any) => {
+            request.on(REQUEST_EVENTS.data, (data) => {
+                if (error !== null) {
+                    return;
                 }
-                //Add request to storage
-                this._requests.set(_request.getId(), _request);
-                //Subscribe on request's events
-                this._subscribeRequest(_request);
+                str += data;
+                if (str.length > SETTINGS.POST_REQUEST_MAX_LENGTH) {
+                    error = new Error(this._logger.warn(`Length of request to big. Maximum length of request is: ${SETTINGS.POST_REQUEST_MAX_LENGTH} bytes`))
+                    reject(error);
+                }                
+            });
+    
+            request.on(REQUEST_EVENTS.end, () => {
+                if (error !== null) {
+                    return;
+                }
+                try {
+                    let post = querystring.parse(str);
+                    if (Tools.getTypeOf(post) !== Tools.EPrimitiveTypes.object){
+                        return reject(new Error(this._logger.warn(`As post data expecting only {object}.`)));
+                    }
+                    resolve(post);
+                } catch (e) {
+                    reject(e);
+                }
+            });
+        });
+    }
+
+    private _onRequest(request: HTTP.IncomingMessage, response: HTTP.ServerResponse){
+        this._getPOSTData(request)
+            .then((post: any) => {
+                const _request = new Request(Symbol(Tools.guid()), request, response);
+                const token = Protocol.getToken(post);
+                if (token instanceof Error) {
+                    const responseHandshake = new Protocol.ResponseHandshake({
+                        clientId: post.clientId,
+                        allowed: false,
+                        reason: Protocol.Reasons.NO_TOKEN_FOUND,
+                        error: token.message
+                    });
+                    _request.send({data: responseHandshake});
+                    return;
+                }
+                //Get message
+                const message = Protocol.extract(post);
+                if (token === '') {
+                    //Case: not authorized request
+
+                }
+                console.log(message);
+                //Authorization of request
+                this._middleware.auth(_request.getId(), request)
+                    .then((auth: boolean) => {
+                        if (!auth){
+                            return this._closeNotAuthRequest(_request);
+                        }
+                        //Add request to storage
+                        this._requests.set(_request.getId(), _request);
+                        //Subscribe on request's events
+                        this._subscribeRequest(_request);
+                    })
+                    .catch((error: Error) => {
+                        //Close request immediately 
+                        _request.close();
+                    });
             })
             .catch((error: Error) => {
-                //Close request immediately 
-                _request.close();
+                this._logger.warn(`Cannot exctract request due error: ${error.message}`);
             });
+    
     }
 
     private _closeNotAuthRequest(request: Request){

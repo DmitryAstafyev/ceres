@@ -128,3 +128,4 @@ class __Parser {
 
 const __parser = new __Parser();
 
+export const extract = __parser.convert.bind(__parser);
