@@ -19,7 +19,6 @@ enum ERepeatReason {
 
 export enum EClientStates {
     created = 'created',
-    authorized = 'authorized',
     listening = 'listening'
 }
 
@@ -33,6 +32,7 @@ export class Client {
     private _middleware : DescMiddleware.Middleware;
     private _state      : EClientStates = EClientStates.created;
     private _clientGUID : string = Tools.guid();
+    private _token      : string = '';
 
     constructor(
         parameters: DescConnection.ConnectionParameters,
@@ -73,20 +73,23 @@ export class Client {
     }
 
     private _proceed(){
-        switch(this._state){
+        let request;
+        switch(this._getState()){
             case EClientStates.created:
-                const requestHandshake = new Protocol.RequestHandshake({
+                request = new Request(this._clientGUID, this._parameters.getURL(), Enums.ERequestTypes.post, new Protocol.RequestHandshake({
                     clientId: this._clientGUID
-                });
-                const request = new Request(this._clientGUID, this._parameters.getURL(), Enums.ERequestTypes.post, requestHandshake);
+                }));
                 this._registerRequest(request);
                 request.send();
                 break;
-            case EClientStates.authorized:
-
-                break;
             case EClientStates.listening:
-
+                const requestHeartbeat = new Protocol.RequestHeartbeat({
+                    clientId: this._clientGUID,
+                });
+                requestHeartbeat.setToken(this._getToken());
+                request = new Request(this._clientGUID, this._parameters.getURL(), Enums.ERequestTypes.post, requestHeartbeat);
+                this._registerRequest(request);
+                request.send();
                 break;
         }
     }
@@ -128,6 +131,30 @@ export class Client {
     private _onDoneRequest(request: Request, response: any){
         this._logger.debug(`Request guid: ${request.getId()} is finished successfuly: ${Tools.inspect(response)}`);
         this._unsubscribeRequest(request);
+        const message = Protocol.extract(response);
+        if (message instanceof Error) {
+            this._logger.warn(`Cannot parse response due error: ${message.message}`);
+            return this._repeat(ERepeatReason.done);
+        }
+        switch(this._getState()){
+            case EClientStates.created:
+                if (message instanceof Protocol.ResponseHandshake) {
+                    if (message.allowed && message.getToken() !== ''){
+                        this._setToken(message.getToken());
+                        this._setState(EClientStates.listening);
+                    } else {
+                        this._logger.warn(`Fail to authorize request due reason: ${message.reason} ${message.error !== void 0 ? `(${message.error})`: ''}`);
+                    }
+                } else {
+                    this._logger.warn(`On this state (${this._getState()}) expected authorization confirmation, but gotten: ${Tools.inspect(message)}.`);
+                }
+                break;
+            case EClientStates.listening:
+                if (message instanceof Protocol.ResponseHeartbeat){
+                    this._logger.debug(`Heartbeat...`);
+                }
+                break;
+        }
         this._repeat(ERepeatReason.done);
     }
 
@@ -136,6 +163,25 @@ export class Client {
             ERepeatTimeout[reason] > 0      && setTimeout(this._proceed.bind(this), ERepeatTimeout[reason]);
             ERepeatTimeout[reason] === 0    && this._proceed();
         }
+    }
+
+    private _setToken(token: string){
+        if (Tools.getTypeOf(token) !== Tools.EPrimitiveTypes.string){
+            return this._logger.warn(`Cannot set token. Expected {string}, but has gotten: ${Tools.getTypeOf(token)}.`);
+        }
+        this._token = token;
+    }
+
+    private _getToken(): string {
+        return this._token;
+    }
+
+    private _setState(state: EClientStates) {
+        this._state = state;
+    }
+
+    private _getState(): EClientStates {
+        return this._state;
     }
 
 }

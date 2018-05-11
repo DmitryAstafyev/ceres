@@ -8,7 +8,7 @@ class ProtocolMessage {
     }
 
     setToken(token: string) {
-        if (typeof token !== 'string' || token.trim() === '') {
+        if (typeof token !== 'string') {
             throw new Error(`As value of token can be used only {string} type, but gotten: ${(typeof token)}`);
         }
         if (this.__token !== '') {

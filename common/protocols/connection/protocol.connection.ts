@@ -1,6 +1,6 @@
 
 /*
-* This file generated automaticaly (UTC: Fri, 11 May 2018 14:30:48 GMT). 
+* This file generated automaticaly (UTC: Fri, 11 May 2018 21:53:34 GMT). 
 * Do not remove or change this code.
 */
 
@@ -93,7 +93,7 @@ function getInstanceErrors(
         if (__getTypeOf(properties) !== __ETypes.object){
             _errors.push(new Error(logger(`Entity "${name}" isn't defined any parameters.`)));
         }
-        if (Object.keys(rules).length === 0){
+        if (__getTypeOf(rules) !== __ETypes.object){
             _errors.push(new Error(logger(`Entity "${name}" doens't have defined rules.`)));
         }
         if (_errors.length > 0){
@@ -328,7 +328,7 @@ class ProtocolMessage {
     }
 
     setToken(token: string) {
-        if (typeof token !== 'string' || token.trim() === '') {
+        if (typeof token !== 'string') {
             throw new Error(`As value of token can be used only {string} type, but gotten: ${(typeof token)}`);
         }
         if (this.__token !== '') {
@@ -441,19 +441,17 @@ export class RequestHandshake extends Message{
 export class ResponseHandshake extends Message{
 
 	public allowed: boolean;
-	public token: string | undefined;
 	public reason: Reasons | undefined;
 	public error: string | undefined;
     static __signature: string = '5A3E1D6F';
     public __signature: string = ResponseHandshake.__signature;
     static __rules : {[key:string]: any}   = {
 		"allowed": { "type": "boolean", "required": true },
-		"token": { "type": "string", "optional": true },
 		"reason": { "in": "Reasons", "optional": true },
 		"error": { "type": "string", "optional": true }
     };
     
-    constructor(properties: { allowed:boolean, token?:string, reason?:Reasons, error?:string, request?: Requests, response?: Responses, guid?: string, clientId: string }) {
+    constructor(properties: { allowed:boolean, reason?:Reasons, error?:string, request?: Requests, response?: Responses, guid?: string, clientId: string }) {
         super(Object.assign(properties, { 
             	response: Responses.HANDSHAKE
             }));
@@ -471,7 +469,6 @@ export class ResponseHandshake extends Message{
         }
 
 		this.allowed = properties.allowed;
-		this.token = properties.token;
 		this.reason = properties.reason;
 		this.error = properties.error;
 
@@ -480,11 +477,11 @@ export class ResponseHandshake extends Message{
 }
 
 
-export class Heartbeat extends Message{
+export class RequestHeartbeat extends Message{
 
 
-    static __signature: string = '6918978B';
-    public __signature: string = Heartbeat.__signature;
+    static __signature: string = '550C9C06';
+    public __signature: string = RequestHeartbeat.__signature;
     static __rules : {[key:string]: any}   = {
 
     };
@@ -494,10 +491,43 @@ export class Heartbeat extends Message{
             	request: Requests.HEARTBEAT
             }));
 
-        const name  : string = 'Heartbeat';
+        const name  : string = 'RequestHeartbeat';
 
         const errors = getInstanceErrors(name,
-            Heartbeat.__rules,
+            RequestHeartbeat.__rules,
+            __SchemeEnums,
+            __SchemeClasses,
+            properties);
+        
+        if (errors instanceof Array){
+            throw new Error(`Cannot initialize ${name} due errors: ${errors.map((error: Error)=>{ return error.message; }).join(', ')}`);
+        }
+
+
+
+    }
+
+}
+
+
+export class ResponseHeartbeat extends Message{
+
+
+    static __signature: string = '47172DEC';
+    public __signature: string = ResponseHeartbeat.__signature;
+    static __rules : {[key:string]: any}   = {
+
+    };
+    
+    constructor(properties: { request?: Requests, response?: Responses, guid?: string, clientId: string }) {
+        super(Object.assign(properties, { 
+            	response: Responses.HEARTBEAT
+            }));
+
+        const name  : string = 'ResponseHeartbeat';
+
+        const errors = getInstanceErrors(name,
+            ResponseHeartbeat.__rules,
             __SchemeEnums,
             __SchemeClasses,
             properties);
@@ -517,7 +547,8 @@ const __SchemeClasses : {[key:string]: any} = {
 	Message: Message,
 	RequestHandshake: RequestHandshake,
 	ResponseHandshake: ResponseHandshake,
-	Heartbeat: Heartbeat
+	RequestHeartbeat: RequestHeartbeat,
+	ResponseHeartbeat: ResponseHeartbeat
 }       
         
 
@@ -533,7 +564,8 @@ export const Protocol : {[key:string]: any} = {
 	Message: Message,
 	RequestHandshake: RequestHandshake,
 	ResponseHandshake: ResponseHandshake,
-	Heartbeat: Heartbeat, 
+	RequestHeartbeat: RequestHeartbeat,
+	ResponseHeartbeat: ResponseHeartbeat, 
     //Enums
 	Requests: Requests,
 	Responses: Responses,

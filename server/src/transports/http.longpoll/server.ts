@@ -170,11 +170,12 @@ export class Server {
                 //Create a token
                 const token = this._tokens.add(credential.clientId);
                 //Send token to client
-                request.send({ data: (new Protocol.ResponseHandshake({
+                const responseHandshake = new Protocol.ResponseHandshake({
                     clientId: credential.clientId,
-                    allowed: true,
-                    token: token
-                })).getStr()});
+                    allowed: true
+                });
+                responseHandshake.setToken(token);
+                request.send({ data: responseHandshake.getStr()});
                 this._logger.debug(`Client ${credential.clientId} successfuly authorized.`);
             })
             .catch((error: Error) => {
@@ -192,7 +193,7 @@ export class Server {
             .then((post: any) => {
                 const _request = new Request(Symbol(Tools.guid()), request, response);
                 //Validate body of request
-                const credential = this._validatePost(_request, post);
+                const credential: IRequestCredential | Error = this._validatePost(_request, post);
                 if (credential instanceof Error) {
                     return this._logger.debug(`Cannot processing request due error: ${credential.message}`);
                 }
@@ -202,15 +203,17 @@ export class Server {
                 }
                 //Get message
                 const message = Protocol.extract(post);
-                if (message instanceof Protocol.Heartbeat){
-                        //Add request to storage
-                        this._requests.set(_request.getId(), _request);
-                        //Subscribe on request's events
-                        this._subscribeRequest(_request);
+                if (message instanceof Protocol.RequestHeartbeat){
+                    //Add request to storage
+                    this._requests.set(_request.getId(), _request);
+                    //Subscribe on request's events
+                    this._subscribeRequest(_request);
+                    //Set expired response
+                    _request.setExpiredResponse(this._getExpiredResponse(credential));
                 } else if (message instanceof Error) {
                     this._logger.warn(`Cannot exctract message due error: ${message.message}`);
                 } else {
-                    this._logger.warn(`Not expected type of message: ${Tools.getTypeOf(message)}. Expected "Heartbeat".`);
+                    this._logger.warn(`Not expected type of message: ${Tools.getTypeOf(message)}. Expected "${Protocol.RequestHeartbeat.name}".`);
                 }
             })
             .catch((error: Error) => {
@@ -236,5 +239,13 @@ export class Server {
     private _onCloseRequest(_request: Request){
         this._unsubscribeRequest(_request);
         this._requests.delete(_request.getId());
+    }
+
+    private _getExpiredResponse(credential: IRequestCredential): string {
+        const responseHeartbeat = new Protocol.ResponseHeartbeat({
+            clientId: credential.clientId
+        });
+        responseHeartbeat.setToken(credential.token);
+        return responseHeartbeat.getStr();
     }
 }

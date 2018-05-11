@@ -59,7 +59,7 @@ function getInstanceErrors(
         if (__getTypeOf(properties) !== __ETypes.object){
             _errors.push(new Error(logger(`Entity "${name}" isn't defined any parameters.`)));
         }
-        if (Object.keys(rules).length === 0){
+        if (__getTypeOf(rules) !== __ETypes.object){
             _errors.push(new Error(logger(`Entity "${name}" doens't have defined rules.`)));
         }
         if (_errors.length > 0){

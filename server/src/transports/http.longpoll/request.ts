@@ -66,21 +66,22 @@ export class Request extends EventEmitter {
 		onClose: Symbol()
 	};
 
-    private _logger     : Tools.Logger 	= new Tools.Logger('Http.Server.Request');
-	private _created 	: Date 			= new Date();
-    private _request    : HTTP.IncomingMessage;
-	private _response   : HTTP.ServerResponse;
-	private _lifecircle : Lifecircle;
-	private _id 		: symbol;
-	private _CORS 		: boolean;
+    private _logger     		: Tools.Logger 	= new Tools.Logger('Http.Server.Request');
+	private _created 			: Date 			= new Date();
+    private _request    		: HTTP.IncomingMessage;
+	private _response   		: HTTP.ServerResponse;
+	private _lifecircle 		: Lifecircle;
+	private _id 				: symbol;
+	private _CORS 				: boolean;
+	private _expiredResponse	: string = '';
 
     constructor(id: symbol, request: HTTP.IncomingMessage, response: HTTP.ServerResponse, CORS: boolean = true) {
 		super();
-		this._id 			= id;
-        this._request   	= request;
-		this._response  	= response;
-		this._CORS 			= CORS;
-		this._lifecircle 	= new Lifecircle(SETTINGS.RESET_TIMEOUT);
+		this._id 				= id;
+        this._request   		= request;
+		this._response  		= response;
+		this._CORS 				= CORS;
+		this._lifecircle 		= new Lifecircle(SETTINGS.RESET_TIMEOUT);
 		this._lifecircleSubscribe();
 		this._lifecircle.start();
 	}
@@ -96,7 +97,7 @@ export class Request extends EventEmitter {
 
 	private _onExpired(){
 		this.emit(this.EVENTS.onExpired);
-		this.close();
+		this.close(this._expiredResponse);
 	}
 
 	private _isCORSDefined(headers: { [key: string]: string }): boolean {
@@ -123,14 +124,24 @@ export class Request extends EventEmitter {
 		return this._id;
 	}
 
-	public close(): Promise<void> {
+	public close(response?: string): Promise<void> {
+		response = Tools.getTypeOf(response) === Tools.EPrimitiveTypes.string ? response : '';
 		return new Promise((resolve, reject) => {
 			this._lifecircleUnsubscribe();
 			this._response.writeHead(200, this._addCORSToHeaders(DEFAULT_HEADERS));
-			this._response.end('', () => {
-				this.emit(this.EVENTS.onClose);
-				resolve();
-			});
+			if (response !== '') {
+				this._response.write(response, () => {
+					this._response.end('', () => {
+						this.emit(this.EVENTS.onClose);
+						resolve();
+					});
+				});
+			} else {
+				this._response.end(response, () => {
+					this.emit(this.EVENTS.onClose);
+					resolve();
+				});	
+			}
 		});
 	}
 
@@ -162,5 +173,9 @@ export class Request extends EventEmitter {
 				});
 			}
 		});
+	}
+
+	public setExpiredResponse(response: string) {
+		this._expiredResponse = response;
 	}
 }

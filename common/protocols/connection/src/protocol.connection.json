@@ -12,11 +12,12 @@
                     }],
                     "ResponseHandshake":[{ "response": "HANDSHAKE"}, {
                         "allowed"   : { "type"  : "boolean",    "required": true },
-                        "token"     : { "type"  : "string",     "optional": true },
                         "reason"    : { "in"    : "Reasons",    "optional": true },
                         "error"     : { "type"  : "string",     "optional": true }
                     }],
-                    "Heartbeat":[{ "request": "HEARTBEAT"}, {
+                    "RequestHeartbeat":[{ "request": "HEARTBEAT"}, {
+                    }],
+                    "ResponseHeartbeat":[{ "response": "HEARTBEAT"}, {
                     }]
                 },
             
