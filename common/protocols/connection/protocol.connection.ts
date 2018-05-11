@@ -1,6 +1,6 @@
 
 /*
-* This file generated automaticaly (UTC: Fri, 11 May 2018 13:12:35 GMT). 
+* This file generated automaticaly (UTC: Fri, 11 May 2018 14:30:48 GMT). 
 * Do not remove or change this code.
 */
 
@@ -364,6 +364,7 @@ export enum Reasons {
 	FAIL_AUTH = 0,
 	NO_TOKEN_FOUND = 1,
 	NO_CLIENT_ID_FOUND = 2,
+	NO_TOKEN_PROVIDED = 3,
 };
 
 export class Message extends ProtocolMessage{

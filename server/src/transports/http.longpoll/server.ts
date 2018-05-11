@@ -38,6 +38,10 @@ export class Tokens {
         }
         return this._tokens.get(clientId) === token;
     }
+
+    isRegistred(clientId: string) :boolean {
+        return this._tokens.has(clientId);
+    }
 }
 
 export class Server {
@@ -127,7 +131,7 @@ export class Server {
                 allowed: false,
                 reason: Protocol.Reasons.NO_CLIENT_ID_FOUND
             });
-            request.send({data: responseHandshake.getStr()});
+            request.send({data: responseHandshake.getStr(), safely: true});
             return new Error(`Client ID isn't defined.`);
         }
         if (token instanceof Error) {
@@ -138,8 +142,18 @@ export class Server {
                 reason: Protocol.Reasons.NO_TOKEN_FOUND,
                 error: token.message
             });
-            request.send({data: responseHandshake.getStr()});
-            return new Error(`Cannot detect token.`);
+            request.send({data: responseHandshake.getStr(), safely: true});
+            return new Error(`Cannot detect token. Client ID: ${clientId}.`);
+        }
+        if (token === '' && this._tokens.isRegistred(clientId)) {
+            //Client is already registred
+            const responseHandshake = new Protocol.ResponseHandshake({
+                clientId: post.clientId,
+                allowed: false,
+                reason: Protocol.Reasons.NO_TOKEN_PROVIDED
+            });
+            request.send({data: responseHandshake.getStr(), safely: true});
+            return new Error(`Token isn't provided, even client is already registred. Client ID: ${clientId}.`);
         }
         return {
             token: token,
@@ -161,7 +175,7 @@ export class Server {
                     allowed: true,
                     token: token
                 })).getStr()});
-                this._logger.debug(`Client ${credential.clientId} successfuly authorized.`)
+                this._logger.debug(`Client ${credential.clientId} successfuly authorized.`);
             })
             .catch((error: Error) => {
                 request.send({ data: (new Protocol.ResponseHandshake({
@@ -169,7 +183,7 @@ export class Server {
                     allowed: false,
                     reason: Protocol.Reasons.FAIL_AUTH
                 })).getStr()});
-                this._logger.debug(`Client ${credential.clientId} isn't authorized. Connection is refused.`)
+                this._logger.debug(`Client ${credential.clientId} isn't authorized. Connection is refused.`);
             });
     }
 
@@ -182,7 +196,7 @@ export class Server {
                 if (credential instanceof Error) {
                     return this._logger.debug(`Cannot processing request due error: ${credential.message}`);
                 }
-                //Authorization
+                //Authorization: not authorized
                 if (credential.token === '') {
                     return this._authClient(_request, credential, post);
                 }
