@@ -3,26 +3,27 @@
                 "default": {
                     "request"   : { "in"    : "Requests",   "optional": true },
                     "response"  : { "in"    : "Responses",  "optional": true },
-                    "guid"      : { "type"  : "guid",       "optional": true }
+                    "guid"      : { "type"  : "guid",       "optional": true },
+                    "clientId"  : { "type"  : "string",     "required": true }
                 },
             
                 "cases":{
                     "RequestHandshake":[{ "request": "HANDSHAKE"}, {
-                        "clientId"  : { "type"  : "string",     "required": true }
                     }],
                     "ResponseHandshake":[{ "response": "HANDSHAKE"}, {
-                        "clientId"  : { "type"  : "string",     "required": true },
                         "allowed"   : { "type"  : "boolean",    "required": true },
                         "token"     : { "type"  : "string",     "optional": true },
                         "reason"    : { "in"    : "Reasons",    "optional": true },
                         "error"     : { "type"  : "string",     "optional": true }
+                    }],
+                    "Heartbeat":[{ "request": "HEARTBEAT"}, {
                     }]
                 },
             
                 "definitions": {
-                    "Requests"  : ["HANDSHAKE", "AUTH"],
-                    "Responses" : ["HANDSHAKE", "AUTH"],
-                    "Reasons"   : ["FAIL_AUTH", "NO_TOKEN_FOUND"]
+                    "Requests"  : ["HANDSHAKE", "HEARTBEAT"],
+                    "Responses" : ["HANDSHAKE", "HEARTBEAT"],
+                    "Reasons"   : ["FAIL_AUTH", "NO_TOKEN_FOUND", "NO_CLIENT_ID_FOUND"]
                 }
             }
 }

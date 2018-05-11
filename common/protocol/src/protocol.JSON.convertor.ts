@@ -10,20 +10,19 @@ interface IConditionDescription {
     type    : any
 }
 
-const DEFAULT_FIELDS : { [key: string]: any } = {
-    __token: { type: 'string', required: false, default: '""', setter: 'setToken', getter: 'getToken' }
-};
-
 const INJECTIONS_MODULES = [
     'protocol.inject.generic.ts',
     'protocol.inject.validator.ts',
     'protocol.inject.parser.ts',
-    'protocol.inject.token.ts'
+    'protocol.inject.token.ts',
+    'protocol.inject.root.ts'
 ];
 
 const INJECTIONS_COMMENT_OUT = [
     { reg: /declare var/g, replaceTo: '// declare var' }
 ];
+
+const ROOT_CLASS = 'ProtocolMessage';
 
 class Injections {
 
@@ -389,7 +388,7 @@ ${enumArray.map((key: string, index: number)=>{
         return parameters;
     }
 
-    private _getClassStr(properties: any, property: string, parent: string = '', conditions: { [key:string] : IConditionDescription } = {}, parentProps: any = {}){
+    private _getClassStr(properties: any, property: string, parent: string = ROOT_CLASS, conditions: { [key:string] : IConditionDescription } = {}, parentProps: any = {}){
         return `
 export class ${property} ${parent !== '' ? ('extends ' + parent) : ''}{
 
@@ -399,10 +398,6 @@ ${Object.keys(properties).map((prop) => {
     } else {
         return `\tpublic ${prop}: ${this._getTypeOfPrimitive(prop, properties[prop])}${properties[prop][SCHEME.AVAILABILITY.optional] ? (' | ' + Tools.EPrimitiveTypes.undefined) : ''};`
     }
-}).join('\n')}
-${Object.keys(DEFAULT_FIELDS).map((prop: string) => {
-    const description: any = DEFAULT_FIELDS[prop];
-    return `\tpublic ${prop}${(description.required ? '' : '?')}: ${description.type} = ${description.default};`;
 }).join('\n')}
     static __signature: string = '${this._getSignature(property, parent)}';
     public __signature: string = ${property}.__signature;
@@ -430,11 +425,11 @@ ${Object.keys(properties).map((prop) => {
     };
     
     constructor(properties: { ${this._getParametersDeclaration(properties, conditions, parentProps).join(', ')} }) {
-        ${parent === '' ? '' : `super(Object.assign(properties, { 
-        ${this._getConditionsDefinitions('properties', conditions).map((str: string)=>{
-            return `\t${str}`;
-        }).join(',\n')}
-        }));`}
+        ${parent === '' ? '' : (parent === ROOT_CLASS ? `super();` : `super(Object.assign(properties, { 
+            ${this._getConditionsDefinitions('properties', conditions).map((str: string)=>{
+                return `\t${str}`;
+            }).join(',\n')}
+            }));`)}
 
         const name  : string = '${property}';
 
@@ -457,22 +452,6 @@ ${Object.keys(properties).map((prop) => {
         }).filter(x => x !== null).join('\n')}
 
     }
-
-    ${Object.keys(DEFAULT_FIELDS).map((prop: string) => {
-        const description: any = DEFAULT_FIELDS[prop];
-        let str = '';
-        if (description.getter !== void 0){
-            str += `public ${description.getter}() {
-        return this.${prop};
-    }`
-        }
-        if (description.setter !== void 0){
-            str += `${str !== '' ? '\n\n\t' : ''}public ${description.setter}(value: ${description.type}) {
-        this.${prop} = value;
-    }`
-        }
-        return str === '' ? null : str;
-    }).filter(x => x !== null).join('\n')}
 
 }
 `;

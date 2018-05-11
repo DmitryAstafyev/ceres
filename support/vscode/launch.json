@@ -1,0 +1,40 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Protocol CLI",
+            "program": "${workspaceFolder}/common/protocol/cli/src/generate.ts",
+            "outFiles": [
+                "${workspaceFolder}/common/protocol/cli/build/**/*.js"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Playground Server",
+            "program": "${workspaceFolder}/playground/server/src/main.ts",
+            "outFiles": [
+                "${workspaceFolder}/playground/server/build/**/*.js"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Protocol Jasmine-ts Tests",
+            "program": "${workspaceFolder}/common/protocol/node_modules/jasmine-ts/lib/index.js",
+            "args": [
+              "${workspaceFolder}/common/protocol/**/*.spec.ts",
+            ],
+            "stopOnEntry": false,
+            "cwd": "${workspaceFolder}/common/protocol",
+            "protocol": "inspector",
+            "outputCapture":"std"
+        }
+    ]
+}

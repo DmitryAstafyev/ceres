@@ -7,7 +7,8 @@ const SETTINGS = {
 	/*
 	* Timeout should be twise less then timeout on client. For example client has 30 sec -> server should have 15 sec.
 	*/
-	RESET_TIMEOUT: 5000 //15sec
+	RESET_TIMEOUT: 5000, //15sec
+    SAFELY_SEND_TIMEOUT: 3000, //ms
 };
 
 const CORS = {
@@ -133,7 +134,7 @@ export class Request extends EventEmitter {
 		});
 	}
 
-	public send({ headers = {}, data = null} : { headers?: { [key: string]: string }, data?: any}): Promise<void> {
+	public send({ headers = {}, data = '', safely = false} : { headers?: { [key: string]: string }, data?: string, safely?: boolean}): Promise<void> {
 		return new Promise((resolve, reject) => {
 			this._lifecircleUnsubscribe();
 			if (Tools.getTypeOf(headers) === Tools.EPrimitiveTypes.object && Object.keys(headers).length > 0){ 
@@ -141,13 +142,25 @@ export class Request extends EventEmitter {
 			} else {
 				this._response.writeHead(200, this._addCORSToHeaders(DEFAULT_HEADERS));
 			}
-			this._response.write(data, () => {
-				this._response.end(() => {
-					this.emit(this.EVENTS.onSent);
-					this.emit(this.EVENTS.onClose);
-					resolve();
+			if (safely) {
+				setTimeout(() => {
+					this._response.write(data, () => {
+						this._response.end(() => {
+							this.emit(this.EVENTS.onSent);
+							this.emit(this.EVENTS.onClose);
+							resolve();
+						});
+					});
+				}, SETTINGS.SAFELY_SEND_TIMEOUT);
+			} else {
+				this._response.write(data, () => {
+					this._response.end(() => {
+						this.emit(this.EVENTS.onSent);
+						this.emit(this.EVENTS.onClose);
+						resolve();
+					});
 				});
-			});
+			}
 		});
 	}
 }

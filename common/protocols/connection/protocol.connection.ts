@@ -1,6 +1,6 @@
 
 /*
-* This file generated automaticaly (UTC: Fri, 11 May 2018 07:17:55 GMT). 
+* This file generated automaticaly (UTC: Fri, 11 May 2018 13:12:35 GMT). 
 * Do not remove or change this code.
 */
 
@@ -319,38 +319,69 @@ export function getToken(smth: any): string | Error {
 }
 
 
+class ProtocolMessage {
+
+    public __token: string = '';
+
+    getToken(): string {
+        return this.__token;
+    }
+
+    setToken(token: string) {
+        if (typeof token !== 'string' || token.trim() === '') {
+            throw new Error(`As value of token can be used only {string} type, but gotten: ${(typeof token)}`);
+        }
+        if (this.__token !== '') {
+            throw new Error(`Token already has value. It's impossible to set value of token more then once.`);
+        }
+        this.__token = token;
+    }
+
+    getStr() {
+        return JSON.stringify(this);
+    }
+
+    getJSON() {
+        return JSON.parse(this.getStr());
+    }
+
+}
+
+
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 * Protocol implementation
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 export enum Requests {
 	HANDSHAKE = 0,
-	AUTH = 1,
+	HEARTBEAT = 1,
 };
 export enum Responses {
 	HANDSHAKE = 0,
-	AUTH = 1,
+	HEARTBEAT = 1,
 };
 export enum Reasons {
 	FAIL_AUTH = 0,
 	NO_TOKEN_FOUND = 1,
+	NO_CLIENT_ID_FOUND = 2,
 };
 
-export class Message {
+export class Message extends ProtocolMessage{
 
 	public request: Requests | undefined;
 	public response: Responses | undefined;
 	public readonly guid: string = __generic.guid();
-	public __token?: string = "";
-    static __signature: string = '63DC6819';
+	public clientId: string;
+    static __signature: string = '1EFD6368';
     public __signature: string = Message.__signature;
     static __rules : {[key:string]: any}   = {
 		"request": { "in": "Requests", "optional": true },
-		"response": { "in": "Responses", "optional": true }
+		"response": { "in": "Responses", "optional": true },
+		"clientId": { "type": "string", "required": true }
     };
     
-    constructor(properties: { request?:Requests, response?:Responses, guid?:string }) {
-        
+    constructor(properties: { request?:Requests, response?:Responses, guid?:string, clientId:string }) {
+        super();
 
         const name  : string = 'Message';
 
@@ -366,15 +397,8 @@ export class Message {
 
 		this.request = properties.request;
 		this.response = properties.response;
+		this.clientId = properties.clientId;
 
-    }
-
-    public getToken() {
-        return this.__token;
-    }
-
-	public setToken(value: string) {
-        this.__token = value;
     }
 
 }
@@ -382,18 +406,17 @@ export class Message {
 
 export class RequestHandshake extends Message{
 
-	public clientId: string;
-	public __token?: string = "";
+
     static __signature: string = '99E189F';
     public __signature: string = RequestHandshake.__signature;
     static __rules : {[key:string]: any}   = {
-		"clientId": { "type": "string", "required": true }
+
     };
     
-    constructor(properties: { clientId:string, request?: Requests, response?: Responses, guid?: string }) {
+    constructor(properties: { request?: Requests, response?: Responses, guid?: string, clientId: string }) {
         super(Object.assign(properties, { 
-        	request: Requests.HANDSHAKE
-        }));
+            	request: Requests.HANDSHAKE
+            }));
 
         const name  : string = 'RequestHandshake';
 
@@ -407,16 +430,8 @@ export class RequestHandshake extends Message{
             throw new Error(`Cannot initialize ${name} due errors: ${errors.map((error: Error)=>{ return error.message; }).join(', ')}`);
         }
 
-		this.clientId = properties.clientId;
 
-    }
 
-    public getToken() {
-        return this.__token;
-    }
-
-	public setToken(value: string) {
-        this.__token = value;
     }
 
 }
@@ -424,26 +439,23 @@ export class RequestHandshake extends Message{
 
 export class ResponseHandshake extends Message{
 
-	public clientId: string;
 	public allowed: boolean;
 	public token: string | undefined;
 	public reason: Reasons | undefined;
 	public error: string | undefined;
-	public __token?: string = "";
     static __signature: string = '5A3E1D6F';
     public __signature: string = ResponseHandshake.__signature;
     static __rules : {[key:string]: any}   = {
-		"clientId": { "type": "string", "required": true },
 		"allowed": { "type": "boolean", "required": true },
 		"token": { "type": "string", "optional": true },
 		"reason": { "in": "Reasons", "optional": true },
 		"error": { "type": "string", "optional": true }
     };
     
-    constructor(properties: { clientId:string, allowed:boolean, token?:string, reason?:Reasons, error?:string, request?: Requests, response?: Responses, guid?: string }) {
+    constructor(properties: { allowed:boolean, token?:string, reason?:Reasons, error?:string, request?: Requests, response?: Responses, guid?: string, clientId: string }) {
         super(Object.assign(properties, { 
-        	response: Responses.HANDSHAKE
-        }));
+            	response: Responses.HANDSHAKE
+            }));
 
         const name  : string = 'ResponseHandshake';
 
@@ -457,7 +469,6 @@ export class ResponseHandshake extends Message{
             throw new Error(`Cannot initialize ${name} due errors: ${errors.map((error: Error)=>{ return error.message; }).join(', ')}`);
         }
 
-		this.clientId = properties.clientId;
 		this.allowed = properties.allowed;
 		this.token = properties.token;
 		this.reason = properties.reason;
@@ -465,12 +476,37 @@ export class ResponseHandshake extends Message{
 
     }
 
-    public getToken() {
-        return this.__token;
-    }
+}
 
-	public setToken(value: string) {
-        this.__token = value;
+
+export class Heartbeat extends Message{
+
+
+    static __signature: string = '6918978B';
+    public __signature: string = Heartbeat.__signature;
+    static __rules : {[key:string]: any}   = {
+
+    };
+    
+    constructor(properties: { request?: Requests, response?: Responses, guid?: string, clientId: string }) {
+        super(Object.assign(properties, { 
+            	request: Requests.HEARTBEAT
+            }));
+
+        const name  : string = 'Heartbeat';
+
+        const errors = getInstanceErrors(name,
+            Heartbeat.__rules,
+            __SchemeEnums,
+            __SchemeClasses,
+            properties);
+        
+        if (errors instanceof Array){
+            throw new Error(`Cannot initialize ${name} due errors: ${errors.map((error: Error)=>{ return error.message; }).join(', ')}`);
+        }
+
+
+
     }
 
 }
@@ -479,7 +515,8 @@ export class ResponseHandshake extends Message{
 const __SchemeClasses : {[key:string]: any} = {
 	Message: Message,
 	RequestHandshake: RequestHandshake,
-	ResponseHandshake: ResponseHandshake
+	ResponseHandshake: ResponseHandshake,
+	Heartbeat: Heartbeat
 }       
         
 
@@ -494,7 +531,8 @@ export const Protocol : {[key:string]: any} = {
     //Classes
 	Message: Message,
 	RequestHandshake: RequestHandshake,
-	ResponseHandshake: ResponseHandshake, 
+	ResponseHandshake: ResponseHandshake,
+	Heartbeat: Heartbeat, 
     //Enums
 	Requests: Requests,
 	Responses: Responses,

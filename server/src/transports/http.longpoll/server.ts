@@ -9,7 +9,6 @@ import { Request } from './request';
 import * as Protocol from '../../protocols/connection/protocol.connection';
 
 const SETTINGS = {
-    NOT_AUTH_REQUEST_CLOSE_TIMEOUT: 3000, //ms
     POST_REQUEST_MAX_LENGTH: 100000
 };
 
@@ -18,6 +17,29 @@ const REQUEST_EVENTS = {
     end     : 'end'
 };
 
+interface IRequestCredential {
+    token: string,
+    clientId: string
+}
+
+export class Tokens {
+
+    private _tokens: Map<string, string> = new Map();
+
+    add(clientId: string): string {
+        const token = Tools.guid();
+        this._tokens.set(clientId, token);
+        return token;
+    }
+
+    isValid(clientId: string, token: string): boolean {
+        if (!this._tokens.has(clientId)){
+            return false;
+        }
+        return this._tokens.get(clientId) === token;
+    }
+}
+
 export class Server {
  
     private _logger     : Tools.Logger          = new Tools.Logger('Http.Server');
@@ -25,7 +47,8 @@ export class Server {
     private _parameters : DescConnection.ConnectionParameters;
     private _middleware : DescMiddleware.Middleware<HTTP.IncomingMessage, HTTP.ServerResponse>;
     private _http       : HTTP.Server;
- 
+    private _tokens     : Tokens = new Tokens();
+
     constructor(
         parameters: DescConnection.ConnectionParameters,
         middleware?: DescMiddleware.Middleware<HTTP.IncomingMessage, HTTP.ServerResponse>
@@ -94,58 +117,92 @@ export class Server {
         });
     }
 
+    private _validatePost(request: Request, post: any): IRequestCredential | Error {
+        const token     = Protocol.getToken(post);
+        const clientId  = post.clientId;
+        if (Tools.getTypeOf(clientId) !== Tools.EPrimitiveTypes.string || clientId.trim() === ''){
+            //Client ID isn't defined at all
+            const responseHandshake = new Protocol.ResponseHandshake({
+                clientId: '',
+                allowed: false,
+                reason: Protocol.Reasons.NO_CLIENT_ID_FOUND
+            });
+            request.send({data: responseHandshake.getStr()});
+            return new Error(`Client ID isn't defined.`);
+        }
+        if (token instanceof Error) {
+            //Token isn't defined at all
+            const responseHandshake = new Protocol.ResponseHandshake({
+                clientId: post.clientId,
+                allowed: false,
+                reason: Protocol.Reasons.NO_TOKEN_FOUND,
+                error: token.message
+            });
+            request.send({data: responseHandshake.getStr()});
+            return new Error(`Cannot detect token.`);
+        }
+        return {
+            token: token,
+            clientId: clientId
+        };
+    }
+
+    private _authClient(request: Request, credential: IRequestCredential, post: any) {
+        this._middleware.auth(request.getId(), post)
+            .then((auth: boolean) => {
+                if (!auth){
+                    return;
+                }
+                //Create a token
+                const token = this._tokens.add(credential.clientId);
+                //Send token to client
+                request.send({ data: (new Protocol.ResponseHandshake({
+                    clientId: credential.clientId,
+                    allowed: true,
+                    token: token
+                })).getStr()});
+                this._logger.debug(`Client ${credential.clientId} successfuly authorized.`)
+            })
+            .catch((error: Error) => {
+                request.send({ data: (new Protocol.ResponseHandshake({
+                    clientId: credential.clientId,
+                    allowed: false,
+                    reason: Protocol.Reasons.FAIL_AUTH
+                })).getStr()});
+                this._logger.debug(`Client ${credential.clientId} isn't authorized. Connection is refused.`)
+            });
+    }
+
     private _onRequest(request: HTTP.IncomingMessage, response: HTTP.ServerResponse){
         this._getPOSTData(request)
             .then((post: any) => {
                 const _request = new Request(Symbol(Tools.guid()), request, response);
-                const token = Protocol.getToken(post);
-                if (token instanceof Error) {
-                    const responseHandshake = new Protocol.ResponseHandshake({
-                        clientId: post.clientId,
-                        allowed: false,
-                        reason: Protocol.Reasons.NO_TOKEN_FOUND,
-                        error: token.message
-                    });
-                    _request.send({data: responseHandshake});
-                    return;
+                //Validate body of request
+                const credential = this._validatePost(_request, post);
+                if (credential instanceof Error) {
+                    return this._logger.debug(`Cannot processing request due error: ${credential.message}`);
+                }
+                //Authorization
+                if (credential.token === '') {
+                    return this._authClient(_request, credential, post);
                 }
                 //Get message
                 const message = Protocol.extract(post);
-                if (token === '') {
-                    //Case: not authorized request
-
-                }
-                console.log(message);
-                //Authorization of request
-                this._middleware.auth(_request.getId(), request)
-                    .then((auth: boolean) => {
-                        if (!auth){
-                            return this._closeNotAuthRequest(_request);
-                        }
+                if (message instanceof Protocol.Heartbeat){
                         //Add request to storage
                         this._requests.set(_request.getId(), _request);
                         //Subscribe on request's events
                         this._subscribeRequest(_request);
-                    })
-                    .catch((error: Error) => {
-                        //Close request immediately 
-                        _request.close();
-                    });
+                } else if (message instanceof Error) {
+                    this._logger.warn(`Cannot exctract message due error: ${message.message}`);
+                } else {
+                    this._logger.warn(`Not expected type of message: ${Tools.getTypeOf(message)}. Expected "Heartbeat".`);
+                }
             })
             .catch((error: Error) => {
                 this._logger.warn(`Cannot exctract request due error: ${error.message}`);
             });
     
-    }
-
-    private _closeNotAuthRequest(request: Request){
-        setTimeout(() => {
-            if (!(request instanceof Request)) {
-                return false;
-            }
-            request.close();
-            this._logger.debug(`Request ${request.getId().toString()} was closed, because athorization was failed on midleware level.`);
-        }, SETTINGS.NOT_AUTH_REQUEST_CLOSE_TIMEOUT);
     }
 
     private _send(message: string){
