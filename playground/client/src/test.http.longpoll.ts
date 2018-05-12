@@ -40,6 +40,9 @@ export default function test(){
     client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.connected, () => {
         output.add(`HTTP.Longpoll transport test: Connected`);
     });
+    client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.disconnected, () => {
+        output.add(`Client is disconnected.`, { color: 'rgb(255,255,0)'});
+    });
     client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.error, (error: any) => {
         output.add(`Error: ${error.message}; reason: ${error.reason}`, { color: 'rgb(255,0,0)'});
     });

@@ -225,6 +225,7 @@ export class Client extends Tools.EventEmitter {
     }
 
     private _reset() {
+        this._getState() === EClientStates.listening && this.emit(EClientEvents.disconnected);
         this._setToken('');
         this._setState(EClientStates.created);
         this._clientGUID = Tools.guid();      
