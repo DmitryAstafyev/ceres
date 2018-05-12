@@ -9,12 +9,18 @@ import { Request } from './request';
 import * as Protocol from '../../protocols/connection/protocol.connection';
 
 const SETTINGS = {
-    POST_REQUEST_MAX_LENGTH: 100000
+    POST_REQUEST_MAX_LENGTH: 100000,
+    TOKENS_CLEANUP_TIMEOUT: 30000,
 };
 
 const REQUEST_EVENTS = {
     data    : 'data',
     end     : 'end'
+};
+
+const HTTP_INCOME_MESSAGE_EVENTS = {
+    close: 'close',
+    aborted: 'aborted'
 };
 
 interface IRequestCredential {
@@ -24,23 +30,75 @@ interface IRequestCredential {
 
 export class Tokens {
 
-    private _tokens: Map<string, string> = new Map();
+    private _tokens : Map<string, { token: string, timestamp: number }> = new Map();
+    private _timer  : NodeJS.Timer | null = null;
+    
+    constructor(){
+        this.cleanup();
+    }
 
     add(clientId: string): string {
         const token = Tools.guid();
-        this._tokens.set(clientId, token);
+        this._tokens.set(clientId, {
+            token: token,
+            timestamp: (new Date()).getTime()
+        });
         return token;
     }
 
     isValid(clientId: string, token: string): boolean {
-        if (!this._tokens.has(clientId)){
+        if (!this.isRegistred(token)){
             return false;
         }
-        return this._tokens.get(clientId) === token;
+        const data = this._tokens.get(clientId);
+        return data !== void 0 ? (data.token === token ? true : false) : false;
     }
 
-    isRegistred(clientId: string) :boolean {
+    isRegistred(clientId: string): boolean {
         return this._tokens.has(clientId);
+    }
+
+    refresh(clientId: string) {
+        const data = this._tokens.get(clientId);
+        if (data === void 0) {
+            return;
+        }
+        this._tokens.set(clientId, {
+            token: data.token,
+            timestamp: (new Date()).getTime()
+        });
+    }
+
+    remove(clientId: string) {
+        this._tokens.delete(clientId);
+        console.log('removed token of ' + clientId);
+    }
+
+    destroy() {
+		if (this._timer === null) {
+			return false;
+		}
+		if (this._timer !== null) {
+			this._timer.unref();
+			this._timer = null;
+		}
+    }
+
+    private cleanup() {
+        this._timer = setTimeout(() => {
+            const timestamp: number = (new Date()).getTime();
+            const removed: Array<string> = [];
+            this._tokens.forEach((value, clientId: string) => {
+                if (timestamp - value.timestamp > SETTINGS.TOKENS_CLEANUP_TIMEOUT) {
+                    removed.push(clientId);
+                }
+            });
+            removed.forEach((clientId: string) => {
+                this._tokens.delete(clientId);
+            });
+            this.cleanup();
+            console.log('cleanup is done. removed: ' + removed.length + ' from ' + this._tokens.size);
+        }, SETTINGS.TOKENS_CLEANUP_TIMEOUT);
     }
 }
 
@@ -84,6 +142,7 @@ export class Server {
      */
     public destroy(): Promise<void> {
         return new Promise((resolve, reject) => {
+            this._tokens.destroy();
             this._http.close(resolve);
         });
     }
@@ -155,6 +214,16 @@ export class Server {
             request.send({data: responseHandshake.getStr(), safely: true});
             return new Error(`Token isn't provided, even client is already registred. Client ID: ${clientId}.`);
         }
+        if (token !== '' && !this._tokens.isRegistred(clientId)) {
+            //Client doesn't have registred token
+            const responseHandshake = new Protocol.ResponseHeartbeat({
+                clientId: post.clientId,
+                allowed: false,
+                reason: Protocol.Reasons.TOKEN_IS_WRONG
+            });
+            request.send({data: responseHandshake.getStr(), safely: true});
+            return new Error(`Token provided by client isn't registred. Client ID: ${clientId}.`);
+        }
         return {
             token: token,
             clientId: clientId
@@ -188,6 +257,12 @@ export class Server {
             });
     }
 
+    private _subscribeIncomeMessage(request: HTTP.IncomingMessage, clientId: string){
+        request.on(HTTP_INCOME_MESSAGE_EVENTS.aborted, () => {
+            this._tokens.remove(clientId);
+        });
+    }
+
     private _onRequest(request: HTTP.IncomingMessage, response: HTTP.ServerResponse){
         this._getPOSTData(request)
             .then((post: any) => {
@@ -197,19 +272,23 @@ export class Server {
                 if (credential instanceof Error) {
                     return this._logger.debug(`Cannot processing request due error: ${credential.message}`);
                 }
+                //Subscribe HTTP.IncomingMessage events
+                this._subscribeIncomeMessage(request, credential.clientId);
                 //Authorization: not authorized
                 if (credential.token === '') {
                     return this._authClient(_request, credential, post);
                 }
                 //Get message
                 const message = Protocol.extract(post);
-                if (message instanceof Protocol.RequestHeartbeat){
+                if (message instanceof Protocol.RequestHeartbeat) {
                     //Add request to storage
                     this._requests.set(_request.getId(), _request);
                     //Subscribe on request's events
                     this._subscribeRequest(_request);
                     //Set expired response
                     _request.setExpiredResponse(this._getExpiredResponse(credential));
+                    //Update token date
+                    this._tokens.refresh(credential.clientId);
                 } else if (message instanceof Error) {
                     this._logger.warn(`Cannot exctract message due error: ${message.message}`);
                 } else {
@@ -219,7 +298,6 @@ export class Server {
             .catch((error: Error) => {
                 this._logger.warn(`Cannot exctract request due error: ${error.message}`);
             });
-    
     }
 
     private _send(message: string){
@@ -243,7 +321,8 @@ export class Server {
 
     private _getExpiredResponse(credential: IRequestCredential): string {
         const responseHeartbeat = new Protocol.ResponseHeartbeat({
-            clientId: credential.clientId
+            clientId: credential.clientId,
+            allowed: true
         });
         responseHeartbeat.setToken(credential.token);
         return responseHeartbeat.getStr();

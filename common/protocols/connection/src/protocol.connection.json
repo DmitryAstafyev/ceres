@@ -18,13 +18,15 @@
                     "RequestHeartbeat":[{ "request": "HEARTBEAT"}, {
                     }],
                     "ResponseHeartbeat":[{ "response": "HEARTBEAT"}, {
+                        "allowed"   : { "type"  : "boolean",    "required": true },
+                        "reason"    : { "in"    : "Reasons",    "optional": true }
                     }]
                 },
             
                 "definitions": {
                     "Requests"  : ["HANDSHAKE", "HEARTBEAT"],
                     "Responses" : ["HANDSHAKE", "HEARTBEAT"],
-                    "Reasons"   : ["FAIL_AUTH", "NO_TOKEN_FOUND", "NO_CLIENT_ID_FOUND", "NO_TOKEN_PROVIDED"]
+                    "Reasons"   : ["FAIL_AUTH", "NO_TOKEN_FOUND", "NO_CLIENT_ID_FOUND", "NO_TOKEN_PROVIDED", "TOKEN_IS_WRONG"]
                 }
             }
 }

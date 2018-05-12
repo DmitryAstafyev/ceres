@@ -117,19 +117,21 @@ export class Client {
     }
 
     private _onExpiredRequest(request: Request, error: Error){
-        this._logger.debug(`Request guid: ${request.getId()} is expired due error: ${Tools.inspect(error)}`);
+        this._logger.dev(`Request guid: ${request.getId()} is expired due error: ${Tools.inspect(error)}`);
+        this._reset();
         this._unregisterRequest(request);
         this._repeat(ERepeatReason.expired);
     }
 
     private _onErrorRequest(request: Request, error: Error){
-        this._logger.debug(`Request guid: ${request.getId()} is finished due error: ${Tools.inspect(error)}`);
+        this._logger.dev(`Request guid: ${request.getId()} is finished due error: ${Tools.inspect(error)}`);
+        this._reset();
         this._unsubscribeRequest(request);
         this._repeat(ERepeatReason.error);
     }
 
     private _onDoneRequest(request: Request, response: any){
-        this._logger.debug(`Request guid: ${request.getId()} is finished successfuly: ${Tools.inspect(response)}`);
+        this._logger.dev(`Request guid: ${request.getId()} is finished successfuly: ${Tools.inspect(response)}`);
         this._unsubscribeRequest(request);
         const message = Protocol.extract(response);
         if (message instanceof Error) {
@@ -151,7 +153,12 @@ export class Client {
                 break;
             case EClientStates.listening:
                 if (message instanceof Protocol.ResponseHeartbeat){
-                    this._logger.debug(`Heartbeat...`);
+                    if (!message.allowed) {
+                        this._reset();
+                        this._logger.debug(`Token isn't accepted by server. Try reregister...`);
+                    } else {
+                        this._logger.debug(`Heartbeat [${(new Date()).toUTCString()}]...`);
+                    }
                 }
                 break;
         }
@@ -182,6 +189,12 @@ export class Client {
 
     private _getState(): EClientStates {
         return this._state;
+    }
+
+    private _reset() {
+        this._setToken('');
+        this._setState(EClientStates.created);
+        this._clientGUID = Tools.guid();      
     }
 
 }

@@ -1,6 +1,6 @@
 
 /*
-* This file generated automaticaly (UTC: Fri, 11 May 2018 21:53:34 GMT). 
+* This file generated automaticaly (UTC: Sat, 12 May 2018 01:01:45 GMT). 
 * Do not remove or change this code.
 */
 
@@ -365,6 +365,7 @@ export enum Reasons {
 	NO_TOKEN_FOUND = 1,
 	NO_CLIENT_ID_FOUND = 2,
 	NO_TOKEN_PROVIDED = 3,
+	TOKEN_IS_WRONG = 4,
 };
 
 export class Message extends ProtocolMessage{
@@ -512,14 +513,16 @@ export class RequestHeartbeat extends Message{
 
 export class ResponseHeartbeat extends Message{
 
-
+	public allowed: boolean;
+	public reason: Reasons | undefined;
     static __signature: string = '47172DEC';
     public __signature: string = ResponseHeartbeat.__signature;
     static __rules : {[key:string]: any}   = {
-
+		"allowed": { "type": "boolean", "required": true },
+		"reason": { "in": "Reasons", "optional": true }
     };
     
-    constructor(properties: { request?: Requests, response?: Responses, guid?: string, clientId: string }) {
+    constructor(properties: { allowed:boolean, reason?:Reasons, request?: Requests, response?: Responses, guid?: string, clientId: string }) {
         super(Object.assign(properties, { 
             	response: Responses.HEARTBEAT
             }));
@@ -536,7 +539,8 @@ export class ResponseHeartbeat extends Message{
             throw new Error(`Cannot initialize ${name} due errors: ${errors.map((error: Error)=>{ return error.message; }).join(', ')}`);
         }
 
-
+		this.allowed = properties.allowed;
+		this.reason = properties.reason;
 
     }
 
