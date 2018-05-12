@@ -22,10 +22,18 @@ export enum EClientStates {
     listening = 'listening'
 }
 
-export class Client {
+export enum EClientEvents {
+    connected = 'connected',
+    disconnected = 'disconnected',
+    error = 'error',
+    heartbeat = 'heartbeat',
+    message = 'message'
+}
+
+export class Client extends Tools.EventEmitter {
     
     static STATES = EClientStates;
-
+    static EVENTS = EClientEvents;
     private _logger     : Tools.Logger          = new Tools.Logger('Http.Client');
     private _requests   : Map<string, Request>  = new Map();
     private _parameters : DescConnection.ConnectionParameters;
@@ -38,7 +46,7 @@ export class Client {
         parameters: DescConnection.ConnectionParameters,
         middleware?: DescMiddleware.Middleware
     ){
- 
+        super();
         if (!(parameters instanceof DescConnection.ConnectionParameters)) {
             if (parameters !== undefined){
                 this._logger.warn(`Get wrong parameters of connection. Expected <ConnectionParameters>. Gotten: `, parameters);
@@ -124,7 +132,11 @@ export class Client {
     }
 
     private _onErrorRequest(request: Request, error: Error){
-        this._logger.dev(`Request guid: ${request.getId()} is finished due error: ${Tools.inspect(error)}`);
+        this.emit(EClientEvents.error, {
+            message: this._logger.dev(`Request guid: ${request.getId()} is finished with error.`),
+            reason: undefined,
+            details: error.message
+        });
         this._reset();
         this._unsubscribeRequest(request);
         this._repeat(ERepeatReason.error);
@@ -135,32 +147,53 @@ export class Client {
         this._unsubscribeRequest(request);
         const message = Protocol.extract(response);
         if (message instanceof Error) {
-            this._logger.warn(`Cannot parse response due error: ${message.message}`);
+            this.emit(EClientEvents.error, {
+                message: this._logger.warn(`Cannot parse response due error: ${message.message}`),
+                reason: undefined,
+                details: undefined
+            });
             return this._repeat(ERepeatReason.done);
         }
         switch(this._getState()){
             case EClientStates.created:
                 if (message instanceof Protocol.ResponseHandshake) {
                     if (message.allowed && message.getToken() !== ''){
+                        this.emit(EClientEvents.connected);
                         this._setToken(message.getToken());
                         this._setState(EClientStates.listening);
                     } else {
-                        this._logger.warn(`Fail to authorize request due reason: ${message.reason} ${message.error !== void 0 ? `(${message.error})`: ''}`);
+                        this.emit(EClientEvents.error, {
+                            message: this._logger.warn(`Fail to authorize request due reason: ${message.reason} ${message.error !== void 0 ? `(${message.error})`: ''}`),
+                            reason: message.reason,
+                            details: undefined
+                        });
                     }
                 } else {
-                    this._logger.warn(`On this state (${this._getState()}) expected authorization confirmation, but gotten: ${Tools.inspect(message)}.`);
+                    this.emit(EClientEvents.error, {
+                        message: this._logger.warn(`On this state (${this._getState()}) expected authorization confirmation, but gotten: ${Tools.inspect(message)}.`),
+                        reason: undefined,
+                        details: undefined
+                    });
                 }
                 break;
             case EClientStates.listening:
                 if (message instanceof Protocol.ResponseHeartbeat){
                     if (!message.allowed) {
                         this._reset();
-                        this._logger.debug(`Token isn't accepted by server. Try reregister...`);
+                        this.emit(EClientEvents.error, {
+                            message: this._logger.debug(`Token isn't accepted by server. Try reregister...`),
+                            reason: undefined,
+                            details: undefined
+                        });
                     } else {
+                        this.emit(EClientEvents.heartbeat);
                         this._logger.debug(`Heartbeat [${(new Date()).toUTCString()}]...`);
                     }
                 }
                 break;
+            default:
+                this.emit(EClientEvents.message);
+                break
         }
         this._repeat(ERepeatReason.done);
     }

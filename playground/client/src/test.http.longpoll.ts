@@ -1,7 +1,32 @@
 import * as Transports from '../../../client/src/transports/index';
 import * as Enums from '../../../common/platform/enums/index';
 
+class Output {
+    private node: HTMLElement | null = null;
+
+    constructor() {
+        this._setTargetNode();
+    }
+
+    _setTargetNode() {
+        if (this.node === null) {
+            this.node = document.querySelector('#output');
+        }
+    }
+
+    add(str: string, style?: any) {
+        this._setTargetNode();
+        if (this.node !== null) {
+            const p = document.createElement('P');
+            p.innerHTML = `${(new Date).toTimeString()}: ${str}`;
+            Object.assign(p.style, style);
+            this.node.appendChild(p);
+            p.scrollIntoView();
+        }
+    }
+}
 export default function test(){
+    const output = new Output();
     //Create parameters for HTTP Longpoll client
     const parameters = new Transports.HTTPLongpollClient.ConnectionParameters({
         host: 'http://localhost',
@@ -11,4 +36,15 @@ export default function test(){
 
     //Create HTTP Longpoll client
     const client = new Transports.HTTPLongpollClient.Client(parameters);
+
+    client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.connected, () => {
+        output.add(`HTTP.Longpoll transport test: Connected`);
+    });
+    client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.error, (error: any) => {
+        output.add(`Error: ${error.message}; reason: ${error.reason}`, { color: 'rgb(255,0,0)'});
+    });
+    client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.heartbeat, () => {
+        output.add(`Heartbeat...`, { color: 'rgb(150,150,150)'});
+    });
+
 }
