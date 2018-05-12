@@ -71,7 +71,6 @@ export class Tokens {
 
     remove(clientId: string) {
         this._tokens.delete(clientId);
-        console.log('removed token of ' + clientId);
     }
 
     destroy() {
@@ -97,7 +96,6 @@ export class Tokens {
                 this._tokens.delete(clientId);
             });
             this.cleanup();
-            console.log('cleanup is done. removed: ' + removed.length + ' from ' + this._tokens.size);
         }, SETTINGS.TOKENS_CLEANUP_TIMEOUT);
     }
 }
