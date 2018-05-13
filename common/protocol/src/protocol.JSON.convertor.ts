@@ -24,6 +24,8 @@ const INJECTIONS_COMMENT_OUT = [
 
 const ROOT_CLASS = 'ProtocolMessage';
 
+const SIGNATURE = '__signature';
+
 class Injections {
 
     get(){
@@ -67,23 +69,33 @@ export class ProtocolJSONConvertor{
     private _implementation : string = '';
     private _hashes         : Array<string> = [];
     private _injections     : Array<string> = [];
+    private _version        : string;
+    private _rootClassName  : string;
+
 
     constructor(JSON: any, injections: Array<string> = []){
         if (Tools.getTypeOf(JSON) !== Tools.EPrimitiveTypes.object){
             throw new Error(this._logger.error(`Expects {object} as parameter, but was gotten: ${Tools.inspect(JSON)}`));
         }
 
-        if (Object.keys(JSON).length !== 1){
-            throw new Error(this._logger.error(`Expects {object} with one root property as parameter, but was gotten: ${Tools.inspect(JSON)}`));
+        if (Tools.getTypeOf(JSON.version) !== Tools.EPrimitiveTypes.string || JSON.version.trim() === ''){
+            throw new Error(this._logger.error(`Root level of protocol should have property "version" {string}.`));
         }
 
-        const className = Object.keys(JSON)[0];
-        const root      = JSON[className];
+        if (Object.keys(JSON).length !== 2){
+            throw new Error(this._logger.error(`Expects {object} with one root property as parameter and property "varsion" {string}, but was gotten: ${Tools.inspect(JSON)}`));
+        }
+
+        this._version   = JSON.version;
+        delete JSON.version;
+
+        this._rootClassName = Object.keys(JSON)[0];
+        const root          = JSON[this._rootClassName];
 
         if (!this._isComplexEntity(root)){
             throw new Error(this._logger.error(`root level should be entity with next sections: ${Object.keys(SCHEME.ENTITY).join(', ')}`));
         }
-        this._parseComplexEtity(className, root);
+        this._parseComplexEtity(this._rootClassName, root);
 
         if (injections instanceof Array && injections.length > 0){
             this._injections = injections;
@@ -366,6 +378,10 @@ ${enumArray.map((key: string, index: number)=>{
         return hash;
     }
 
+    private _getProtocolSignature(): string {
+        return Tools.hash(this._version + this._rootClassName + this._hashes.join(''));
+    }
+
     private _getParametersDeclaration(properties: any, conditions: { [key:string] : IConditionDescription } = {}, parentProps: { [key:string] : any } = {}){
         let parameters = Object.keys(properties).map((prop) => {
             return `${prop}${properties[prop][SCHEME.AVAILABILITY.optional]? '?' :''}:${this._getTypeOfPrimitive(prop, properties[prop])}`;
@@ -399,8 +415,8 @@ ${Object.keys(properties).map((prop) => {
         return `\tpublic ${prop}: ${this._getTypeOfPrimitive(prop, properties[prop])}${properties[prop][SCHEME.AVAILABILITY.optional] ? (' | ' + Tools.EPrimitiveTypes.undefined) : ''};`
     }
 }).join('\n')}
-    static __signature: string = '${this._getSignature(property, parent)}';
-    public __signature: string = ${property}.__signature;
+    static ${SIGNATURE}: string = '${this._getSignature(property, parent)}';
+    public ${SIGNATURE}: string = ${property}.${SIGNATURE};
     static __rules : {[key:string]: any}   = {
 ${Object.keys(properties).map((prop) => {
     const description = properties[prop];
@@ -508,7 +524,8 @@ ${Object.keys(this._classes).map((className: string)=>{
 ${Object.keys(this._enums).map((enumName: string)=>{
         return `\t${enumName}: ${enumName}`;
     }).join(',\n')},
-    extract: __parser.convert.bind(__parser)
+    extract: __parser.convert.bind(__parser),
+    ${SIGNATURE}: "${this._getProtocolSignature()}"
 }     
         `;
     }

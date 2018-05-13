@@ -4,7 +4,7 @@ import * as DescConnection from './connection/index';
 import * as DescMiddleware from '../../infrastructure/middleware/index';
 import { Request } from './request';
 import * as Protocol from '../../protocols/connection/protocol.connection';
-import { IClientInterface } from '../../interfaces/interface.client';
+import { ITransportInterface } from '../../platform/interfaces/interface.transport';
 
 enum ERepeatTimeout {
     error = 1000,
@@ -31,7 +31,7 @@ export enum EClientEvents {
     message = 'message'
 }
 
-export class Client extends Tools.EventEmitter implements IClientInterface {
+export class Client extends Tools.EventEmitter implements ITransportInterface {
     
     static STATES = EClientStates;
     static EVENTS = EClientEvents;

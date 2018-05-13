@@ -1,6 +1,6 @@
 
 /*
-* This file generated automaticaly (UTC: Sat, 12 May 2018 15:50:27 GMT). 
+* This file generated automaticaly (UTC: Sun, 13 May 2018 21:55:37 GMT). 
 * Do not remove or change this code.
 */
 
@@ -771,7 +771,8 @@ export const Protocol : {[key:string]: any} = {
 	Requests: Requests,
 	Responses: Responses,
 	Reasons: Reasons,
-    extract: __parser.convert.bind(__parser)
+    extract: __parser.convert.bind(__parser),
+    __signature: "5B1A3C48"
 }     
         
         

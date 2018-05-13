@@ -5,6 +5,7 @@
             "event"     : { "findin": "protocol.events.json",   "optional": true },
             "request"   : { "findin": "protocol.requests.json", "optional": true }
         }
-    }
+    },
+    "version": "0.0.1"
 
 }

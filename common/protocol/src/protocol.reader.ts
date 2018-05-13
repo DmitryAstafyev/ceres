@@ -25,7 +25,7 @@ export class Reader {
         this._path = Path.dirname(this._file);
     }
 
-    public read(file: string = ''): Promise<IReaderResult>{
+    public read(file: string = '', root: boolean = true): Promise<IReaderResult>{
         file = Tools.getTypeOf(file) === Tools.EPrimitiveTypes.string ? (file.trim() !== '' ? Path.join(this._path, file) : this._file) : this._file;
         return new Promise((resolve, reject) => {
 
@@ -44,7 +44,7 @@ export class Reader {
                     reject(json);
                 }
 
-                this._validate(json).then(resolve).catch(reject);
+                this._validate(json, root).then(resolve).catch(reject);
             });
         });
     }
@@ -59,13 +59,22 @@ export class Reader {
         return json;
     }
 
-    private _validate(json: any): Promise<IReaderResult> {
+    private _validate(json: any, root: boolean = false): Promise<IReaderResult> {
         return new Promise((resolve, reject) => {
             if (Tools.getTypeOf(json) !== Tools.EPrimitiveTypes.object){
                 return reject(new Error(logger.error(`Target entity isn't an object.`)));
             }
-            if (Object.keys(json).length !== 1){
-                return reject(new Error(logger.error(`Expected on root level only one property - name of entity (class).`)));
+            if (root){
+                if (Tools.getTypeOf(json.version) !== Tools.EPrimitiveTypes.string){
+                    return reject(new Error(logger.error(`Root level of protocol should have property "version" {string}.`)));
+                }
+                if (Object.keys(json).length !== 2){
+                    return reject(new Error(logger.error(`Expected on root level one property - name of entity (class) and property "version" {string}.`)));
+                }
+            } else {
+                if (Object.keys(json).length !== 1){
+                    return reject(new Error(logger.error(`Expected on root level one property - name of entity (class).`)));
+                }
             }
             const className = Object.keys(json)[0];
             let body = json[className];
@@ -101,7 +110,7 @@ export class Reader {
                 } as IReaderResult);
             }
             Promise.all(Object.keys(refs).map((prop: string) => {
-                return this.read(refs[prop])
+                return this.read(refs[prop], false)
                     .then((nested: IReaderResult)=>{
                         body[SCHEME.ENTITY.default][prop][SCHEME.TYPE_DEF.type] = nested.className;
                         if (body[SCHEME.ENTITY.definitions] === void 0){

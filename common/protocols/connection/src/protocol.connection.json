@@ -1,54 +1,55 @@
 {
     "Message": {
-                "default": {
-                    "request"   : { "in"    : "Requests",   "optional": true },
-                    "response"  : { "in"    : "Responses",  "optional": true },
-                    "guid"      : { "type"  : "guid",       "optional": true },
-                    "clientId"  : { "type"  : "string",     "required": true }
-                },
-            
-                "cases":{
-                    "RequestHandshake":[{ "request": "HANDSHAKE"}, {
-                    }],
-                    "ResponseHandshake":[{ "response": "HANDSHAKE"}, {
-                        "allowed"   : { "type"  : "boolean",    "required": true },
-                        "reason"    : { "in"    : "Reasons",    "optional": true },
-                        "error"     : { "type"  : "string",     "optional": true }
-                    }],
-                    "RequestHeartbeat":[{ "request": "HEARTBEAT"}, {
-                    }],
-                    "ResponseHeartbeat":[{ "response": "HEARTBEAT"}, {
-                        "allowed"   : { "type"  : "boolean",    "required": true },
-                        "reason"    : { "in"    : "Reasons",    "optional": true }
-                    }],
-                    "EventRequest":[{ "request": "EVENT"}, {
-                        "body"      : { "type"  : "string",     "required": true },
-                        "protocol"  : { "type"  : "string",     "required": true },
-                        "eventId"   : { "type"  : "guid",       "optional": true }
-                    }],
-                    "EventResponse":[{ "response": "EVENT"}, {
-                        "eventId"   : { "type"  : "string",     "required": true },
-                        "sent"      : { "type"  : "number",     "required": true }
-                    }],
-                    "RequestRequest":[{ "request": "REQUEST"}, {
-                        "body"      : { "type"  : "string",     "required": true },
-                        "protocol"  : { "type"  : "string",     "required": true },
-                        "requestId" : { "type"  : "guid",       "optional": true }
-                    }],
-                    "RequestResponse":[{ "response": "REQUEST"}, {
-                        "requestId" : { "type"  : "string",     "required": true },
-                        "processing": { "type"  : "boolean",    "required": true }
-                    }],
-                    "RequestResultResponse":[{ "response": "REQUEST_RESULT"}, {
-                        "requestId" : { "type"  : "string",     "required": true },
-                        "body"      : { "type"  : "string",     "required": true }
-                    }]
-                },
-            
-                "definitions": {
-                    "Requests"  : ["HANDSHAKE", "HEARTBEAT", "EVENT", "REQUEST"],
-                    "Responses" : ["HANDSHAKE", "HEARTBEAT", "EVENT", "REQUEST", "REQUEST_RESULT"],
-                    "Reasons"   : ["FAIL_AUTH", "NO_TOKEN_FOUND", "NO_CLIENT_ID_FOUND", "NO_TOKEN_PROVIDED", "TOKEN_IS_WRONG"]
-                }
-            }
+        "default": {
+            "request"   : { "in"    : "Requests",   "optional": true },
+            "response"  : { "in"    : "Responses",  "optional": true },
+            "guid"      : { "type"  : "guid",       "optional": true },
+            "clientId"  : { "type"  : "string",     "required": true }
+        },
+    
+        "cases":{
+            "RequestHandshake":[{ "request": "HANDSHAKE"}, {
+            }],
+            "ResponseHandshake":[{ "response": "HANDSHAKE"}, {
+                "allowed"   : { "type"  : "boolean",    "required": true },
+                "reason"    : { "in"    : "Reasons",    "optional": true },
+                "error"     : { "type"  : "string",     "optional": true }
+            }],
+            "RequestHeartbeat":[{ "request": "HEARTBEAT"}, {
+            }],
+            "ResponseHeartbeat":[{ "response": "HEARTBEAT"}, {
+                "allowed"   : { "type"  : "boolean",    "required": true },
+                "reason"    : { "in"    : "Reasons",    "optional": true }
+            }],
+            "EventRequest":[{ "request": "EVENT"}, {
+                "body"      : { "type"  : "string",     "required": true },
+                "protocol"  : { "type"  : "string",     "required": true },
+                "eventId"   : { "type"  : "guid",       "optional": true }
+            }],
+            "EventResponse":[{ "response": "EVENT"}, {
+                "eventId"   : { "type"  : "string",     "required": true },
+                "sent"      : { "type"  : "number",     "required": true }
+            }],
+            "RequestRequest":[{ "request": "REQUEST"}, {
+                "body"      : { "type"  : "string",     "required": true },
+                "protocol"  : { "type"  : "string",     "required": true },
+                "requestId" : { "type"  : "guid",       "optional": true }
+            }],
+            "RequestResponse":[{ "response": "REQUEST"}, {
+                "requestId" : { "type"  : "string",     "required": true },
+                "processing": { "type"  : "boolean",    "required": true }
+            }],
+            "RequestResultResponse":[{ "response": "REQUEST_RESULT"}, {
+                "requestId" : { "type"  : "string",     "required": true },
+                "body"      : { "type"  : "string",     "required": true }
+            }]
+        },
+    
+        "definitions": {
+            "Requests"  : ["HANDSHAKE", "HEARTBEAT", "EVENT", "REQUEST"],
+            "Responses" : ["HANDSHAKE", "HEARTBEAT", "EVENT", "REQUEST", "REQUEST_RESULT"],
+            "Reasons"   : ["FAIL_AUTH", "NO_TOKEN_FOUND", "NO_CLIENT_ID_FOUND", "NO_TOKEN_PROVIDED", "TOKEN_IS_WRONG"]
+        }
+    },
+    "version": "0.0.1"
 }
