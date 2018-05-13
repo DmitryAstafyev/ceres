@@ -4,6 +4,7 @@ import * as DescConnection from './connection/index';
 import * as DescMiddleware from '../../infrastructure/middleware/index';
 import { Request } from './request';
 import * as Protocol from '../../protocols/connection/protocol.connection';
+import { IClientInterface } from '../../interfaces/interface.client';
 
 enum ERepeatTimeout {
     error = 1000,
@@ -30,7 +31,7 @@ export enum EClientEvents {
     message = 'message'
 }
 
-export class Client extends Tools.EventEmitter {
+export class Client extends Tools.EventEmitter implements IClientInterface {
     
     static STATES = EClientStates;
     static EVENTS = EClientEvents;
@@ -229,6 +230,14 @@ export class Client extends Tools.EventEmitter {
         this._setToken('');
         this._setState(EClientStates.created);
         this._clientGUID = Tools.guid();      
+    }
+
+    public sendEvent(protocolSignature: string, body: string) {
+        return new Promise(() => {});
+    }
+
+    public sendRequest(protocolSignature: string, body: string) {
+        return new Promise(() => {});
     }
 
 }

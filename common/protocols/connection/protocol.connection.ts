@@ -1,6 +1,6 @@
 
 /*
-* This file generated automaticaly (UTC: Sat, 12 May 2018 01:01:45 GMT). 
+* This file generated automaticaly (UTC: Sat, 12 May 2018 15:50:27 GMT). 
 * Do not remove or change this code.
 */
 
@@ -355,10 +355,15 @@ class ProtocolMessage {
 export enum Requests {
 	HANDSHAKE = 0,
 	HEARTBEAT = 1,
+	EVENT = 2,
+	REQUEST = 3,
 };
 export enum Responses {
 	HANDSHAKE = 0,
 	HEARTBEAT = 1,
+	EVENT = 2,
+	REQUEST = 3,
+	REQUEST_RESULT = 4,
 };
 export enum Reasons {
 	FAIL_AUTH = 0,
@@ -547,12 +552,199 @@ export class ResponseHeartbeat extends Message{
 }
 
 
+export class EventRequest extends Message{
+
+	public body: string;
+	public protocol: string;
+	public readonly eventId: string = __generic.guid();
+    static __signature: string = 'FD7E792';
+    public __signature: string = EventRequest.__signature;
+    static __rules : {[key:string]: any}   = {
+		"body": { "type": "string", "required": true },
+		"protocol": { "type": "string", "required": true }
+    };
+    
+    constructor(properties: { body:string, protocol:string, eventId?:string, request?: Requests, response?: Responses, guid?: string, clientId: string }) {
+        super(Object.assign(properties, { 
+            	request: Requests.EVENT
+            }));
+
+        const name  : string = 'EventRequest';
+
+        const errors = getInstanceErrors(name,
+            EventRequest.__rules,
+            __SchemeEnums,
+            __SchemeClasses,
+            properties);
+        
+        if (errors instanceof Array){
+            throw new Error(`Cannot initialize ${name} due errors: ${errors.map((error: Error)=>{ return error.message; }).join(', ')}`);
+        }
+
+		this.body = properties.body;
+		this.protocol = properties.protocol;
+
+    }
+
+}
+
+
+export class EventResponse extends Message{
+
+	public eventId: string;
+	public sent: number;
+    static __signature: string = '3766E554';
+    public __signature: string = EventResponse.__signature;
+    static __rules : {[key:string]: any}   = {
+		"eventId": { "type": "string", "required": true },
+		"sent": { "type": "number", "required": true }
+    };
+    
+    constructor(properties: { eventId:string, sent:number, request?: Requests, response?: Responses, guid?: string, clientId: string }) {
+        super(Object.assign(properties, { 
+            	response: Responses.EVENT
+            }));
+
+        const name  : string = 'EventResponse';
+
+        const errors = getInstanceErrors(name,
+            EventResponse.__rules,
+            __SchemeEnums,
+            __SchemeClasses,
+            properties);
+        
+        if (errors instanceof Array){
+            throw new Error(`Cannot initialize ${name} due errors: ${errors.map((error: Error)=>{ return error.message; }).join(', ')}`);
+        }
+
+		this.eventId = properties.eventId;
+		this.sent = properties.sent;
+
+    }
+
+}
+
+
+export class RequestRequest extends Message{
+
+	public body: string;
+	public protocol: string;
+	public readonly requestId: string = __generic.guid();
+    static __signature: string = '78405EC7';
+    public __signature: string = RequestRequest.__signature;
+    static __rules : {[key:string]: any}   = {
+		"body": { "type": "string", "required": true },
+		"protocol": { "type": "string", "required": true }
+    };
+    
+    constructor(properties: { body:string, protocol:string, requestId?:string, request?: Requests, response?: Responses, guid?: string, clientId: string }) {
+        super(Object.assign(properties, { 
+            	request: Requests.REQUEST
+            }));
+
+        const name  : string = 'RequestRequest';
+
+        const errors = getInstanceErrors(name,
+            RequestRequest.__rules,
+            __SchemeEnums,
+            __SchemeClasses,
+            properties);
+        
+        if (errors instanceof Array){
+            throw new Error(`Cannot initialize ${name} due errors: ${errors.map((error: Error)=>{ return error.message; }).join(', ')}`);
+        }
+
+		this.body = properties.body;
+		this.protocol = properties.protocol;
+
+    }
+
+}
+
+
+export class RequestResponse extends Message{
+
+	public requestId: string;
+	public processing: boolean;
+    static __signature: string = '6D3F8A17';
+    public __signature: string = RequestResponse.__signature;
+    static __rules : {[key:string]: any}   = {
+		"requestId": { "type": "string", "required": true },
+		"processing": { "type": "boolean", "required": true }
+    };
+    
+    constructor(properties: { requestId:string, processing:boolean, request?: Requests, response?: Responses, guid?: string, clientId: string }) {
+        super(Object.assign(properties, { 
+            	response: Responses.REQUEST
+            }));
+
+        const name  : string = 'RequestResponse';
+
+        const errors = getInstanceErrors(name,
+            RequestResponse.__rules,
+            __SchemeEnums,
+            __SchemeClasses,
+            properties);
+        
+        if (errors instanceof Array){
+            throw new Error(`Cannot initialize ${name} due errors: ${errors.map((error: Error)=>{ return error.message; }).join(', ')}`);
+        }
+
+		this.requestId = properties.requestId;
+		this.processing = properties.processing;
+
+    }
+
+}
+
+
+export class RequestResultResponse extends Message{
+
+	public requestId: string;
+	public body: string;
+    static __signature: string = '4AF39486';
+    public __signature: string = RequestResultResponse.__signature;
+    static __rules : {[key:string]: any}   = {
+		"requestId": { "type": "string", "required": true },
+		"body": { "type": "string", "required": true }
+    };
+    
+    constructor(properties: { requestId:string, body:string, request?: Requests, response?: Responses, guid?: string, clientId: string }) {
+        super(Object.assign(properties, { 
+            	response: Responses.REQUEST_RESULT
+            }));
+
+        const name  : string = 'RequestResultResponse';
+
+        const errors = getInstanceErrors(name,
+            RequestResultResponse.__rules,
+            __SchemeEnums,
+            __SchemeClasses,
+            properties);
+        
+        if (errors instanceof Array){
+            throw new Error(`Cannot initialize ${name} due errors: ${errors.map((error: Error)=>{ return error.message; }).join(', ')}`);
+        }
+
+		this.requestId = properties.requestId;
+		this.body = properties.body;
+
+    }
+
+}
+
+
 const __SchemeClasses : {[key:string]: any} = {
 	Message: Message,
 	RequestHandshake: RequestHandshake,
 	ResponseHandshake: ResponseHandshake,
 	RequestHeartbeat: RequestHeartbeat,
-	ResponseHeartbeat: ResponseHeartbeat
+	ResponseHeartbeat: ResponseHeartbeat,
+	EventRequest: EventRequest,
+	EventResponse: EventResponse,
+	RequestRequest: RequestRequest,
+	RequestResponse: RequestResponse,
+	RequestResultResponse: RequestResultResponse
 }       
         
 
@@ -569,7 +761,12 @@ export const Protocol : {[key:string]: any} = {
 	RequestHandshake: RequestHandshake,
 	ResponseHandshake: ResponseHandshake,
 	RequestHeartbeat: RequestHeartbeat,
-	ResponseHeartbeat: ResponseHeartbeat, 
+	ResponseHeartbeat: ResponseHeartbeat,
+	EventRequest: EventRequest,
+	EventResponse: EventResponse,
+	RequestRequest: RequestRequest,
+	RequestResponse: RequestResponse,
+	RequestResultResponse: RequestResultResponse, 
     //Enums
 	Requests: Requests,
 	Responses: Responses,
