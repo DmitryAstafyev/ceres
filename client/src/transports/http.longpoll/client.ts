@@ -42,10 +42,12 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
     private _state      : EClientStates = EClientStates.created;
     private _clientGUID : string = Tools.guid();
     private _token      : string = '';
+    private _signature  : string | null = null;//Signature of default protocol
 
     constructor(
         parameters: DescConnection.ConnectionParameters,
-        middleware?: DescMiddleware.Middleware
+        middleware?: DescMiddleware.Middleware,
+        protocol?: any
     ){
         super();
         if (!(parameters instanceof DescConnection.ConnectionParameters)) {
@@ -64,8 +66,19 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
 
         this._parameters = parameters;
         this._middleware = middleware;
-
+        const sigature = 
+        this._signature = this._getProtocolSignature(protocol) instanceof Error ? null : (this._getProtocolSignature(protocol) as string);
         this._proceed();
+    }
+
+    private _getProtocolSignature(protocol: any): string | Error {
+        if (typeof protocol !== 'object' || protocol === null) {
+            return new Error('No protocol found');
+        }
+        if (Tools.getTypeOf(protocol.__signature) !== Tools.EPrimitiveTypes.string || protocol.__signature.trim() === ''){
+            return new Error('No sigature of protocol found');
+        }
+        return protocol.__signature;
     }
 
     /**
@@ -232,12 +245,55 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
         this._clientGUID = Tools.guid();      
     }
 
-    public sendEvent(protocolSignature: string, body: string) {
-        return new Promise(() => {});
+    private _extractProtocolSignature(protocol: any): string | Error {
+        const signature = this._getProtocolSignature(protocol);
+        if (Tools.getTypeOf(protocol) !== Tools.EPrimitiveTypes.undefined && signature instanceof Error){
+            return signature;
+        }
+        if (signature instanceof Error && this._signature === null) {
+            return new Error(`Protocol isn't defined. Protocol can be defined as argument of this method ("event") or in constructor of client.`);
+        }
+        return signature;
     }
 
-    public sendRequest(protocolSignature: string, body: string) {
-        return new Promise(() => {});
+    public event(event: any, protocol?: any) {
+        return new Promise((resolve, reject) => {
+            const signature = this._extractProtocolSignature(protocol);
+            if (signature instanceof Error){
+                return reject(signature);
+            }
+            if (Tools.getTypeOf(event) === Tools.EPrimitiveTypes.undefined || event === null || Tools.getTypeOf(event.getStr) !== Tools.EPrimitiveTypes.string){
+                return reject(new Error(`Invalid instance of event. Please be sure you are using valid protocol.`));
+            }
+            const instance = new Protocol.EventRequest({
+                protocol: signature,
+                body: event.getStr(),
+                clientId: this._clientGUID
+            });
+            instance.setToken(this._getToken());
+            const _request = new Request(this._clientGUID, this._parameters.getURL(), Enums.ERequestTypes.post, instance);
+            this._registerRequest(_request);
+            _request.send();
+            //Here should be storing [resolve, reject] functions 
+        });
+    }
+
+    public request(request: any, protocol?: any) {
+        return new Promise((resolve, reject) => {
+            const signature = this._extractProtocolSignature(protocol);
+            if (signature instanceof Error){
+                return reject(signature);
+            }
+            if (Tools.getTypeOf(request) === Tools.EPrimitiveTypes.undefined || request === null || Tools.getTypeOf(request.getStr) !== Tools.EPrimitiveTypes.string){
+                return reject(new Error(`Invalid instance of request. Please be sure you are using valid protocol.`));
+            }
+            const instance = new Protocol.RequestRequest({
+                protocol: signature,
+                body: request.getStr(),
+                clientId: this._clientGUID
+            });
+            //implementation
+        });
     }
 
 }

@@ -203,7 +203,7 @@ export class Server {
             return new Error(`Cannot detect token. Client ID: ${clientId}.`);
         }
         if (token === '' && this._tokens.isRegistred(clientId)) {
-            //Client is already registred
+            //Client is already registred, but token isn't provided
             const responseHandshake = new Protocol.ResponseHandshake({
                 clientId: post.clientId,
                 allowed: false,
