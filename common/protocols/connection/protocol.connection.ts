@@ -1,6 +1,6 @@
 
 /*
-* This file generated automaticaly (UTC: Fri, 01 Jun 2018 19:35:38 GMT). 
+* This file generated automaticaly (UTC: Sun, 03 Jun 2018 20:55:35 GMT). 
 * Do not remove or change this code.
 */
 
@@ -356,14 +356,20 @@ export enum Requests {
 	HANDSHAKE = 0,
 	HEARTBEAT = 1,
 	EVENT = 2,
-	REQUEST = 3,
+	SUBSCRIBE = 3,
+	UNSUBSCRIBE = 4,
+	UNSUBSCRIBE_ALL = 5,
+	REQUEST = 6,
 };
 export enum Responses {
 	HANDSHAKE = 0,
 	HEARTBEAT = 1,
 	EVENT = 2,
-	REQUEST = 3,
-	REQUEST_RESULT = 4,
+	SUBSCRIBE = 3,
+	UNSUBSCRIBE = 4,
+	UNSUBSCRIBE_ALL = 5,
+	REQUEST = 6,
+	REQUEST_RESULT = 7,
 };
 export enum Reasons {
 	FAIL_AUTH = 0,
@@ -625,6 +631,225 @@ export class EventResponse extends Message{
 }
 
 
+export class SubscribeRequest extends Message{
+
+	public signature: string;
+	public protocol: string;
+    static __signature: string = '130E11BE';
+    public __signature: string = SubscribeRequest.__signature;
+    static __rules : {[key:string]: any}   = {
+		"signature": { "type": "string", "required": true },
+		"protocol": { "type": "string", "required": true }
+    };
+    
+    constructor(properties: { signature:string, protocol:string, request?: Requests, response?: Responses, guid?: string, clientId: string }) {
+        super(Object.assign(properties, { 
+            	request: Requests.SUBSCRIBE
+            }));
+
+        const name  : string = 'SubscribeRequest';
+
+        const errors = getInstanceErrors(name,
+            SubscribeRequest.__rules,
+            __SchemeEnums,
+            __SchemeClasses,
+            properties);
+        
+        if (errors instanceof Array){
+            throw new Error(`Cannot initialize ${name} due errors: ${errors.map((error: Error)=>{ return error.message; }).join(', ')}`);
+        }
+
+		this.signature = properties.signature;
+		this.protocol = properties.protocol;
+
+    }
+
+}
+
+
+export class SubscribeResponse extends Message{
+
+	public signature: string;
+	public protocol: string;
+	public status: boolean;
+    static __signature: string = '71401604';
+    public __signature: string = SubscribeResponse.__signature;
+    static __rules : {[key:string]: any}   = {
+		"signature": { "type": "string", "required": true },
+		"protocol": { "type": "string", "required": true },
+		"status": { "type": "boolean", "required": true }
+    };
+    
+    constructor(properties: { signature:string, protocol:string, status:boolean, request?: Requests, response?: Responses, guid?: string, clientId: string }) {
+        super(Object.assign(properties, { 
+            	response: Responses.SUBSCRIBE
+            }));
+
+        const name  : string = 'SubscribeResponse';
+
+        const errors = getInstanceErrors(name,
+            SubscribeResponse.__rules,
+            __SchemeEnums,
+            __SchemeClasses,
+            properties);
+        
+        if (errors instanceof Array){
+            throw new Error(`Cannot initialize ${name} due errors: ${errors.map((error: Error)=>{ return error.message; }).join(', ')}`);
+        }
+
+		this.signature = properties.signature;
+		this.protocol = properties.protocol;
+		this.status = properties.status;
+
+    }
+
+}
+
+
+export class UnsubscribeRequest extends Message{
+
+	public signature: string;
+	public protocol: string;
+    static __signature: string = '5FDA0B89';
+    public __signature: string = UnsubscribeRequest.__signature;
+    static __rules : {[key:string]: any}   = {
+		"signature": { "type": "string", "required": true },
+		"protocol": { "type": "string", "required": true }
+    };
+    
+    constructor(properties: { signature:string, protocol:string, request?: Requests, response?: Responses, guid?: string, clientId: string }) {
+        super(Object.assign(properties, { 
+            	request: Requests.UNSUBSCRIBE
+            }));
+
+        const name  : string = 'UnsubscribeRequest';
+
+        const errors = getInstanceErrors(name,
+            UnsubscribeRequest.__rules,
+            __SchemeEnums,
+            __SchemeClasses,
+            properties);
+        
+        if (errors instanceof Array){
+            throw new Error(`Cannot initialize ${name} due errors: ${errors.map((error: Error)=>{ return error.message; }).join(', ')}`);
+        }
+
+		this.signature = properties.signature;
+		this.protocol = properties.protocol;
+
+    }
+
+}
+
+
+export class UnsubscribeResponse extends Message{
+
+	public signature: string;
+	public protocol: string;
+	public status: boolean;
+    static __signature: string = '78DB7595';
+    public __signature: string = UnsubscribeResponse.__signature;
+    static __rules : {[key:string]: any}   = {
+		"signature": { "type": "string", "required": true },
+		"protocol": { "type": "string", "required": true },
+		"status": { "type": "boolean", "required": true }
+    };
+    
+    constructor(properties: { signature:string, protocol:string, status:boolean, request?: Requests, response?: Responses, guid?: string, clientId: string }) {
+        super(Object.assign(properties, { 
+            	response: Responses.UNSUBSCRIBE
+            }));
+
+        const name  : string = 'UnsubscribeResponse';
+
+        const errors = getInstanceErrors(name,
+            UnsubscribeResponse.__rules,
+            __SchemeEnums,
+            __SchemeClasses,
+            properties);
+        
+        if (errors instanceof Array){
+            throw new Error(`Cannot initialize ${name} due errors: ${errors.map((error: Error)=>{ return error.message; }).join(', ')}`);
+        }
+
+		this.signature = properties.signature;
+		this.protocol = properties.protocol;
+		this.status = properties.status;
+
+    }
+
+}
+
+
+export class UnsubscribeAllRequest extends Message{
+
+	public protocol: string;
+    static __signature: string = '56672C38';
+    public __signature: string = UnsubscribeAllRequest.__signature;
+    static __rules : {[key:string]: any}   = {
+		"protocol": { "type": "string", "required": true }
+    };
+    
+    constructor(properties: { protocol:string, request?: Requests, response?: Responses, guid?: string, clientId: string }) {
+        super(Object.assign(properties, { 
+            	request: Requests.UNSUBSCRIBE_ALL
+            }));
+
+        const name  : string = 'UnsubscribeAllRequest';
+
+        const errors = getInstanceErrors(name,
+            UnsubscribeAllRequest.__rules,
+            __SchemeEnums,
+            __SchemeClasses,
+            properties);
+        
+        if (errors instanceof Array){
+            throw new Error(`Cannot initialize ${name} due errors: ${errors.map((error: Error)=>{ return error.message; }).join(', ')}`);
+        }
+
+		this.protocol = properties.protocol;
+
+    }
+
+}
+
+
+export class UnsubscribeAllResponse extends Message{
+
+	public protocol: string;
+	public status: boolean;
+    static __signature: string = '66F5B536';
+    public __signature: string = UnsubscribeAllResponse.__signature;
+    static __rules : {[key:string]: any}   = {
+		"protocol": { "type": "string", "required": true },
+		"status": { "type": "boolean", "required": true }
+    };
+    
+    constructor(properties: { protocol:string, status:boolean, request?: Requests, response?: Responses, guid?: string, clientId: string }) {
+        super(Object.assign(properties, { 
+            	response: Responses.UNSUBSCRIBE_ALL
+            }));
+
+        const name  : string = 'UnsubscribeAllResponse';
+
+        const errors = getInstanceErrors(name,
+            UnsubscribeAllResponse.__rules,
+            __SchemeEnums,
+            __SchemeClasses,
+            properties);
+        
+        if (errors instanceof Array){
+            throw new Error(`Cannot initialize ${name} due errors: ${errors.map((error: Error)=>{ return error.message; }).join(', ')}`);
+        }
+
+		this.protocol = properties.protocol;
+		this.status = properties.status;
+
+    }
+
+}
+
+
 export class RequestRequest extends Message{
 
 	public body: string;
@@ -742,6 +967,12 @@ const __SchemeClasses : {[key:string]: any} = {
 	ResponseHeartbeat: ResponseHeartbeat,
 	EventRequest: EventRequest,
 	EventResponse: EventResponse,
+	SubscribeRequest: SubscribeRequest,
+	SubscribeResponse: SubscribeResponse,
+	UnsubscribeRequest: UnsubscribeRequest,
+	UnsubscribeResponse: UnsubscribeResponse,
+	UnsubscribeAllRequest: UnsubscribeAllRequest,
+	UnsubscribeAllResponse: UnsubscribeAllResponse,
 	RequestRequest: RequestRequest,
 	RequestResponse: RequestResponse,
 	RequestResultResponse: RequestResultResponse
@@ -754,6 +985,7 @@ const __SchemeEnums : {[key:string]: any} = {
 	Reasons: Reasons
 }     
         
+export const __signature = '33464798';
 
 export const Protocol : {[key:string]: any} = {
     //Classes
@@ -764,6 +996,12 @@ export const Protocol : {[key:string]: any} = {
 	ResponseHeartbeat: ResponseHeartbeat,
 	EventRequest: EventRequest,
 	EventResponse: EventResponse,
+	SubscribeRequest: SubscribeRequest,
+	SubscribeResponse: SubscribeResponse,
+	UnsubscribeRequest: UnsubscribeRequest,
+	UnsubscribeResponse: UnsubscribeResponse,
+	UnsubscribeAllRequest: UnsubscribeAllRequest,
+	UnsubscribeAllResponse: UnsubscribeAllResponse,
 	RequestRequest: RequestRequest,
 	RequestResponse: RequestResponse,
 	RequestResultResponse: RequestResultResponse, 
@@ -772,7 +1010,7 @@ export const Protocol : {[key:string]: any} = {
 	Responses: Responses,
 	Reasons: Reasons,
     extract: __parser.convert.bind(__parser),
-    __signature: "5B1A3C48"
+    __signature: "33464798"
 }     
         
         

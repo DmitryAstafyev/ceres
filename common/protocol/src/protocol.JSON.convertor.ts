@@ -561,6 +561,7 @@ ${Object.keys(this._classes).map((className: string)=>{
         }).join('\n')}
 ${this._getSchemeOfClasses()}
 ${this._getSchemeOfEnums()}
+export const ${SIGNATURE} = '${this._getProtocolSignature()}';
 ${this._getProtocolDescription()}
         `;
     }

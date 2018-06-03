@@ -1,5 +1,7 @@
 import * as Transports from '../../../client/src/transports/index';
 import * as Enums from '../../../common/platform/enums/index';
+import * as Tools from '../../../common/platform/tools/index';
+import * as Protocol from '../../protocol/protocol.playground';
 
 class Output {
     private node: HTMLElement | null = null;
@@ -39,6 +41,16 @@ export default function test(){
 
     client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.connected, () => {
         output.add(`HTTP.Longpoll transport test: Connected`);
+        const greeting = new Protocol.EventPing({
+            name: 'Test Client'
+        });
+        client.eventEmit(greeting, Protocol)
+            .then((res) => {
+                output.add(`Event sent: ${Tools.inspect(res)}`, { color: 'rgb(200,200,200)'});
+            })
+            .catch((e) => {
+                output.add(`Error: ${Tools.inspect(e)}`, { color: 'rgb(255,0,0)'});
+            });
     });
     client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.disconnected, () => {
         output.add(`Client is disconnected.`, { color: 'rgb(255,255,0)'});

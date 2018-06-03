@@ -51,7 +51,11 @@ export default class Emitter {
         return true;
     }
 
-    unsubscribeAll(signature: Symbol | string | Function) {
+    unsubscribeAll(signature?: Symbol | string | Function) {
+        if (signature === undefined) {
+            this.__handlers.clear();
+            return;
+        }
         signature = this.__getSymbolSignature(signature);
         this.__handlers.delete(signature);
     }

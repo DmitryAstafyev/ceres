@@ -30,6 +30,31 @@
                 "eventId"   : { "type"  : "string",     "required": true },
                 "sent"      : { "type"  : "number",     "required": true }
             }],
+            "SubscribeRequest":[{ "request": "SUBSCRIBE"}, {
+                "signature" : { "type"  : "string",     "required": true },
+                "protocol"  : { "type"  : "string",     "required": true }
+            }],
+            "SubscribeResponse":[{ "response": "SUBSCRIBE"}, {
+                "signature" : { "type"  : "string",     "required": true },
+                "protocol"  : { "type"  : "string",     "required": true },
+                "status"    : { "type"  : "boolean",    "required": true }
+            }],
+            "UnsubscribeRequest":[{ "request": "UNSUBSCRIBE"}, {
+                "signature" : { "type"  : "string",     "required": true },
+                "protocol"  : { "type"  : "string",     "required": true }
+            }],
+            "UnsubscribeResponse":[{ "response": "UNSUBSCRIBE"}, {
+                "signature" : { "type"  : "string",     "required": true },
+                "protocol"  : { "type"  : "string",     "required": true },
+                "status"    : { "type"  : "boolean",    "required": true }
+            }],
+            "UnsubscribeAllRequest":[{ "request": "UNSUBSCRIBE_ALL"}, {
+                "protocol"  : { "type"  : "string",     "required": true }
+            }],
+            "UnsubscribeAllResponse":[{ "response": "UNSUBSCRIBE_ALL"}, {
+                "protocol"  : { "type"  : "string",     "required": true },
+                "status"    : { "type"  : "boolean",    "required": true }
+            }],
             "RequestRequest":[{ "request": "REQUEST"}, {
                 "body"      : { "type"  : "string",     "required": true },
                 "protocol"  : { "type"  : "string",     "required": true },
@@ -46,8 +71,8 @@
         },
     
         "definitions": {
-            "Requests"  : ["HANDSHAKE", "HEARTBEAT", "EVENT", "REQUEST"],
-            "Responses" : ["HANDSHAKE", "HEARTBEAT", "EVENT", "REQUEST", "REQUEST_RESULT"],
+            "Requests"  : ["HANDSHAKE", "HEARTBEAT", "EVENT", "SUBSCRIBE", "UNSUBSCRIBE", "UNSUBSCRIBE_ALL", "REQUEST"],
+            "Responses" : ["HANDSHAKE", "HEARTBEAT", "EVENT", "SUBSCRIBE", "UNSUBSCRIBE", "UNSUBSCRIBE_ALL", "REQUEST", "REQUEST_RESULT"],
             "Reasons"   : ["FAIL_AUTH", "NO_TOKEN_FOUND", "NO_CLIENT_ID_FOUND", "NO_TOKEN_PROVIDED", "TOKEN_IS_WRONG"]
         }
     },

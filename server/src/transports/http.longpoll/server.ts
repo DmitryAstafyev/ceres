@@ -102,12 +102,13 @@ export class Tokens {
 
 export class Server {
  
-    private _logger     : Tools.Logger          = new Tools.Logger('Http.Server');
-    private _requests   : Map<symbol, Request>  = new Map();
-    private _parameters : DescConnection.ConnectionParameters;
-    private _middleware : DescMiddleware.Middleware<HTTP.IncomingMessage, HTTP.ServerResponse>;
-    private _http       : HTTP.Server;
-    private _tokens     : Tokens = new Tokens();
+    private _logger         : Tools.Logger              = new Tools.Logger('Http.Server');
+    private _requests       : Map<symbol, Request>      = new Map();
+    private _tokens         : Tokens                    = new Tokens();
+    private _subscriptions  : Tools.SubscriptionsHolder = new Tools.SubscriptionsHolder();
+    private _parameters     : DescConnection.ConnectionParameters;
+    private _middleware     : DescMiddleware.Middleware<HTTP.IncomingMessage, HTTP.ServerResponse>;
+    private _http           : HTTP.Server;
 
     constructor(
         parameters: DescConnection.ConnectionParameters,
@@ -287,6 +288,61 @@ export class Server {
                     _request.setExpiredResponse(this._getExpiredResponse(credential));
                     //Update token date
                     this._tokens.refresh(credential.clientId);
+                } else if (message instanceof Protocol.EventRequest){
+                    const eventResponse = new Protocol.EventResponse({
+                        clientId: credential.clientId,
+                        sent: 0,
+                        eventId: message.eventId
+                    });
+                    eventResponse.setToken(credential.token);
+                    _request.send({ data: eventResponse.getStr()});
+                    this._logger.debug(`Event came: ${message.body}`);
+//Here should be triggering of event and boardcasting it to all subscribed
+                } else if (message instanceof Protocol.SubscribeRequest) {
+                    const status = this._subscriptions.subscribe(
+                        message.protocol,
+                        message.signature,
+                        credential.clientId
+                    );
+                    const subscriptionResponse = new Protocol.SubscribeResponse({
+                        clientId: credential.clientId,
+                        protocol: message.protocol,
+                        signature: message.signature,
+                        status: status
+                    });
+                    subscriptionResponse.setToken(credential.token);
+                    _request.send({ data: subscriptionResponse.getStr()});
+                    this._logger.debug(`Subscription for client ${credential.clientId} to protocol ${message.protocol}, event ${message.signature} is done.`);
+                } else if (message instanceof Protocol.UnsubscribeRequest) {
+                    const status = this._subscriptions.unsubscribe(
+                        credential.clientId,
+                        message.protocol,
+                        message.signature
+                    );
+                    const unsubscriptionResponse = new Protocol.UnsubscribeResponse({
+                        clientId: credential.clientId,
+                        protocol: message.protocol,
+                        signature: message.signature,
+                        status: status
+                    });
+                    unsubscriptionResponse.setToken(credential.token);
+                    _request.send({ data: unsubscriptionResponse.getStr()});
+                    this._logger.debug(`Unsubscription for client ${credential.clientId} to protocol ${message.protocol}, event ${message.signature} is done.`);
+                } else if (message instanceof Protocol.UnsubscribeAllRequest) {
+                    const status = this._subscriptions.unsubscribe(
+                        credential.clientId,
+                        message.protocol
+                    );
+                    const unsubscriptionAllResponse = new Protocol.UnsubscribeAllResponse({
+                        clientId: credential.clientId,
+                        protocol: message.protocol,
+                        status: status
+                    });
+                    unsubscriptionAllResponse.setToken(credential.token);
+                    _request.send({ data: unsubscriptionAllResponse.getStr()});
+                    this._logger.debug(`Unsubscription for client ${credential.clientId} to protocol ${message.protocol} for all events is done.`);
+                } else if (message instanceof Protocol.RequestRequest){
+                    this._logger.debug(`Request came: ${message.body}`);
                 } else if (message instanceof Error) {
                     this._logger.warn(`Cannot exctract message due error: ${message.message}`);
                 } else {
