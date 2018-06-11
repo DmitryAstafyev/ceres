@@ -1,6 +1,6 @@
 
 /*
-* This file generated automaticaly (UTC: Sun, 03 Jun 2018 20:55:35 GMT). 
+* This file generated automaticaly (UTC: Sun, 10 Jun 2018 20:49:57 GMT). 
 * Do not remove or change this code.
 */
 
@@ -365,11 +365,12 @@ export enum Responses {
 	HANDSHAKE = 0,
 	HEARTBEAT = 1,
 	EVENT = 2,
-	SUBSCRIBE = 3,
-	UNSUBSCRIBE = 4,
-	UNSUBSCRIBE_ALL = 5,
-	REQUEST = 6,
-	REQUEST_RESULT = 7,
+	INCOME_EVENT = 3,
+	SUBSCRIBE = 4,
+	UNSUBSCRIBE = 5,
+	UNSUBSCRIBE_ALL = 6,
+	REQUEST = 7,
+	REQUEST_RESULT = 8,
 };
 export enum Reasons {
 	FAIL_AUTH = 0,
@@ -625,6 +626,43 @@ export class EventResponse extends Message{
 
 		this.eventId = properties.eventId;
 		this.sent = properties.sent;
+
+    }
+
+}
+
+
+export class IncomeEvent extends Message{
+
+	public body: string;
+	public protocol: string;
+	public readonly eventId: string = __generic.guid();
+    static __signature: string = '59E39F8A';
+    public __signature: string = IncomeEvent.__signature;
+    static __rules : {[key:string]: any}   = {
+		"body": { "type": "string", "required": true },
+		"protocol": { "type": "string", "required": true }
+    };
+    
+    constructor(properties: { body:string, protocol:string, eventId?:string, request?: Requests, response?: Responses, guid?: string, clientId: string }) {
+        super(Object.assign(properties, { 
+            	response: Responses.INCOME_EVENT
+            }));
+
+        const name  : string = 'IncomeEvent';
+
+        const errors = getInstanceErrors(name,
+            IncomeEvent.__rules,
+            __SchemeEnums,
+            __SchemeClasses,
+            properties);
+        
+        if (errors instanceof Array){
+            throw new Error(`Cannot initialize ${name} due errors: ${errors.map((error: Error)=>{ return error.message; }).join(', ')}`);
+        }
+
+		this.body = properties.body;
+		this.protocol = properties.protocol;
 
     }
 
@@ -967,6 +1005,7 @@ const __SchemeClasses : {[key:string]: any} = {
 	ResponseHeartbeat: ResponseHeartbeat,
 	EventRequest: EventRequest,
 	EventResponse: EventResponse,
+	IncomeEvent: IncomeEvent,
 	SubscribeRequest: SubscribeRequest,
 	SubscribeResponse: SubscribeResponse,
 	UnsubscribeRequest: UnsubscribeRequest,
@@ -985,7 +1024,7 @@ const __SchemeEnums : {[key:string]: any} = {
 	Reasons: Reasons
 }     
         
-export const __signature = '33464798';
+export const __signature = '5EF57FC0';
 
 export const Protocol : {[key:string]: any} = {
     //Classes
@@ -996,6 +1035,7 @@ export const Protocol : {[key:string]: any} = {
 	ResponseHeartbeat: ResponseHeartbeat,
 	EventRequest: EventRequest,
 	EventResponse: EventResponse,
+	IncomeEvent: IncomeEvent,
 	SubscribeRequest: SubscribeRequest,
 	SubscribeResponse: SubscribeResponse,
 	UnsubscribeRequest: UnsubscribeRequest,
@@ -1010,7 +1050,7 @@ export const Protocol : {[key:string]: any} = {
 	Responses: Responses,
 	Reasons: Reasons,
     extract: __parser.convert.bind(__parser),
-    __signature: "33464798"
+    __signature: "5EF57FC0"
 }     
         
         

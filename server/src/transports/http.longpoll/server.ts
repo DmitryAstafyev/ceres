@@ -83,6 +83,14 @@ export class Tokens {
 		}
     }
 
+    get(clientId: string){
+        const tokenData = this._tokens.get(clientId);
+        if (tokenData === undefined){
+            return null;
+        }
+        return tokenData.token;
+    }
+
     private cleanup() {
         this._timer = setTimeout(() => {
             const timestamp: number = (new Date()).getTime();
@@ -280,6 +288,8 @@ export class Server {
                 //Get message
                 const message = Protocol.extract(post);
                 if (message instanceof Protocol.RequestHeartbeat) {
+                    //Register clientId
+                    _request.setClientId(message.clientId);
                     //Add request to storage
                     this._requests.set(_request.getId(), _request);
                     //Subscribe on request's events
@@ -291,13 +301,12 @@ export class Server {
                 } else if (message instanceof Protocol.EventRequest){
                     const eventResponse = new Protocol.EventResponse({
                         clientId: credential.clientId,
-                        sent: 0,
+                        sent: this._triggerEvent(message.protocol, message.eventId, message.body),
                         eventId: message.eventId
                     });
                     eventResponse.setToken(credential.token);
                     _request.send({ data: eventResponse.getStr()});
                     this._logger.debug(`Event came: ${message.body}`);
-//Here should be triggering of event and boardcasting it to all subscribed
                 } else if (message instanceof Protocol.SubscribeRequest) {
                     const status = this._subscriptions.subscribe(
                         message.protocol,
@@ -352,6 +361,32 @@ export class Server {
             .catch((error: Error) => {
                 this._logger.warn(`Cannot exctract request due error: ${error.message}`);
             });
+    }
+
+    private _triggerEvent(protocol: string, event: string, body: string): number{
+        const subscribers = this._subscriptions.get(protocol, event);
+        this._requests.forEach((request: Request, ID: symbol) => {
+            const clientId = request.getClientId();
+            if (clientId === ''){
+                return;
+            }
+            if (~subscribers.indexOf(clientId)){
+                const IncomeEvent = new Protocol.IncomeEvent({
+                    eventId: event,
+                    protocol: protocol,
+                    body: body,
+                    clientId:clientId
+                });
+                const clientToken = this._tokens.get(clientId);
+                if (clientToken === null){
+                    this._logger.warn(`During triggering event "${protocol}/${event}" was detected client (${clientId}) without token.`);
+                    return;
+                }
+                IncomeEvent.setToken(clientToken);
+                request.send({ data: IncomeEvent.getStr() });
+            }
+        });
+        return subscribers.length;
     }
 
     private _send(message: string){

@@ -74,6 +74,7 @@ export class Request extends EventEmitter {
 	private _id 				: symbol;
 	private _CORS 				: boolean;
 	private _expiredResponse	: string = '';
+	private _clientId 			: string = '';
 
     constructor(id: symbol, request: HTTP.IncomingMessage, response: HTTP.ServerResponse, CORS: boolean = true) {
 		super();
@@ -122,6 +123,14 @@ export class Request extends EventEmitter {
 
 	public getId(){
 		return this._id;
+	}
+
+	public setClientId(clientId: string){
+		this._clientId = clientId;
+	}
+
+	public getClientId(){
+		return this._clientId;
 	}
 
 	public close(response?: string): Promise<void> {

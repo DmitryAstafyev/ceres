@@ -34,7 +34,7 @@ export default class SubscriptionsHolder{
             storage.forEach((IDs, event, map) => {
                 if (~IDs.indexOf(clientID)) {
                     IDs.splice(IDs.indexOf(clientID), 1);
-                    storage.set(event, IDs);
+                    storage !== undefined && storage.set(event, IDs);
                     changed = true;
                 }
             });
@@ -54,5 +54,17 @@ export default class SubscriptionsHolder{
         storage.set(event, IDs);
         this._subscriptions.set(protocol, storage);
         return true;
+    }
+
+    get(protocol: string, event: string): Array<clientId> {
+        let storage = this._subscriptions.get(protocol);
+        if (storage === undefined){
+            return [];
+        }
+        let IDs = storage.get(event);
+        if (IDs === undefined){
+            return [];
+        }
+        return IDs.slice();
     }
 }

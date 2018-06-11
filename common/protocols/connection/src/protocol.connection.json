@@ -30,6 +30,11 @@
                 "eventId"   : { "type"  : "string",     "required": true },
                 "sent"      : { "type"  : "number",     "required": true }
             }],
+            "IncomeEvent":[{ "response": "INCOME_EVENT"}, {
+                "body"      : { "type"  : "string",     "required": true },
+                "protocol"  : { "type"  : "string",     "required": true },
+                "eventId"   : { "type"  : "guid",       "optional": true }
+            }],
             "SubscribeRequest":[{ "request": "SUBSCRIBE"}, {
                 "signature" : { "type"  : "string",     "required": true },
                 "protocol"  : { "type"  : "string",     "required": true }
@@ -72,7 +77,7 @@
     
         "definitions": {
             "Requests"  : ["HANDSHAKE", "HEARTBEAT", "EVENT", "SUBSCRIBE", "UNSUBSCRIBE", "UNSUBSCRIBE_ALL", "REQUEST"],
-            "Responses" : ["HANDSHAKE", "HEARTBEAT", "EVENT", "SUBSCRIBE", "UNSUBSCRIBE", "UNSUBSCRIBE_ALL", "REQUEST", "REQUEST_RESULT"],
+            "Responses" : ["HANDSHAKE", "HEARTBEAT", "EVENT", "INCOME_EVENT", "SUBSCRIBE", "UNSUBSCRIBE", "UNSUBSCRIBE_ALL", "REQUEST", "REQUEST_RESULT"],
             "Reasons"   : ["FAIL_AUTH", "NO_TOKEN_FOUND", "NO_CLIENT_ID_FOUND", "NO_TOKEN_PROVIDED", "TOKEN_IS_WRONG"]
         }
     },
