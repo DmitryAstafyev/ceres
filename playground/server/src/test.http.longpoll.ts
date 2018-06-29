@@ -6,7 +6,7 @@ export default function test(){
     const logger = new Tools.Logger('HTTPLongpollServerTest');
     logger.info(`Create parameters for test.`)
     const parameters = new Transports.HTTPLongpoll.ConnectionParameters({
-        port: 3003,
+        port: 3005,
         type: Enums.ERequestTypes.post
     });
     logger.info(`Creating server with:`, parameters);
