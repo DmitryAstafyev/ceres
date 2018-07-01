@@ -301,7 +301,7 @@ export class Server {
                 } else if (message instanceof Protocol.EventRequest){
                     const eventResponse = new Protocol.EventResponse({
                         clientId: credential.clientId,
-                        sent: this._triggerEvent(message.protocol, message.eventId, message.body),
+                        sent: this._triggerEvent(message.protocol, message.signature, message.body),
                         eventId: message.eventId
                     });
                     eventResponse.setToken(credential.token);
@@ -372,7 +372,7 @@ export class Server {
             }
             if (~subscribers.indexOf(clientId)){
                 const IncomeEvent = new Protocol.IncomeEvent({
-                    eventId: event,
+                    signature: event,
                     protocol: protocol,
                     body: body,
                     clientId:clientId

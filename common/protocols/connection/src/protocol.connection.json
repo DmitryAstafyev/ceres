@@ -24,6 +24,7 @@
             "EventRequest":[{ "request": "EVENT"}, {
                 "body"      : { "type"  : "string",     "required": true },
                 "protocol"  : { "type"  : "string",     "required": true },
+                "signature" : { "type"  : "string",     "required": true },
                 "eventId"   : { "type"  : "guid",       "optional": true }
             }],
             "EventResponse":[{ "response": "EVENT"}, {
@@ -32,6 +33,7 @@
             }],
             "IncomeEvent":[{ "response": "INCOME_EVENT"}, {
                 "body"      : { "type"  : "string",     "required": true },
+                "signature" : { "type"  : "string",     "required": true },
                 "protocol"  : { "type"  : "string",     "required": true },
                 "eventId"   : { "type"  : "guid",       "optional": true }
             }],

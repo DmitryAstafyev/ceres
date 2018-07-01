@@ -1,6 +1,6 @@
 
 /*
-* This file generated automaticaly (UTC: Sun, 10 Jun 2018 20:49:57 GMT). 
+* This file generated automaticaly (UTC: Sun, 01 Jul 2018 16:37:07 GMT). 
 * Do not remove or change this code.
 */
 
@@ -563,15 +563,17 @@ export class EventRequest extends Message{
 
 	public body: string;
 	public protocol: string;
+	public signature: string;
 	public readonly eventId: string = __generic.guid();
     static __signature: string = 'FD7E792';
     public __signature: string = EventRequest.__signature;
     static __rules : {[key:string]: any}   = {
 		"body": { "type": "string", "required": true },
-		"protocol": { "type": "string", "required": true }
+		"protocol": { "type": "string", "required": true },
+		"signature": { "type": "string", "required": true }
     };
     
-    constructor(properties: { body:string, protocol:string, eventId?:string, request?: Requests, response?: Responses, guid?: string, clientId: string }) {
+    constructor(properties: { body:string, protocol:string, signature:string, eventId?:string, request?: Requests, response?: Responses, guid?: string, clientId: string }) {
         super(Object.assign(properties, { 
             	request: Requests.EVENT
             }));
@@ -590,6 +592,7 @@ export class EventRequest extends Message{
 
 		this.body = properties.body;
 		this.protocol = properties.protocol;
+		this.signature = properties.signature;
 
     }
 
@@ -635,16 +638,18 @@ export class EventResponse extends Message{
 export class IncomeEvent extends Message{
 
 	public body: string;
+	public signature: string;
 	public protocol: string;
 	public readonly eventId: string = __generic.guid();
     static __signature: string = '59E39F8A';
     public __signature: string = IncomeEvent.__signature;
     static __rules : {[key:string]: any}   = {
 		"body": { "type": "string", "required": true },
+		"signature": { "type": "string", "required": true },
 		"protocol": { "type": "string", "required": true }
     };
     
-    constructor(properties: { body:string, protocol:string, eventId?:string, request?: Requests, response?: Responses, guid?: string, clientId: string }) {
+    constructor(properties: { body:string, signature:string, protocol:string, eventId?:string, request?: Requests, response?: Responses, guid?: string, clientId: string }) {
         super(Object.assign(properties, { 
             	response: Responses.INCOME_EVENT
             }));
@@ -662,6 +667,7 @@ export class IncomeEvent extends Message{
         }
 
 		this.body = properties.body;
+		this.signature = properties.signature;
 		this.protocol = properties.protocol;
 
     }

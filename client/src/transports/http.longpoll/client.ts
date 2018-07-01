@@ -29,6 +29,7 @@ export enum EClientEvents {
     error = 'error',
     heartbeat = 'heartbeat',
     eventSent = 'eventSent',
+    eventCome = 'eventCome',
     subscriptionDone = 'subscriptionDone',
     unsubscriptionDone = 'unsubscriptionDone',
     unsubscriptionAllDone = 'unsubscriptionAllDone',
@@ -47,6 +48,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
     private _clientGUID : string                = Tools.guid();
     private _token      : string                = '';
     private _holder     : Tools.HandlersHolder  = new Tools.HandlersHolder();
+    private _protocols  : Tools.ProtocolsHolder = new Tools.ProtocolsHolder();
     private _parameters : DescConnection.ConnectionParameters;
     private _middleware : DescMiddleware.Middleware;
 
@@ -158,6 +160,8 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
     }
 
     private _onDoneRequest(resolve: Function, reject: Function, request: Request, response: any){
+        resolve = Tools.getTypeOf(resolve) === Tools.EPrimitiveTypes.function ? resolve : () => {};
+        reject = Tools.getTypeOf(reject) === Tools.EPrimitiveTypes.function ? reject : () => {};
         this._logger.dev(`Request guid: ${request.getId()} is finished successfuly: ${Tools.inspect(response)}`);
         this._unsubscribeRequest(request);
         const message = Protocol.extract(response);
@@ -167,6 +171,9 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                 reason: undefined,
                 details: undefined
             });
+            if (Tools.getTypeOf(reject) === Tools.EPrimitiveTypes.function) {
+                reject(message);
+            }
             return this._repeat(ERepeatReason.done);
         }
         switch(this._getState()){
@@ -176,12 +183,14 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                         this._setToken(message.getToken());
                         this._setState(EClientStates.listening);
                         this.emit(EClientEvents.connected);
+                        resolve();
                     } else {
                         this.emit(EClientEvents.error, {
                             message: this._logger.warn(`Fail to authorize request due reason: ${message.reason} ${message.error !== void 0 ? `(${message.error})`: ''}`),
                             reason: message.reason,
                             details: undefined
                         });
+                        reject(message);
                     }
                 } else {
                     this.emit(EClientEvents.error, {
@@ -189,6 +198,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                         reason: undefined,
                         details: undefined
                     });
+                    reject(message);
                 }
                 break;
             case EClientStates.listening:
@@ -200,36 +210,44 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                             reason: undefined,
                             details: undefined
                         });
+                        reject(message);
                     } else {
                         this.emit(EClientEvents.heartbeat);
+                        resolve();
                         this._logger.debug(`Heartbeat [${(new Date()).toUTCString()}]...`);
                     }
                 } else if (message instanceof Protocol.EventResponse) {
                     this.emit(EClientEvents.eventSent, message);
                     this._logger.debug(`Event sent to: ${message.sent}.`);
-                    return;
+                    return resolve(message);
+                } else if (message instanceof Protocol.IncomeEvent) {
+                    this._processIncomeEvent(message);
+                    return resolve(message);
                 } else if (message instanceof Protocol.SubscribeResponse) {
                     this.emit(EClientEvents.subscriptionDone, message);
                     this._logger.debug(`Subscription to protocol ${message.protocol}, event ${message.signature} has status: ${message.status}.`);
+                    return resolve(message);
                 } else if (message instanceof Protocol.UnsubscribeResponse) {
                     this.emit(EClientEvents.unsubscriptionDone, message);
                     this._logger.debug(`Unsubscription from protocol ${message.protocol}, event ${message.signature} has status: ${message.status}.`);
+                    return resolve(message);
                 } else if (message instanceof Protocol.UnsubscribeAllResponse) {
                     this.emit(EClientEvents.unsubscriptionAllDone, message);
                     this._logger.debug(`Unsubscription from all events in scope of protocol ${message.protocol}  has status: ${message.status}.`);
+                    return resolve(message);
                 } else if (message instanceof Protocol.RequestResponse) {
                     this.emit(EClientEvents.requestSent);
                     this._logger.debug(`Request sent: ${message.processing}.`);
-                    return;
+                    return resolve(message);
                 } else if (message instanceof Protocol.RequestResultResponse) {
                     this.emit(EClientEvents.requestDone);
                     this._logger.debug(`Request result: ${message.body}.`);
-                    return;
+                    return resolve(message);
                 }
                 break;
             default:
                 this.emit(EClientEvents.message);
-                break
+                return resolve(message);
         }
         this._repeat(ERepeatReason.done);
     }
@@ -289,13 +307,18 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
             if (signature instanceof Error){
                 return reject(signature);
             }
+            const eventSignature = this._getProtocolSignature(event);
+            if (eventSignature instanceof Error){
+                return reject(eventSignature);
+            }
             if (Tools.getTypeOf(event) === Tools.EPrimitiveTypes.undefined || event === null || Tools.getTypeOf(event.getStr) !== Tools.EPrimitiveTypes.function){
                 return reject(new Error(`Invalid instance of event. Please be sure you are using valid protocol.`));
             }
             const instance = new Protocol.EventRequest({
                 protocol: signature,
                 body: event.getStr(),
-                clientId: this._clientGUID
+                clientId: this._clientGUID,
+                signature: eventSignature
             });
             instance.setToken(this._getToken());
             const _request = new Request(this._clientGUID, this._parameters.getURL(), Enums.ERequestTypes.post, instance);
@@ -321,19 +344,25 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
             if (eventSignature instanceof Error){
                 return reject(eventSignature);
             }
-            const subscription = this._holder.subscribe(protocolSignature, eventSignature, handler);
-            if (subscription instanceof Error){
-                return reject(subscription);
-            }
-            const instance = new Protocol.SubscribeRequest({
-                protocol: protocolSignature,
-                signature: eventSignature,
-                clientId: this._clientGUID
-            });
-            instance.setToken(this._getToken());
-            const _request = new Request(this._clientGUID, this._parameters.getURL(), Enums.ERequestTypes.post, instance);
-            this._registerRequest(_request, resolve, reject);
-            _request.send();
+            this._protocols.add(protocol)
+                .then(() => {
+                    const subscription = this._holder.subscribe(protocolSignature, eventSignature, handler);
+                    if (subscription instanceof Error){
+                        return reject(subscription);
+                    }
+                    const instance = new Protocol.SubscribeRequest({
+                        protocol: protocolSignature,
+                        signature: eventSignature,
+                        clientId: this._clientGUID
+                    });
+                    instance.setToken(this._getToken());
+                    const _request = new Request(this._clientGUID, this._parameters.getURL(), Enums.ERequestTypes.post, instance);
+                    this._registerRequest(_request, resolve, reject);
+                    _request.send();
+                })
+                .catch((e)=>{
+                    reject(e);
+                });
         });
     }
 
@@ -353,7 +382,6 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
             if (eventSignature instanceof Error){
                 return reject(eventSignature);
             }
-
             if (this._holder.unsubscribe(protocolSignature, eventSignature) !== true){
                 return resolve(true);
             }
@@ -392,6 +420,19 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
             const _request = new Request(this._clientGUID, this._parameters.getURL(), Enums.ERequestTypes.post, instance);
             this._registerRequest(_request, resolve, reject);
             _request.send();
+        });
+    }
+
+    private _processIncomeEvent(message: Protocol.IncomeEvent){
+        return new Promise((resolve, reject) => {
+            this._protocols.getImplementationFromStr(message.protocol, message.body)
+                .then((event) => {
+                    this._holder.emit(message.protocol, message.signature, event);
+                    resolve(event);
+                })
+                .catch((e) => {
+                    reject(e);
+                });
         });
     }
 

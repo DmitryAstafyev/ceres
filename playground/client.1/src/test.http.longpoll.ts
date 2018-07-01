@@ -44,12 +44,14 @@ export default function test(){
         const greeting = new Protocol.EventPing({
             name: 'Test Client'
         });
-        client.eventEmit(greeting, Protocol)
+        client.subscribeEvent(greeting, Protocol, (event: Protocol.EventPing) => {
+            output.add(`HTTP.Longpoll transport test: get event: ${Tools.inspect(event)}`);
+        })
             .then((res) => {
-                output.add(`Event sent: ${Tools.inspect(res)}`, { color: 'rgb(200,200,200)'});
+                output.add(`Subscription to ${Tools.inspect(greeting)} was done. Subscription response: ${Tools.inspect(res)}`, { color: 'rgb(200,200,200)'});
             })
             .catch((e) => {
-                output.add(`Error: ${Tools.inspect(e)}`, { color: 'rgb(255,0,0)'});
+                output.add(`Error to subscribe to ${Tools.inspect(greeting)}: ${Tools.inspect(e)}`, { color: 'rgb(255,0,0)'});
             });
     });
     client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.disconnected, () => {
