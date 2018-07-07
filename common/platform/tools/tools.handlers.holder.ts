@@ -1,8 +1,7 @@
 import * as Types from './tools.primitivetypes';
 import EventEmitter from './tools.emitter';
 import inspect from './tools.inspect';
-
-const HANDLER_SIGNATURE = '__event_handler_signature';
+import GUID from './tools.guid';
 
 export default class EventHandlers {
 
@@ -26,9 +25,6 @@ export default class EventHandlers {
         if (Types.getTypeOf(handler) !== Types.ETypes.function) {
             return new Error(`Expect type of handler will be {function}. Bug has gotten: ${inspect(handler)}`);
         }
-        if ((handler as any)[HANDLER_SIGNATURE] !== void 0) {
-            return new Error(`Handler already is registred as handler for event. One handler can be used as listener only once.`);
-        }
         if (!this._handlers.has(protocol)) {
             this._handlers.set(protocol, new EventEmitter());
         }
@@ -51,9 +47,6 @@ export default class EventHandlers {
             emitter.unsubscribeAll(event);
             this._handlers.set(protocol, emitter);
             return true;
-        }
-        if ((handler as any)[HANDLER_SIGNATURE] === void 0) {
-            return new Error(`Handler isn't registred as handler for event.`);
         }
         emitter.unsubscribe(event, handler);
         return true;

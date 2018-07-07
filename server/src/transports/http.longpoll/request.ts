@@ -20,6 +20,10 @@ const DEFAULT_HEADERS = {
 	"Content-Type": "text/plain" 
 };
 
+const REQUEST_EVENTS = {
+	aborted: 'aborted'
+}
+
 class Lifecircle extends EventEmitter {
 
 	public EVENTS = {
@@ -63,7 +67,8 @@ export class Request extends EventEmitter {
 	public EVENTS = {
 		onExpired: Symbol(),
 		onSent: Symbol(),
-		onClose: Symbol()
+		onClose: Symbol(),
+		onAborted: Symbol()
 	};
 
     private _logger     		: Tools.Logger 	= new Tools.Logger('Http.Server.Request');
@@ -85,6 +90,16 @@ export class Request extends EventEmitter {
 		this._lifecircle 		= new Lifecircle(SETTINGS.RESET_TIMEOUT);
 		this._lifecircleSubscribe();
 		this._lifecircle.start();
+		this._subscribeRequest();
+	}
+
+	private _subscribeRequest(){
+		this._request.on(REQUEST_EVENTS.aborted, this._onAborted.bind(this));
+	}
+
+	private _onAborted(){
+		this._lifecircleUnsubscribe();
+		this.emit(this.EVENTS.onAborted);
 	}
 
 	private _lifecircleSubscribe(){

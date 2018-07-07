@@ -16,11 +16,18 @@ class Output {
         }
     }
 
+    _serialize(str: string){
+        if (typeof str !== 'string') {
+            return '';
+        }
+        return str.replace(/</gi, '&lt').replace(/>/gi, '&gt');
+    }
+
     add(str: string, style?: any) {
         this._setTargetNode();
         if (this.node !== null) {
             const p = document.createElement('P');
-            p.innerHTML = `${(new Date).toTimeString()}: ${str}`;
+            p.innerHTML = `${(new Date).toTimeString()}: ${this._serialize(str)}`;
             Object.assign(p.style, style);
             this.node.appendChild(p);
             p.scrollIntoView();
@@ -42,6 +49,8 @@ export default class Test {
     constructor(){    
         //Create HTTP Longpoll client
         this._client = new Transports.HTTPLongpollClient.Client(this._parameters);
+        this._bind();
+        this._bindTestProtocol();
         this._subsribeTransportEvents();
     }
 
@@ -56,7 +65,6 @@ export default class Test {
     }
 
     private _subsribeTransportEvents(){
-        this._bind();
         this._client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.connected, this._onConnected);
         this._client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.disconnected, this._onDisconnected);
         this._client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.error, this._onError);
@@ -100,7 +108,6 @@ export default class Test {
     }
 
     private _subscribeTestProtocol(){
-        this._bindTestProtocol();
         this._client.subscribeEvent(Protocol.EventPing, Protocol, this._onTestProtocolGreeting)
             .then((res) => {
                 this._output.add(`Subscription to ${Tools.inspect(Protocol.EventPing)} was done. Subscription response: ${Tools.inspect(res)}`, { color: 'rgb(200,200,200)'});
@@ -111,13 +118,20 @@ export default class Test {
     }
 
     private _unsubscribeTestProtocol(){
+        this._client.unsubscribeEvent(Protocol.EventPing, Protocol)
+            .then((res) => {
+                this._output.add(`Unsubscription from ${Tools.inspect(Protocol.EventPing)} was done. Unsubscription response: ${Tools.inspect(res)}`, { color: 'rgb(50,50,250)'});
+            })
+            .catch((e) => {
+                this._output.add(`Error to unsubscribe to ${Tools.inspect(Protocol.EventPing)}: ${Tools.inspect(e)}`, { color: 'rgb(255,0,0)'});
+            });
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Tests protocol: handlers
     //////////////////////////////////////////////////////////////////////////////////////////////
     private _onTestProtocolGreeting(event: Protocol.EventPing){
-        this._output.add(`HTTP.Longpoll transport test: get event: ${Tools.inspect(event)}`);
+        this._output.add(`HTTP.Longpoll transport test: get event: ${Tools.inspect(event)}`, { color: 'rgb(170, 170, 236)'});
     }
 
 }

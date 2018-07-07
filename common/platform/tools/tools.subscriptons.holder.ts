@@ -67,4 +67,24 @@ export default class SubscriptionsHolder{
         }
         return IDs.slice();
     }
+
+    removeClient(clientID: string){
+        this._subscriptions.forEach((storage: Map<event, Array<clientId>>, protocol: string) => {
+            storage.forEach((IDs: Array<clientId>, event: string) => {
+                if (IDs.indexOf(clientID) !== -1){
+                    this.unsubscribe(clientID, protocol, event);
+                }
+            });
+        });
+    }
+
+    getInfo(){
+        let info: Array<string> = [];
+        this._subscriptions.forEach((storage: Map<event, Array<clientId>>, protocol: string) => {
+            storage.forEach((IDs: Array<clientId>, event: string) => {
+                info.push(`[${protocol}:${event}]: ${IDs.length}`)
+            });
+        });
+        return info.join('; ');
+    }
 }

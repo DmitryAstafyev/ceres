@@ -16,11 +16,18 @@ class Output {
         }
     }
 
+    _serialize(str: string){
+        if (typeof str !== 'string') {
+            return '';
+        }
+        return str.replace(/</gi, '&lt').replace(/>/gi, '&gt');
+    }
+
     add(str: string, style?: any) {
         this._setTargetNode();
         if (this.node !== null) {
             const p = document.createElement('P');
-            p.innerHTML = `${(new Date).toTimeString()}: ${str}`;
+            p.innerHTML = `${(new Date).toTimeString()}: ${this._serialize(str)}`;
             Object.assign(p.style, style);
             this.node.appendChild(p);
             p.scrollIntoView();
@@ -42,6 +49,7 @@ export default class Test {
     constructor(){    
         //Create HTTP Longpoll client
         this._client = new Transports.HTTPLongpollClient.Client(this._parameters);
+        this._bind();
         this._subsribeTransportEvents();
     }
 
@@ -56,7 +64,6 @@ export default class Test {
     }
 
     private _subsribeTransportEvents(){
-        this._bind();
         this._client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.connected, this._onConnected);
         this._client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.disconnected, this._onDisconnected);
         this._client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.error, this._onError);

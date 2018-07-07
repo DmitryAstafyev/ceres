@@ -7,6 +7,7 @@ import * as DescMiddleware from '../../infrastructure/middleware/implementation'
 import { Request } from './request';
 
 import * as Protocol from '../../protocols/connection/protocol.connection';
+import { request } from 'https';
 
 const SETTINGS = {
     POST_REQUEST_MAX_LENGTH: 100000,
@@ -140,7 +141,8 @@ export class Server {
         this._parameters = parameters;
         this._middleware = middleware;
 
-        this._http = HTTP.createServer(this._onRequest.bind(this)).listen(this._parameters.port); 
+        this._http = HTTP.createServer(this._onRequest.bind(this)).listen(this._parameters.port);
+        this._logState();
     }
 
     /**
@@ -372,7 +374,7 @@ export class Server {
                 return;
             }
             if (~subscribers.indexOf(clientId)){
-                this._logger.verbose(`Client (${clientId}) is subscribed on "${protocol}/${event}". Event will be sent.`);
+                this._logger.debug(`Client (${clientId}) is subscribed on "${protocol}/${event}". Event will be sent.`);
                 const IncomeEvent = new Protocol.IncomeEvent({
                     signature: event,
                     protocol: protocol,
@@ -389,6 +391,10 @@ export class Server {
                 sent ++;
             }
         });
+        if (sent > 0){
+            this._logger.debug(`Event "${protocol}/${event}" was sent to ${sent} client(s).`);
+
+        }
         return sent;
     }
 
@@ -400,6 +406,8 @@ export class Server {
 
     private _subscribeRequest(_request: Request){
         _request.on(_request.EVENTS.onClose, this._onCloseRequest.bind(this, _request));
+        _request.on(_request.EVENTS.onAborted, this._onAbortedRequest.bind(this, _request));
+
     }
 
     private _unsubscribeRequest(_request: Request){
@@ -411,6 +419,14 @@ export class Server {
         this._requests.delete(_request.getId());
     }
 
+    private _onAbortedRequest(_request: Request){
+        const clientId: string = _request.getClientId();
+        this._unsubscribeRequest(_request);
+        this._requests.delete(_request.getId());
+        this._subscriptions.removeClient(clientId);
+        this._logger.debug(`Client (${clientId}) aborted connection.`);
+    }
+
     private _getExpiredResponse(credential: IRequestCredential): string {
         const responseHeartbeat = new Protocol.ResponseHeartbeat({
             clientId: credential.clientId,
@@ -418,5 +434,16 @@ export class Server {
         });
         responseHeartbeat.setToken(credential.token);
         return responseHeartbeat.getStr();
+    }
+
+    private _logState(){
+        const clients: Array<string> = [];
+        this._requests.forEach((request: Request, key: symbol) => {
+            clients.push(request.getClientId());
+        });
+        this._logger.debug(`    [server state]: requests = ${clients.length}; subcribers = ${this._subscriptions.getInfo()}`);
+        setTimeout(() => {
+            this._logState();
+        }, 1000);
     }
 }
