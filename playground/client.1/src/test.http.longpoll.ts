@@ -27,41 +27,98 @@ class Output {
         }
     }
 }
-export default function test(){
-    const output = new Output();
-    //Create parameters for HTTP Longpoll client
-    const parameters = new Transports.HTTPLongpollClient.ConnectionParameters({
+
+export default class Test {
+
+    private _output: Output = new Output();
+    private _parameters: Transports.HTTPLongpollClient.ConnectionParameters = new Transports.HTTPLongpollClient.ConnectionParameters({
         host: 'http://localhost',
         port: 3005,
         type: Enums.ERequestTypes.post
     });
+    private _client: Transports.HTTPLongpollClient.Client;
+    private _greetingMessageTimer: number = -1;
 
-    //Create HTTP Longpoll client
-    const client = new Transports.HTTPLongpollClient.Client(parameters);
+    constructor(){    
+        //Create HTTP Longpoll client
+        this._client = new Transports.HTTPLongpollClient.Client(this._parameters);
+        this._subsribeTransportEvents();
+    }
 
-    client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.connected, () => {
-        output.add(`HTTP.Longpoll transport test: Connected`);
-        const greeting = new Protocol.EventPing({
-            name: 'Test Client'
-        });
-        client.subscribeEvent(greeting, Protocol, (event: Protocol.EventPing) => {
-            output.add(`HTTP.Longpoll transport test: get event: ${Tools.inspect(event)}`);
-        })
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Transprt events: sunscription
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    private _bind(){
+        this._onConnected = this._onConnected.bind(this);
+        this._onDisconnected = this._onDisconnected.bind(this);
+        this._onError = this._onError.bind(this);
+        this._onHeartBeat = this._onHeartBeat.bind(this);
+    }
+
+    private _subsribeTransportEvents(){
+        this._bind();
+        this._client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.connected, this._onConnected);
+        this._client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.disconnected, this._onDisconnected);
+        this._client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.error, this._onError);
+        this._client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.heartbeat, this._onHeartBeat);
+    }
+
+    private _unsubsribeTransportEvents(){
+        this._client.unsubscribe(Transports.HTTPLongpollClient.Client.EVENTS.connected, this._onConnected);
+        this._client.unsubscribe(Transports.HTTPLongpollClient.Client.EVENTS.disconnected, this._onDisconnected);
+        this._client.unsubscribe(Transports.HTTPLongpollClient.Client.EVENTS.error, this._onError);
+        this._client.unsubscribe(Transports.HTTPLongpollClient.Client.EVENTS.heartbeat, this._onHeartBeat);
+    }
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Transprt events: handlers
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    private _onConnected(){
+        this._output.add(`HTTP.Longpoll transport test: Connected`);
+        this._subscribeTestProtocol();
+    }
+
+    private _onDisconnected(){
+        this._output.add(`Client is disconnected.`, { color: 'rgb(255,255,0)'});
+        this._unsubscribeTestProtocol();
+    }
+
+    private _onError(error: any){
+        this._output.add(`Error: ${error.message}; reason: ${error.reason}`, { color: 'rgb(255,0,0)'});
+    }
+
+    private _onHeartBeat(){
+        this._output.add(`Heartbeat...`, { color: 'rgb(150,150,150)'});
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Tests protocol: subscriptions
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    private _bindTestProtocol(){
+        this._onTestProtocolGreeting = this._onTestProtocolGreeting.bind(this);
+    }
+
+    private _subscribeTestProtocol(){
+        this._bindTestProtocol();
+        this._client.subscribeEvent(Protocol.EventPing, Protocol, this._onTestProtocolGreeting)
             .then((res) => {
-                output.add(`Subscription to ${Tools.inspect(greeting)} was done. Subscription response: ${Tools.inspect(res)}`, { color: 'rgb(200,200,200)'});
+                this._output.add(`Subscription to ${Tools.inspect(Protocol.EventPing)} was done. Subscription response: ${Tools.inspect(res)}`, { color: 'rgb(200,200,200)'});
             })
             .catch((e) => {
-                output.add(`Error to subscribe to ${Tools.inspect(greeting)}: ${Tools.inspect(e)}`, { color: 'rgb(255,0,0)'});
+                this._output.add(`Error to subscribe to ${Tools.inspect(Protocol.EventPing)}: ${Tools.inspect(e)}`, { color: 'rgb(255,0,0)'});
             });
-    });
-    client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.disconnected, () => {
-        output.add(`Client is disconnected.`, { color: 'rgb(255,255,0)'});
-    });
-    client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.error, (error: any) => {
-        output.add(`Error: ${error.message}; reason: ${error.reason}`, { color: 'rgb(255,0,0)'});
-    });
-    client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.heartbeat, () => {
-        output.add(`Heartbeat...`, { color: 'rgb(150,150,150)'});
-    });
+    }
+
+    private _unsubscribeTestProtocol(){
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Tests protocol: handlers
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    private _onTestProtocolGreeting(event: Protocol.EventPing){
+        this._output.add(`HTTP.Longpoll transport test: get event: ${Tools.inspect(event)}`);
+    }
 
 }
+

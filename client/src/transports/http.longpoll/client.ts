@@ -222,7 +222,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                     return resolve(message);
                 } else if (message instanceof Protocol.IncomeEvent) {
                     this._processIncomeEvent(message);
-                    return resolve(message);
+                    resolve(message);
                 } else if (message instanceof Protocol.SubscribeResponse) {
                     this.emit(EClientEvents.subscriptionDone, message);
                     this._logger.debug(`Subscription to protocol ${message.protocol}, event ${message.signature} has status: ${message.status}.`);
@@ -285,16 +285,6 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
         this._clientGUID = Tools.guid();      
     }
 
-    private _getProtocolSignature(protocol: any): string | Error {
-        if (typeof protocol !== 'object' || protocol === null) {
-            return new Error('No protocol found');
-        }
-        if (Tools.getTypeOf(protocol.__signature) !== Tools.EPrimitiveTypes.string || protocol.__signature.trim() === ''){
-            return new Error('No sigature of protocol found');
-        }
-        return protocol.__signature;
-    }
-
     /**
      * Emit event 
      * @param event {any} implementation of event
@@ -303,11 +293,11 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
      */
     public eventEmit(event: any, protocol: any): Promise<any> {
         return new Promise((resolve, reject) => {
-            const signature = this._getProtocolSignature(protocol);
+            const signature = Protocol.extractSignature(protocol);
             if (signature instanceof Error){
                 return reject(signature);
             }
-            const eventSignature = this._getProtocolSignature(event);
+            const eventSignature = Protocol.extractSignature(event);
             if (eventSignature instanceof Error){
                 return reject(eventSignature);
             }
@@ -336,11 +326,11 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
      */
     public subscribeEvent(event: any, protocol: any, handler: Function): Promise<any> {
         return new Promise((resolve, reject) => {
-            const protocolSignature = this._getProtocolSignature(protocol);
+            const protocolSignature = Protocol.extractSignature(protocol);
             if (protocolSignature instanceof Error){
                 return reject(protocolSignature);
             }
-            const eventSignature = this._getProtocolSignature(event);
+            const eventSignature = Protocol.extractSignature(event);
             if (eventSignature instanceof Error){
                 return reject(eventSignature);
             }
@@ -374,11 +364,11 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
      */
     public unsubscribeEvent(event: any, protocol: any): Promise<any> {
         return new Promise((resolve, reject) => {
-            const protocolSignature = this._getProtocolSignature(protocol);
+            const protocolSignature = Protocol.extractSignature(protocol);
             if (protocolSignature instanceof Error){
                 return reject(protocolSignature);
             }
-            const eventSignature = this._getProtocolSignature(event);
+            const eventSignature = Protocol.extractSignature(event);
             if (eventSignature instanceof Error){
                 return reject(eventSignature);
             }
@@ -404,7 +394,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
      */
     public unsubscribeAllEvents(protocol: any): Promise<any> {
         return new Promise((resolve, reject) => {
-            const protocolSignature = this._getProtocolSignature(protocol);
+            const protocolSignature = Protocol.extractSignature(protocol);
             if (protocolSignature instanceof Error){
                 return reject(protocolSignature);
             }
@@ -438,7 +428,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
 
     public request(request: any, protocol?: any) {
         return new Promise((resolve, reject) => {
-            const signature = this._getProtocolSignature(protocol);
+            const signature = Protocol.extractSignature(protocol);
             if (signature instanceof Error){
                 return reject(signature);
             }

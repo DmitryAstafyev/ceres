@@ -365,12 +365,14 @@ export class Server {
 
     private _triggerEvent(protocol: string, event: string, body: string): number{
         const subscribers = this._subscriptions.get(protocol, event);
+        let sent = 0;
         this._requests.forEach((request: Request, ID: symbol) => {
             const clientId = request.getClientId();
             if (clientId === ''){
                 return;
             }
             if (~subscribers.indexOf(clientId)){
+                this._logger.verbose(`Client (${clientId}) is subscribed on "${protocol}/${event}". Event will be sent.`);
                 const IncomeEvent = new Protocol.IncomeEvent({
                     signature: event,
                     protocol: protocol,
@@ -384,9 +386,10 @@ export class Server {
                 }
                 IncomeEvent.setToken(clientToken);
                 request.send({ data: IncomeEvent.getStr() });
+                sent ++;
             }
         });
-        return subscribers.length;
+        return sent;
     }
 
     private _send(message: string){

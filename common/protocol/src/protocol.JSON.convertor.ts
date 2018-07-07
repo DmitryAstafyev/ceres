@@ -15,6 +15,7 @@ const INJECTIONS_MODULES = [
     'protocol.inject.validator.ts',
     'protocol.inject.parser.ts',
     'protocol.inject.token.ts',
+    'protocol.inject.helpers.ts',
     'protocol.inject.root.ts'
 ];
 
@@ -417,6 +418,12 @@ ${Object.keys(properties).map((prop) => {
 }).join('\n')}
     static ${SIGNATURE}: string = '${this._getSignature(property, parent)}';
     public ${SIGNATURE}: string = ${property}.${SIGNATURE};
+    static getSignature(){
+        return ${property}.${SIGNATURE};
+    }
+    public getSignature(){
+        return this.${SIGNATURE};
+    }
     static __rules : {[key:string]: any}   = {
 ${Object.keys(properties).map((prop) => {
     const description = properties[prop];
@@ -525,7 +532,9 @@ ${Object.keys(this._enums).map((enumName: string)=>{
         return `\t${enumName}: ${enumName}`;
     }).join(',\n')},
     extract: __parser.convert.bind(__parser),
-    ${SIGNATURE}: "${this._getProtocolSignature()}"
+    ${SIGNATURE}: "${this._getProtocolSignature()}",
+    extractSignature:  extractSignature,
+    getSignature: () => { return '${this._getProtocolSignature()}'; }
 }     
         `;
     }
@@ -562,6 +571,7 @@ ${Object.keys(this._classes).map((className: string)=>{
 ${this._getSchemeOfClasses()}
 ${this._getSchemeOfEnums()}
 export const ${SIGNATURE} = '${this._getProtocolSignature()}';
+export function getSignature() { return '${this._getProtocolSignature()}'; };
 ${this._getProtocolDescription()}
         `;
     }

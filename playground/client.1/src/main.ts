@@ -1,3 +1,3 @@
 import HTTPLongpollTest from './test.http.longpoll';
 
-HTTPLongpollTest();
+const test = new HTTPLongpollTest();

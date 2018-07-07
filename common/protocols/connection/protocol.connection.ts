@@ -1,6 +1,6 @@
 
 /*
-* This file generated automaticaly (UTC: Sun, 01 Jul 2018 16:37:07 GMT). 
+* This file generated automaticaly (UTC: Sat, 07 Jul 2018 20:07:12 GMT). 
 * Do not remove or change this code.
 */
 
@@ -319,6 +319,17 @@ export function getToken(smth: any): string | Error {
 }
 
 
+export function extractSignature(smth: any): string | Error {
+    if ((typeof smth !== 'object' || smth === null) && typeof smth !== 'function') {
+        return new Error('No protocol found. As protocol expecting: constructor or instance of protocol.');
+    }
+    if (typeof smth.getSignature !== 'function' || typeof smth.getSignature() !== 'string' || smth.getSignature().trim() === ''){
+        return new Error('No sigature of protocol found');
+    }
+    return smth.getSignature();
+}
+
+
 class ProtocolMessage {
 
     public __token: string = '';
@@ -388,6 +399,12 @@ export class Message extends ProtocolMessage{
 	public clientId: string;
     static __signature: string = '1EFD6368';
     public __signature: string = Message.__signature;
+    static getSignature(){
+        return Message.__signature;
+    }
+    public getSignature(){
+        return this.__signature;
+    }
     static __rules : {[key:string]: any}   = {
 		"request": { "in": "Requests", "optional": true },
 		"response": { "in": "Responses", "optional": true },
@@ -423,6 +440,12 @@ export class RequestHandshake extends Message{
 
     static __signature: string = '99E189F';
     public __signature: string = RequestHandshake.__signature;
+    static getSignature(){
+        return RequestHandshake.__signature;
+    }
+    public getSignature(){
+        return this.__signature;
+    }
     static __rules : {[key:string]: any}   = {
 
     };
@@ -458,6 +481,12 @@ export class ResponseHandshake extends Message{
 	public error: string | undefined;
     static __signature: string = '5A3E1D6F';
     public __signature: string = ResponseHandshake.__signature;
+    static getSignature(){
+        return ResponseHandshake.__signature;
+    }
+    public getSignature(){
+        return this.__signature;
+    }
     static __rules : {[key:string]: any}   = {
 		"allowed": { "type": "boolean", "required": true },
 		"reason": { "in": "Reasons", "optional": true },
@@ -495,6 +524,12 @@ export class RequestHeartbeat extends Message{
 
     static __signature: string = '550C9C06';
     public __signature: string = RequestHeartbeat.__signature;
+    static getSignature(){
+        return RequestHeartbeat.__signature;
+    }
+    public getSignature(){
+        return this.__signature;
+    }
     static __rules : {[key:string]: any}   = {
 
     };
@@ -529,6 +564,12 @@ export class ResponseHeartbeat extends Message{
 	public reason: Reasons | undefined;
     static __signature: string = '47172DEC';
     public __signature: string = ResponseHeartbeat.__signature;
+    static getSignature(){
+        return ResponseHeartbeat.__signature;
+    }
+    public getSignature(){
+        return this.__signature;
+    }
     static __rules : {[key:string]: any}   = {
 		"allowed": { "type": "boolean", "required": true },
 		"reason": { "in": "Reasons", "optional": true }
@@ -567,6 +608,12 @@ export class EventRequest extends Message{
 	public readonly eventId: string = __generic.guid();
     static __signature: string = 'FD7E792';
     public __signature: string = EventRequest.__signature;
+    static getSignature(){
+        return EventRequest.__signature;
+    }
+    public getSignature(){
+        return this.__signature;
+    }
     static __rules : {[key:string]: any}   = {
 		"body": { "type": "string", "required": true },
 		"protocol": { "type": "string", "required": true },
@@ -605,6 +652,12 @@ export class EventResponse extends Message{
 	public sent: number;
     static __signature: string = '3766E554';
     public __signature: string = EventResponse.__signature;
+    static getSignature(){
+        return EventResponse.__signature;
+    }
+    public getSignature(){
+        return this.__signature;
+    }
     static __rules : {[key:string]: any}   = {
 		"eventId": { "type": "string", "required": true },
 		"sent": { "type": "number", "required": true }
@@ -643,6 +696,12 @@ export class IncomeEvent extends Message{
 	public readonly eventId: string = __generic.guid();
     static __signature: string = '59E39F8A';
     public __signature: string = IncomeEvent.__signature;
+    static getSignature(){
+        return IncomeEvent.__signature;
+    }
+    public getSignature(){
+        return this.__signature;
+    }
     static __rules : {[key:string]: any}   = {
 		"body": { "type": "string", "required": true },
 		"signature": { "type": "string", "required": true },
@@ -681,6 +740,12 @@ export class SubscribeRequest extends Message{
 	public protocol: string;
     static __signature: string = '130E11BE';
     public __signature: string = SubscribeRequest.__signature;
+    static getSignature(){
+        return SubscribeRequest.__signature;
+    }
+    public getSignature(){
+        return this.__signature;
+    }
     static __rules : {[key:string]: any}   = {
 		"signature": { "type": "string", "required": true },
 		"protocol": { "type": "string", "required": true }
@@ -718,6 +783,12 @@ export class SubscribeResponse extends Message{
 	public status: boolean;
     static __signature: string = '71401604';
     public __signature: string = SubscribeResponse.__signature;
+    static getSignature(){
+        return SubscribeResponse.__signature;
+    }
+    public getSignature(){
+        return this.__signature;
+    }
     static __rules : {[key:string]: any}   = {
 		"signature": { "type": "string", "required": true },
 		"protocol": { "type": "string", "required": true },
@@ -756,6 +827,12 @@ export class UnsubscribeRequest extends Message{
 	public protocol: string;
     static __signature: string = '5FDA0B89';
     public __signature: string = UnsubscribeRequest.__signature;
+    static getSignature(){
+        return UnsubscribeRequest.__signature;
+    }
+    public getSignature(){
+        return this.__signature;
+    }
     static __rules : {[key:string]: any}   = {
 		"signature": { "type": "string", "required": true },
 		"protocol": { "type": "string", "required": true }
@@ -793,6 +870,12 @@ export class UnsubscribeResponse extends Message{
 	public status: boolean;
     static __signature: string = '78DB7595';
     public __signature: string = UnsubscribeResponse.__signature;
+    static getSignature(){
+        return UnsubscribeResponse.__signature;
+    }
+    public getSignature(){
+        return this.__signature;
+    }
     static __rules : {[key:string]: any}   = {
 		"signature": { "type": "string", "required": true },
 		"protocol": { "type": "string", "required": true },
@@ -830,6 +913,12 @@ export class UnsubscribeAllRequest extends Message{
 	public protocol: string;
     static __signature: string = '56672C38';
     public __signature: string = UnsubscribeAllRequest.__signature;
+    static getSignature(){
+        return UnsubscribeAllRequest.__signature;
+    }
+    public getSignature(){
+        return this.__signature;
+    }
     static __rules : {[key:string]: any}   = {
 		"protocol": { "type": "string", "required": true }
     };
@@ -864,6 +953,12 @@ export class UnsubscribeAllResponse extends Message{
 	public status: boolean;
     static __signature: string = '66F5B536';
     public __signature: string = UnsubscribeAllResponse.__signature;
+    static getSignature(){
+        return UnsubscribeAllResponse.__signature;
+    }
+    public getSignature(){
+        return this.__signature;
+    }
     static __rules : {[key:string]: any}   = {
 		"protocol": { "type": "string", "required": true },
 		"status": { "type": "boolean", "required": true }
@@ -901,6 +996,12 @@ export class RequestRequest extends Message{
 	public readonly requestId: string = __generic.guid();
     static __signature: string = '78405EC7';
     public __signature: string = RequestRequest.__signature;
+    static getSignature(){
+        return RequestRequest.__signature;
+    }
+    public getSignature(){
+        return this.__signature;
+    }
     static __rules : {[key:string]: any}   = {
 		"body": { "type": "string", "required": true },
 		"protocol": { "type": "string", "required": true }
@@ -937,6 +1038,12 @@ export class RequestResponse extends Message{
 	public processing: boolean;
     static __signature: string = '6D3F8A17';
     public __signature: string = RequestResponse.__signature;
+    static getSignature(){
+        return RequestResponse.__signature;
+    }
+    public getSignature(){
+        return this.__signature;
+    }
     static __rules : {[key:string]: any}   = {
 		"requestId": { "type": "string", "required": true },
 		"processing": { "type": "boolean", "required": true }
@@ -973,6 +1080,12 @@ export class RequestResultResponse extends Message{
 	public body: string;
     static __signature: string = '4AF39486';
     public __signature: string = RequestResultResponse.__signature;
+    static getSignature(){
+        return RequestResultResponse.__signature;
+    }
+    public getSignature(){
+        return this.__signature;
+    }
     static __rules : {[key:string]: any}   = {
 		"requestId": { "type": "string", "required": true },
 		"body": { "type": "string", "required": true }
@@ -1031,6 +1144,7 @@ const __SchemeEnums : {[key:string]: any} = {
 }     
         
 export const __signature = '5EF57FC0';
+export function getSignature() { return '5EF57FC0'; };
 
 export const Protocol : {[key:string]: any} = {
     //Classes
@@ -1056,7 +1170,9 @@ export const Protocol : {[key:string]: any} = {
 	Responses: Responses,
 	Reasons: Reasons,
     extract: __parser.convert.bind(__parser),
-    __signature: "5EF57FC0"
+    __signature: "5EF57FC0",
+    extractSignature:  extractSignature,
+    getSignature: () => { return '5EF57FC0'; }
 }     
         
         

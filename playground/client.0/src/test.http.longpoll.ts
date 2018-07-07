@@ -27,39 +27,97 @@ class Output {
         }
     }
 }
-export default function test(){
-    const output = new Output();
-    //Create parameters for HTTP Longpoll client
-    const parameters = new Transports.HTTPLongpollClient.ConnectionParameters({
+
+export default class Test {
+
+    private _output: Output = new Output();
+    private _parameters: Transports.HTTPLongpollClient.ConnectionParameters = new Transports.HTTPLongpollClient.ConnectionParameters({
         host: 'http://localhost',
         port: 3005,
         type: Enums.ERequestTypes.post
     });
+    private _client: Transports.HTTPLongpollClient.Client;
+    private _greetingMessageTimer: number = -1;
 
-    //Create HTTP Longpoll client
-    const client = new Transports.HTTPLongpollClient.Client(parameters);
+    constructor(){    
+        //Create HTTP Longpoll client
+        this._client = new Transports.HTTPLongpollClient.Client(this._parameters);
+        this._subsribeTransportEvents();
+    }
 
-    client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.connected, () => {
-        output.add(`HTTP.Longpoll transport test: Connected`);
-        const greeting = new Protocol.EventPing({
-            name: 'Test Client'
-        });
-        client.eventEmit(greeting, Protocol)
-            .then((res) => {
-                output.add(`Event sent: ${Tools.inspect(res)}`, { color: 'rgb(200,200,200)'});
-            })
-            .catch((e) => {
-                output.add(`Error: ${Tools.inspect(e)}`, { color: 'rgb(255,0,0)'});
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Transprt events: sunscription
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    private _bind(){
+        this._onConnected = this._onConnected.bind(this);
+        this._onDisconnected = this._onDisconnected.bind(this);
+        this._onError = this._onError.bind(this);
+        this._onHeartBeat = this._onHeartBeat.bind(this);
+    }
+
+    private _subsribeTransportEvents(){
+        this._bind();
+        this._client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.connected, this._onConnected);
+        this._client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.disconnected, this._onDisconnected);
+        this._client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.error, this._onError);
+        this._client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.heartbeat, this._onHeartBeat);
+    }
+
+    private _unsubsribeTransportEvents(){
+        this._client.unsubscribe(Transports.HTTPLongpollClient.Client.EVENTS.connected, this._onConnected);
+        this._client.unsubscribe(Transports.HTTPLongpollClient.Client.EVENTS.disconnected, this._onDisconnected);
+        this._client.unsubscribe(Transports.HTTPLongpollClient.Client.EVENTS.error, this._onError);
+        this._client.unsubscribe(Transports.HTTPLongpollClient.Client.EVENTS.heartbeat, this._onHeartBeat);
+    }
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Transprt events: handlers
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    private _onConnected(){
+        this._output.add(`HTTP.Longpoll transport test: Connected`);
+        this._sendGreetingMessage();
+    }
+
+    private _onDisconnected(){
+        this._output.add(`Client is disconnected.`, { color: 'rgb(255,255,0)'});
+        this._stopSendGreetingMessage();
+    }
+
+    private _onError(error: any){
+        this._output.add(`Error: ${error.message}; reason: ${error.reason}`, { color: 'rgb(255,0,0)'});
+    }
+
+    private _onHeartBeat(){
+        this._output.add(`Heartbeat...`, { color: 'rgb(150,150,150)'});
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Tests
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    private _sendGreetingMessage(){
+        this._greetingMessageTimer = setTimeout(() => {
+            const greeting = new Protocol.EventPing({
+                name: 'Test Client'
             });
-    });
-    client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.disconnected, () => {
-        output.add(`Client is disconnected.`, { color: 'rgb(255,255,0)'});
-    });
-    client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.error, (error: any) => {
-        output.add(`Error: ${error.message}; reason: ${error.reason}`, { color: 'rgb(255,0,0)'});
-    });
-    client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.heartbeat, () => {
-        output.add(`Heartbeat...`, { color: 'rgb(150,150,150)'});
-    });
+            
+            this._client.eventEmit(greeting, Protocol)
+                .then((res) => {
+                    this._output.add(`Event sent: ${Tools.inspect(res)}`, { color: 'rgb(200,200,200)'});
+                    this._sendGreetingMessage();
+                })
+                .catch((e) => {
+                    this._output.add(`Error: ${Tools.inspect(e)}`, { color: 'rgb(255,0,0)'});
+                    this._sendGreetingMessage();
+                });
+            
+        }, 1500);
+    }
 
+    private _stopSendGreetingMessage(){
+        if (this._greetingMessageTimer === -1){
+            return;
+        }
+        clearTimeout(this._greetingMessageTimer);
+        this._greetingMessageTimer = -1;
+    }
 }

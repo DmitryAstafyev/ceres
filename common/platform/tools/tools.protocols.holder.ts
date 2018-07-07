@@ -31,14 +31,14 @@ export default class ProtocolsHolder {
         });
     }
 
-    private _getProtocolSignature(protocol: any): string | Error {
-        if (typeof protocol !== 'object' || protocol === null) {
-            return new Error('No protocol found');
+    private _getProtocolSignature(smth: any): string | Error {
+        if ((typeof smth !== 'object' || smth === null) && typeof smth !== 'function') {
+            return new Error('No protocol found. As protocol expecting: constructor or instance of protocol.');
         }
-        if (typeof protocol.__signature !== 'string' || protocol.__signature.trim() === ''){
+        if (typeof smth.getSignature !== 'function' || typeof smth.getSignature() !== 'string' || smth.getSignature().trim() === ''){
             return new Error('No sigature of protocol found');
         }
-        return protocol.__signature;
+        return smth.getSignature();
     }
 
 }
