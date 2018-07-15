@@ -7,7 +7,6 @@ import * as DescMiddleware from '../../infrastructure/middleware/implementation'
 import { Request } from './request';
 
 import * as Protocol from '../../protocols/connection/protocol.connection';
-import { request } from 'https';
 
 const SETTINGS = {
     POST_REQUEST_MAX_LENGTH: 100000,
@@ -112,9 +111,10 @@ export class Tokens {
 export class Server {
  
     private _logger         : Tools.Logger              = new Tools.Logger('Http.Server');
-    private _requests       : Map<symbol, Request>      = new Map();
+    private _requests       : Map<string, Request>      = new Map();
     private _tokens         : Tokens                    = new Tokens();
     private _subscriptions  : Tools.SubscriptionsHolder = new Tools.SubscriptionsHolder();
+    private _tasks          : Tools.Queue               = new Tools.Queue();
     private _parameters     : DescConnection.ConnectionParameters;
     private _middleware     : DescMiddleware.Middleware<HTTP.IncomingMessage, HTTP.ServerResponse>;
     private _http           : HTTP.Server;
@@ -293,17 +293,20 @@ export class Server {
                     //Register clientId
                     _request.setClientId(message.clientId);
                     //Add request to storage
-                    this._requests.set(_request.getId(), _request);
+                    this._requests.set(_request.getClientId(), _request);
                     //Subscribe on request's events
                     this._subscribeRequest(_request);
                     //Set expired response
                     _request.setExpiredResponse(this._getExpiredResponse(credential));
                     //Update token date
                     this._tokens.refresh(credential.clientId);
+                    //Procced tasks
+                    this._tasks.procced();
                 } else if (message instanceof Protocol.EventRequest){
+                    const sent = this._triggerEvent(message.protocol, message.signature, message.body);
                     const eventResponse = new Protocol.EventResponse({
                         clientId: credential.clientId,
-                        sent: this._triggerEvent(message.protocol, message.signature, message.body),
+                        sent: sent,
                         eventId: message.eventId
                     });
                     eventResponse.setToken(credential.token);
@@ -368,38 +371,46 @@ export class Server {
     private _triggerEvent(protocol: string, event: string, body: string): number{
         const subscribers = this._subscriptions.get(protocol, event);
         let sent = 0;
-        this._requests.forEach((request: Request, ID: symbol) => {
-            const clientId = request.getClientId();
-            if (clientId === ''){
-                return;
+        subscribers.forEach((clientId: string) => {
+            if (!this._triggerEventForClient(protocol, event, body, clientId)){
+                //By some reasons event isn't triggered. Possible reason - no active request for task. Add task.
+                return this._tasks.add(function(this: Server, protocol: string, event: string, body: string, clientId: string){
+                    return this._triggerEventForClient(protocol, event, body, clientId);
+                }.bind(this, protocol, event, body, clientId), clientId);
             }
-            if (~subscribers.indexOf(clientId)){
-                this._logger.debug(`Client (${clientId}) is subscribed on "${protocol}/${event}". Event will be sent.`);
-                const IncomeEvent = new Protocol.IncomeEvent({
-                    signature: event,
-                    protocol: protocol,
-                    body: body,
-                    clientId:clientId
-                });
-                const clientToken = this._tokens.get(clientId);
-                if (clientToken === null){
-                    this._logger.warn(`During triggering event "${protocol}/${event}" was detected client (${clientId}) without token.`);
-                    return;
-                }
-                IncomeEvent.setToken(clientToken);
-                request.send({ data: IncomeEvent.getStr() });
-                sent ++;
-            }
+            sent ++;
         });
         if (sent > 0){
             this._logger.debug(`Event "${protocol}/${event}" was sent to ${sent} client(s).`);
-
         }
         return sent;
     }
 
+    private _triggerEventForClient(protocol: string, event: string, body: string, clientId: string): boolean {
+        const request = this._requests.get(clientId);
+        if (Tools.getTypeOf(request) === Tools.EPrimitiveTypes.undefined) {
+            this._logger.debug(`Client (${clientId}) is subscribed on "${protocol}/${event}", but active request wasn't found. Will be created a queue task.`);
+            return false;
+        }
+        this._logger.debug(`Client (${clientId}) is subscribed on "${protocol}/${event}". Event will be sent.`);
+        const IncomeEvent = new Protocol.IncomeEvent({
+            signature: event,
+            protocol: protocol,
+            body: body,
+            clientId:clientId
+        });
+        const clientToken = this._tokens.get(clientId);
+        if (clientToken === null){
+            this._logger.warn(`During triggering event "${protocol}/${event}" was detected client (${clientId}) without token.`);
+            return false;
+        }
+        IncomeEvent.setToken(clientToken);
+        (request as Request).send({ data: IncomeEvent.getStr() });
+        return true;
+    }
+
     private _send(message: string){
-        this._requests.forEach((request: Request, ID: symbol) => {
+        this._requests.forEach((request: Request, clientId: string) => {
             request.send({ data: message });
         });
     }
@@ -407,7 +418,6 @@ export class Server {
     private _subscribeRequest(_request: Request){
         _request.on(_request.EVENTS.onClose, this._onCloseRequest.bind(this, _request));
         _request.on(_request.EVENTS.onAborted, this._onAbortedRequest.bind(this, _request));
-
     }
 
     private _unsubscribeRequest(_request: Request){
@@ -416,14 +426,15 @@ export class Server {
 
     private _onCloseRequest(_request: Request){
         this._unsubscribeRequest(_request);
-        this._requests.delete(_request.getId());
+        this._requests.delete(_request.getClientId());
     }
 
     private _onAbortedRequest(_request: Request){
         const clientId: string = _request.getClientId();
         this._unsubscribeRequest(_request);
-        this._requests.delete(_request.getId());
+        this._requests.delete(clientId);
         this._subscriptions.removeClient(clientId);
+        this._tasks.drop(clientId);
         this._logger.debug(`Client (${clientId}) aborted connection.`);
     }
 
@@ -438,10 +449,10 @@ export class Server {
 
     private _logState(){
         const clients: Array<string> = [];
-        this._requests.forEach((request: Request, key: symbol) => {
-            clients.push(request.getClientId());
+        this._requests.forEach((request: Request, clientId: string) => {
+            clients.push(clientId);
         });
-        this._logger.debug(`    [server state]: requests = ${clients.length}; subcribers = ${this._subscriptions.getInfo()}`);
+        this._logger.debug(`    [server state]: requests = ${clients.length}; subcribers = ${this._subscriptions.getInfo()}; tasks in queue: ${this._tasks.getTasksCount()}.`);
         setTimeout(() => {
             this._logState();
         }, 1000);
