@@ -286,9 +286,10 @@ export class Server {
                 //Authorization: not authorized
                 if (credential.token === '') {
                     return this._authClient(_request, credential, post);
+                } else {
+                    //Update token date
+                    this._tokens.refresh(credential.clientId);
                 }
-                //Update token date
-                this._tokens.refresh(credential.clientId);
                 //Get message
                 const message = Protocol.extract(post);
                 if (message instanceof Protocol.RequestHeartbeat) {
@@ -428,7 +429,7 @@ export class Server {
         this._unsubscribeRequest(_request);
         this._requests.delete(_request.getClientId());
         /*
-        Here is an issue. In case if request is closed and at this moment client is closed on server side we still have subscriptions and task for such client.
+        Here is an issue. In case if request is closed and at this moment browser with client is closed also (without new Hearbit request), we still have subscriptions and task for such client.
         So, should be defined some kind of way to destroy client if it isn't connected again. To destroy:
         - request storage
         - subscriptions
