@@ -287,6 +287,8 @@ export class Server {
                 if (credential.token === '') {
                     return this._authClient(_request, credential, post);
                 }
+                //Update token date
+                this._tokens.refresh(credential.clientId);
                 //Get message
                 const message = Protocol.extract(post);
                 if (message instanceof Protocol.RequestHeartbeat) {
@@ -298,8 +300,6 @@ export class Server {
                     this._subscribeRequest(_request);
                     //Set expired response
                     _request.setExpiredResponse(this._getExpiredResponse(credential));
-                    //Update token date
-                    this._tokens.refresh(credential.clientId);
                     //Procced tasks
                     this._tasks.procced();
                 } else if (message instanceof Protocol.EventRequest){
@@ -429,7 +429,11 @@ export class Server {
         this._requests.delete(_request.getClientId());
         /*
         Here is an issue. In case if request is closed and at this moment client is closed on server side we still have subscriptions and task for such client.
-        So, should be defined some kind of way to destroy client if it isn't connected again.
+        So, should be defined some kind of way to destroy client if it isn't connected again. To destroy:
+        - request storage
+        - subscriptions
+        - tasks
+        - tokens
         */
     }
 
