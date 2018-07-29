@@ -374,9 +374,9 @@ export class Server {
         subscribers.forEach((clientId: string) => {
             if (!this._triggerEventForClient(protocol, event, body, clientId)){
                 //By some reasons event isn't triggered. Possible reason - no active request for task. Add task.
-                return this._tasks.add(function(this: Server, protocol: string, event: string, body: string, clientId: string){
+                return this._tasks.add(() => {
                     return this._triggerEventForClient(protocol, event, body, clientId);
-                }.bind(this, protocol, event, body, clientId), clientId);
+                }, clientId);
             }
             sent ++;
         });
@@ -427,6 +427,10 @@ export class Server {
     private _onCloseRequest(_request: Request){
         this._unsubscribeRequest(_request);
         this._requests.delete(_request.getClientId());
+        /*
+        Here is an issue. In case if request is closed and at this moment client is closed on server side we still have subscriptions and task for such client.
+        So, should be defined some kind of way to destroy client if it isn't connected again.
+        */
     }
 
     private _onAbortedRequest(_request: Request){
