@@ -18,3 +18,4 @@ export { default as HandlersHolder} from './tools.handlers.holder';
 export { default as SubscriptionsHolder } from './tools.subscriptons.holder';
 export { default as ProtocolsHolder } from './tools.protocols.holder';
 export { default as Queue } from './tools.queue';
+export { default as ExtError } from './tool.error';

@@ -6,6 +6,8 @@ import * as DescMiddleware from '../../infrastructure/middleware/implementation'
 
 import { Request } from './request';
 
+import { EventEmitter } from 'events';
+
 import * as Protocol from '../../protocols/connection/protocol.connection';
 
 const SETTINGS = {
@@ -28,12 +30,17 @@ interface IRequestCredential {
     clientId: string
 }
 
-export class Tokens {
+export class Tokens extends EventEmitter {
 
     private _tokens : Map<string, { token: string, timestamp: number }> = new Map();
     private _timer  : NodeJS.Timer | null = null;
-    
+
+    public EVENTS = {
+        onExpired: Symbol()
+    };
+
     constructor(){
+        super();
         this.cleanup();
     }
 
@@ -94,14 +101,11 @@ export class Tokens {
     private cleanup() {
         this._timer = setTimeout(() => {
             const timestamp: number = (new Date()).getTime();
-            const removed: Array<string> = [];
-            this._tokens.forEach((value, clientId: string) => {
+            this._tokens.forEach((value: { token: string, timestamp: number }, clientId: string) => {
                 if (timestamp - value.timestamp > SETTINGS.TOKENS_CLEANUP_TIMEOUT) {
-                    removed.push(clientId);
+                    this._tokens.delete(clientId);
+                    this.emit(this.EVENTS.onExpired, clientId);
                 }
-            });
-            removed.forEach((clientId: string) => {
-                this._tokens.delete(clientId);
             });
             this.cleanup();
         }, SETTINGS.TOKENS_CLEANUP_TIMEOUT);
@@ -142,6 +146,9 @@ export class Server {
         this._middleware = middleware;
 
         this._http = HTTP.createServer(this._onRequest.bind(this)).listen(this._parameters.port);
+
+        this._tokens.on(this._tokens.EVENTS.onExpired, this._onClientTokenExpired.bind(this));
+
         this._logState();
     }
 
@@ -189,7 +196,7 @@ export class Server {
         });
     }
 
-    private _validatePost(request: Request, post: any): IRequestCredential | Error {
+    private _validatePost(request: Request, post: any): IRequestCredential | Tools.ExtError<{ clientId: string }> {
         const token     = Protocol.getToken(post);
         const clientId  = post.clientId;
         if (Tools.getTypeOf(clientId) !== Tools.EPrimitiveTypes.string || clientId.trim() === ''){
@@ -200,7 +207,7 @@ export class Server {
                 reason: Protocol.Reasons.NO_CLIENT_ID_FOUND
             });
             request.send({data: responseHandshake.getStr(), safely: true});
-            return new Error(`Client ID isn't defined.`);
+            return new Tools.ExtError(`Client ID isn't defined.`);
         }
         if (token instanceof Error) {
             //Token isn't defined at all
@@ -211,7 +218,7 @@ export class Server {
                 error: token.message
             });
             request.send({data: responseHandshake.getStr(), safely: true});
-            return new Error(`Cannot detect token. Client ID: ${clientId}.`);
+            return new Tools.ExtError(`Cannot detect token. Client ID: ${clientId}.`, { clientId: clientId });
         }
         if (token === '' && this._tokens.isRegistred(clientId)) {
             //Client is already registred, but token isn't provided
@@ -221,7 +228,7 @@ export class Server {
                 reason: Protocol.Reasons.NO_TOKEN_PROVIDED
             });
             request.send({data: responseHandshake.getStr(), safely: true});
-            return new Error(`Token isn't provided, even client is already registred. Client ID: ${clientId}.`);
+            return new Tools.ExtError(`Token isn't provided, even client is already registred. Client ID: ${clientId}.`, { clientId: clientId });
         }
         if (token !== '' && !this._tokens.isRegistred(clientId)) {
             //Client doesn't have registred token
@@ -231,7 +238,7 @@ export class Server {
                 reason: Protocol.Reasons.TOKEN_IS_WRONG
             });
             request.send({data: responseHandshake.getStr(), safely: true});
-            return new Error(`Token provided by client isn't registred. Client ID: ${clientId}.`);
+            return new Tools.ExtError(`Token provided by client isn't registred. Client ID: ${clientId}.`, { clientId: clientId });
         }
         return {
             token: token,
@@ -266,23 +273,18 @@ export class Server {
             });
     }
 
-    private _subscribeIncomeMessage(request: HTTP.IncomingMessage, clientId: string){
-        request.on(HTTP_INCOME_MESSAGE_EVENTS.aborted, () => {
-            this._tokens.remove(clientId);
-        });
-    }
-
     private _onRequest(request: HTTP.IncomingMessage, response: HTTP.ServerResponse){
         this._getPOSTData(request)
             .then((post: any) => {
                 const _request = new Request(Symbol(Tools.guid()), request, response);
                 //Validate body of request
-                const credential: IRequestCredential | Error = this._validatePost(_request, post);
-                if (credential instanceof Error) {
-                    return this._logger.debug(`Cannot processing request due error: ${credential.message}`);
+                const credential: IRequestCredential | Tools.ExtError<{ clientId: string }> = this._validatePost(_request, post);
+                if (credential instanceof Tools.ExtError) {
+                    if (credential.info !== void 0) {
+                        this._removeClientData(credential.info.clientId);
+                    }
+                    return this._logger.debug(`Cannot processing request due error: ${credential.error.message}`);
                 }
-                //Subscribe HTTP.IncomingMessage events
-                this._subscribeIncomeMessage(request, credential.clientId);
                 //Authorization: not authorized
                 if (credential.token === '') {
                     return this._authClient(_request, credential, post);
@@ -423,6 +425,7 @@ export class Server {
 
     private _unsubscribeRequest(_request: Request){
         _request.removeAllListeners(_request.EVENTS.onClose);
+        _request.removeAllListeners(_request.EVENTS.onAborted);
     }
 
     private _onCloseRequest(_request: Request){
@@ -438,13 +441,30 @@ export class Server {
         */
     }
 
+    private _onClientTokenExpired(clientId: string){
+        this._removeClientData(clientId);
+        this._logger.debug(`Token of client (${clientId}) is expired. Client is removed.`);
+    }
+
     private _onAbortedRequest(_request: Request){
         const clientId: string = _request.getClientId();
-        this._unsubscribeRequest(_request);
-        this._requests.delete(clientId);
+        this._removeClientData(clientId);
+        this._logger.debug(`Client (${clientId}) aborted connection.`);
+    }
+
+    private _removeClientData(clientId: string): boolean {
+        if (typeof clientId !== 'string') {
+            return false;
+        }
+        const _request = this._requests.get(clientId);
+        if (_request !== void 0) {
+            this._unsubscribeRequest(_request);
+            this._requests.delete(clientId);
+        }
         this._subscriptions.removeClient(clientId);
         this._tasks.drop(clientId);
-        this._logger.debug(`Client (${clientId}) aborted connection.`);
+        this._tokens.remove(clientId);
+        return true;
     }
 
     private _getExpiredResponse(credential: IRequestCredential): string {
