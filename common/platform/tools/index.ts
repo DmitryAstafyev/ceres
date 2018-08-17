@@ -19,3 +19,4 @@ export { default as SubscriptionsHolder } from './tools.subscriptons.holder';
 export { default as ProtocolsHolder } from './tools.protocols.holder';
 export { default as Queue } from './tools.queue';
 export { default as ExtError } from './tool.error';
+export { default as TimerEmitter } from './tools.timer.emitter';

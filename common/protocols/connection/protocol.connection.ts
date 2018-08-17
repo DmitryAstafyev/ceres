@@ -1,6 +1,6 @@
 
 /*
-* This file generated automaticaly (UTC: Sat, 07 Jul 2018 20:07:12 GMT). 
+* This file generated automaticaly (UTC: Thu, 16 Aug 2018 22:03:56 GMT). 
 * Do not remove or change this code.
 */
 
@@ -365,23 +365,25 @@ class ProtocolMessage {
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 export enum Requests {
 	HANDSHAKE = 0,
-	HEARTBEAT = 1,
-	EVENT = 2,
-	SUBSCRIBE = 3,
-	UNSUBSCRIBE = 4,
-	UNSUBSCRIBE_ALL = 5,
-	REQUEST = 6,
-};
-export enum Responses {
-	HANDSHAKE = 0,
-	HEARTBEAT = 1,
-	EVENT = 2,
-	INCOME_EVENT = 3,
+	HOOK = 1,
+	PENDING = 2,
+	EVENT = 3,
 	SUBSCRIBE = 4,
 	UNSUBSCRIBE = 5,
 	UNSUBSCRIBE_ALL = 6,
 	REQUEST = 7,
-	REQUEST_RESULT = 8,
+};
+export enum Responses {
+	HANDSHAKE = 0,
+	HOOK = 1,
+	PENDING = 2,
+	EVENT = 3,
+	INCOME_EVENT = 4,
+	SUBSCRIBE = 5,
+	UNSUBSCRIBE = 6,
+	UNSUBSCRIBE_ALL = 7,
+	REQUEST = 8,
+	REQUEST_RESULT = 9,
 };
 export enum Reasons {
 	FAIL_AUTH = 0,
@@ -519,13 +521,13 @@ export class ResponseHandshake extends Message{
 }
 
 
-export class RequestHeartbeat extends Message{
+export class RequestHook extends Message{
 
 
-    static __signature: string = '550C9C06';
-    public __signature: string = RequestHeartbeat.__signature;
+    static __signature: string = '475CB775';
+    public __signature: string = RequestHook.__signature;
     static getSignature(){
-        return RequestHeartbeat.__signature;
+        return RequestHook.__signature;
     }
     public getSignature(){
         return this.__signature;
@@ -536,13 +538,13 @@ export class RequestHeartbeat extends Message{
     
     constructor(properties: { request?: Requests, response?: Responses, guid?: string, clientId: string }) {
         super(Object.assign(properties, { 
-            	request: Requests.HEARTBEAT
+            	request: Requests.HOOK
             }));
 
-        const name  : string = 'RequestHeartbeat';
+        const name  : string = 'RequestHook';
 
         const errors = getInstanceErrors(name,
-            RequestHeartbeat.__rules,
+            RequestHook.__rules,
             __SchemeEnums,
             __SchemeClasses,
             properties);
@@ -558,32 +560,32 @@ export class RequestHeartbeat extends Message{
 }
 
 
-export class ResponseHeartbeat extends Message{
+export class ResponseHook extends Message{
 
-	public allowed: boolean;
-	public reason: Reasons | undefined;
-    static __signature: string = '47172DEC';
-    public __signature: string = ResponseHeartbeat.__signature;
+	public reason: Reasons;
+	public error: string | undefined;
+    static __signature: string = '574501BD';
+    public __signature: string = ResponseHook.__signature;
     static getSignature(){
-        return ResponseHeartbeat.__signature;
+        return ResponseHook.__signature;
     }
     public getSignature(){
         return this.__signature;
     }
     static __rules : {[key:string]: any}   = {
-		"allowed": { "type": "boolean", "required": true },
-		"reason": { "in": "Reasons", "optional": true }
+		"reason": { "in": "Reasons", "required": true },
+		"error": { "type": "string", "optional": true }
     };
     
-    constructor(properties: { allowed:boolean, reason?:Reasons, request?: Requests, response?: Responses, guid?: string, clientId: string }) {
+    constructor(properties: { reason:Reasons, error?:string, request?: Requests, response?: Responses, guid?: string, clientId: string }) {
         super(Object.assign(properties, { 
-            	response: Responses.HEARTBEAT
+            	response: Responses.HOOK
             }));
 
-        const name  : string = 'ResponseHeartbeat';
+        const name  : string = 'ResponseHook';
 
         const errors = getInstanceErrors(name,
-            ResponseHeartbeat.__rules,
+            ResponseHook.__rules,
             __SchemeEnums,
             __SchemeClasses,
             properties);
@@ -592,8 +594,89 @@ export class ResponseHeartbeat extends Message{
             throw new Error(`Cannot initialize ${name} due errors: ${errors.map((error: Error)=>{ return error.message; }).join(', ')}`);
         }
 
-		this.allowed = properties.allowed;
 		this.reason = properties.reason;
+		this.error = properties.error;
+
+    }
+
+}
+
+
+export class RequestPending extends Message{
+
+
+    static __signature: string = '5FA04EBF';
+    public __signature: string = RequestPending.__signature;
+    static getSignature(){
+        return RequestPending.__signature;
+    }
+    public getSignature(){
+        return this.__signature;
+    }
+    static __rules : {[key:string]: any}   = {
+
+    };
+    
+    constructor(properties: { request?: Requests, response?: Responses, guid?: string, clientId: string }) {
+        super(Object.assign(properties, { 
+            	request: Requests.PENDING
+            }));
+
+        const name  : string = 'RequestPending';
+
+        const errors = getInstanceErrors(name,
+            RequestPending.__rules,
+            __SchemeEnums,
+            __SchemeClasses,
+            properties);
+        
+        if (errors instanceof Array){
+            throw new Error(`Cannot initialize ${name} due errors: ${errors.map((error: Error)=>{ return error.message; }).join(', ')}`);
+        }
+
+
+
+    }
+
+}
+
+
+export class ResponsePending extends Message{
+
+	public reason: Reasons;
+	public error: string | undefined;
+    static __signature: string = '39B1ED31';
+    public __signature: string = ResponsePending.__signature;
+    static getSignature(){
+        return ResponsePending.__signature;
+    }
+    public getSignature(){
+        return this.__signature;
+    }
+    static __rules : {[key:string]: any}   = {
+		"reason": { "in": "Reasons", "required": true },
+		"error": { "type": "string", "optional": true }
+    };
+    
+    constructor(properties: { reason:Reasons, error?:string, request?: Requests, response?: Responses, guid?: string, clientId: string }) {
+        super(Object.assign(properties, { 
+            	response: Responses.PENDING
+            }));
+
+        const name  : string = 'ResponsePending';
+
+        const errors = getInstanceErrors(name,
+            ResponsePending.__rules,
+            __SchemeEnums,
+            __SchemeClasses,
+            properties);
+        
+        if (errors instanceof Array){
+            throw new Error(`Cannot initialize ${name} due errors: ${errors.map((error: Error)=>{ return error.message; }).join(', ')}`);
+        }
+
+		this.reason = properties.reason;
+		this.error = properties.error;
 
     }
 
@@ -1120,8 +1203,10 @@ const __SchemeClasses : {[key:string]: any} = {
 	Message: Message,
 	RequestHandshake: RequestHandshake,
 	ResponseHandshake: ResponseHandshake,
-	RequestHeartbeat: RequestHeartbeat,
-	ResponseHeartbeat: ResponseHeartbeat,
+	RequestHook: RequestHook,
+	ResponseHook: ResponseHook,
+	RequestPending: RequestPending,
+	ResponsePending: ResponsePending,
 	EventRequest: EventRequest,
 	EventResponse: EventResponse,
 	IncomeEvent: IncomeEvent,
@@ -1143,16 +1228,39 @@ const __SchemeEnums : {[key:string]: any} = {
 	Reasons: Reasons
 }     
         
-export const __signature = '5EF57FC0';
-export function getSignature() { return '5EF57FC0'; };
+export const __signature = '-9325CF5';
+export function getSignature() { return '-9325CF5'; };
+
+export type TProtocolClasses = 
+	Message |
+	RequestHandshake |
+	ResponseHandshake |
+	RequestHook |
+	ResponseHook |
+	RequestPending |
+	ResponsePending |
+	EventRequest |
+	EventResponse |
+	IncomeEvent |
+	SubscribeRequest |
+	SubscribeResponse |
+	UnsubscribeRequest |
+	UnsubscribeResponse |
+	UnsubscribeAllRequest |
+	UnsubscribeAllResponse |
+	RequestRequest |
+	RequestResponse |
+	RequestResultResponse;
 
 export const Protocol : {[key:string]: any} = {
     //Classes
 	Message: Message,
 	RequestHandshake: RequestHandshake,
 	ResponseHandshake: ResponseHandshake,
-	RequestHeartbeat: RequestHeartbeat,
-	ResponseHeartbeat: ResponseHeartbeat,
+	RequestHook: RequestHook,
+	ResponseHook: ResponseHook,
+	RequestPending: RequestPending,
+	ResponsePending: ResponsePending,
 	EventRequest: EventRequest,
 	EventResponse: EventResponse,
 	IncomeEvent: IncomeEvent,
@@ -1170,9 +1278,9 @@ export const Protocol : {[key:string]: any} = {
 	Responses: Responses,
 	Reasons: Reasons,
     extract: __parser.convert.bind(__parser),
-    __signature: "5EF57FC0",
+    __signature: "-9325CF5",
     extractSignature:  extractSignature,
-    getSignature: () => { return '5EF57FC0'; }
+    getSignature: () => { return '-9325CF5'; }
 }     
         
         

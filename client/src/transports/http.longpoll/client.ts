@@ -2,10 +2,13 @@ import * as Tools from '../../platform/tools/index';
 import * as Enums from '../../platform/enums/index';
 import * as DescConnection from './connection/index';
 import * as DescMiddleware from '../../infrastructure/middleware/index';
-import { Request } from './request';
+import { Request, IRequestError } from './request';
 import * as Protocol from '../../protocols/connection/protocol.connection';
 import { ITransportInterface } from '../../platform/interfaces/interface.transport';
 
+const SETTINGS = {
+    RECONNECTION_TIMEOUT: 3000 //ms
+};
 enum ERepeatTimeout {
     error = 1000,
     expired = 5000,
@@ -20,7 +23,9 @@ enum ERepeatReason {
 
 export enum EClientStates {
     created = 'created',
-    listening = 'listening'
+    connecting = 'connecting',
+    reconnectioning = 'reconnectioning',
+    connected = 'connected'
 }
 
 export enum EClientEvents {
@@ -38,16 +43,273 @@ export enum EClientEvents {
     message = 'message'
 }
 
+class Token {
+
+    private _token: string = '';
+
+    /**
+     * Set current token
+     * @param token {string}
+     * @returns {void}
+     */
+    public set(token: string) {
+        this._token = token;
+    }
+
+    /**
+     * Return current token
+     * @returns {string}
+     */
+    public get(): string {
+        return this._token;
+    }
+
+    /**
+     * Drop current token
+     * @returns {void}
+     */
+    public drop() {
+        this.set('');
+    }
+}
+
+class State {
+
+    private _state: EClientStates = EClientStates.created;
+
+    /**
+     * Set current state
+     * @param state {string}
+     * @returns {void}
+     */
+    public set(state: EClientStates) {
+        this._state = state;
+    }
+
+    /**
+     * Return current state
+     * @returns {EClientStates}
+     */
+    public get(): EClientStates {
+        return this._state;
+    }
+}
+
+/**
+ * @class Hook
+ * @desc Class hook never finishs. Hook request shows: is connection alive or not
+ */
+class Hook {
+
+    private _request: Request | null = null;
+
+    /**
+     * Create hook request. This request never finish.
+     * @returns {Promise<Error>}
+     */
+    public create(url: string, clientGUID: string, token: Token): Promise<Error>{
+        return new Promise((resolve, reject) => {
+            if (this._request !== null) {
+                return reject(new Error(`Attempt to create hook, even hook is already created.`));
+            }
+            const instance = new Protocol.RequestHook({
+                clientId: clientGUID
+            });
+            instance.setToken(token.get());
+            this._request = new Request(url, instance.getStr());
+            const requestId = this._request.getId();
+            this._request.send()
+                .then((response: string) => {
+                    this._request = null;
+                    resolve(new Error(`Hook request guid "${requestId}" made unexpected response: ${Tools.inspect(response)}`));
+                })
+                .catch((error: Tools.ExtError<IRequestError>) => {
+                    this._request = null;
+                    reject(new Error(`Hook request guid "${requestId}" finished within error: ${error.error.message}`));
+                });
+        });
+    }
+
+    /**
+     * Close hook connection.
+     * @returns {void}
+     */
+    public drop(){
+        if (this._request === null) {
+            return;
+        }
+        this._request.close();
+    }
+
+}
+
+/**
+ * @class Pending
+ * @desc Connection which pending command from server
+ */
+class Pending {
+
+    private _request: Request | null = null;
+    private _guid: string = Tools.guid();
+
+    /**
+     * Create pending connection
+     * @returns {Promise<Error>}
+     */
+    public create(url: string, clientGUID: string, token: Token): Promise<string>{
+        return new Promise((resolve, reject) => {
+            if (this._request !== null) {
+                return reject(new Error(`Attempt to create pending connection, even is already created.`));
+            }
+            const instance = new Protocol.RequestPending({
+                clientId: clientGUID
+            });
+            instance.setToken(token.get());
+            this._request = new Request(url, instance.getStr());
+            const requestId = this._request.getId();
+            this._request.send()
+                .then((response: string) => {
+                    this._request = null;
+                    resolve(response);
+                })
+                .catch((error: Tools.ExtError<IRequestError>) => {
+                    this._request = null;
+                    reject(new Error(`Hook request guid "${requestId}" finished within error: ${error.error.message}`));
+                });
+        });
+    }
+
+    /**
+     * Close pending connection.
+     * @returns {void}
+     */
+    public drop(){
+        if (this._request === null) {
+            return;
+        }
+        this._request.close();
+    }
+
+    /**
+     * Returns GUID of request
+     * @returns {string}
+     */
+    public getGUID(): string{
+        return this._guid;
+    }
+
+}
+
+class PendingTasks extends Tools.EventEmitter {
+    
+    static EVENTS = {
+        onTask: Symbol(),
+        onError: Symbol()
+    };
+
+    private _pending: Map<string, Pending> = new Map();
+    private _url: string | undefined;
+    private _clientGUID: string | undefined;
+    private _token: Token | undefined;
+
+    constructor() {
+        super();
+    }
+
+    private _add(){
+        if (this._url === undefined || this._clientGUID === undefined || this._token === undefined) {
+            return;
+        }
+        const pending = new Pending();
+        const guid = pending.getGUID();
+        pending.create(this._url, this._clientGUID, this._token)
+            .then((response: string) => {
+                const message = Protocol.extract(response);
+                if (message instanceof Error) {
+                    return this.emit(PendingTasks.EVENTS.onError, message);
+                }
+                if (message instanceof Protocol.RequestPending) {
+                    return this.emit(PendingTasks.EVENTS.onError, new Error(`Pending connection returns unexpected response.`));
+                }
+                //Remove current
+                this._pending.delete(guid);
+                //Add new pending imedeately, while current in process
+                this._add();
+                //Trigger event
+                this.emit(PendingTasks.EVENTS.onTask, message);
+            })
+            .catch((error: Error) => {
+                return this.emit(PendingTasks.EVENTS.onError, error);
+            });
+        this._pending.set(guid, pending);
+    }
+
+    public start(url: string, clientGUID: string, token: Token): Error | void {
+        if (this._pending.size > 0) {
+            return new Error(`Pending connections are already exist. Count: ${this._pending.size}`);
+        }
+        this._url = url;
+        this._clientGUID = clientGUID;
+        this._token = token;
+        this._add();
+    }
+
+    public stop(){
+        this._pending.forEach((pending: Pending) => {
+            pending.drop();
+        });
+        this._pending.clear();
+    }
+
+}
+
+class Requests {
+
+    private _requests: Map<string, Request> = new Map();
+
+    public send(url: string, body: string): Promise<Protocol.TProtocolClasses>{
+        return new Promise((resolve, reject) => {
+            const request = new Request(url, body);
+            this._requests.set(request.getId(), request);
+            request.send()
+                .then((response: string) => {
+                    this._requests.delete(request.getId());
+                    const message = Protocol.extract(response);
+                    if (message instanceof Error) {
+                        return reject(message);
+                    }
+                    resolve(message);
+                })
+                .catch((error: Tools.ExtError<IRequestError>) => {
+                    this._requests.delete(request.getId());
+                    reject(error);
+                });
+        });
+    }
+
+    public drop(){
+        this._requests.forEach((request: Request) => {
+            request.close();
+        });
+        this._requests.clear();
+    }
+
+}
+
 export class Client extends Tools.EventEmitter implements ITransportInterface {
     
     static STATES = EClientStates;
     static EVENTS = EClientEvents;
-    private _logger     : Tools.Logger          = new Tools.Logger('Http.Client');
-    private _requests   : Map<string, Request>  = new Map();
-    private _state      : EClientStates         = EClientStates.created;
+
+    private _logger         : Tools.Logger          = new Tools.Logger('Http.Client');
+    private _token          : Token                 = new Token();
+    private _state          : State                 = new State();
+    private _hook           : Hook                  = new Hook();
+    private _tasks          : PendingTasks          = new PendingTasks();
+    private _requests       : Requests              = new Requests();
+    private _subscriptions  : Tools.HandlersHolder  = new Tools.HandlersHolder();
+
     private _clientGUID : string                = Tools.guid();
-    private _token      : string                = '';
-    private _holder     : Tools.HandlersHolder  = new Tools.HandlersHolder();
     private _protocols  : Tools.ProtocolsHolder = new Tools.ProtocolsHolder();
     private _parameters : DescConnection.ConnectionParameters;
     private _middleware : DescMiddleware.Middleware;
@@ -73,7 +335,13 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
 
         this._parameters = parameters;
         this._middleware = middleware;
-        this._proceed();
+        //Subscribe to tasks
+        this._onTask = this._onTask.bind(this);
+        this._onTaskError = this._onTaskError.bind(this);
+        this._tasks.subscribe(PendingTasks.EVENTS.onTask, this._onTask);
+        this._tasks.subscribe(PendingTasks.EVENTS.onError, this._onTaskError);
+        //Connect
+        this._connect();
     }
 
     /**
@@ -82,88 +350,62 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
      */
     public destroy(): Promise<void> {
         return new Promise((resolve, reject) => {
-            this._requests.forEach((request: Request) => {
-                request.close();
-            });
             resolve();
         });
     }
 
-    private _proceed(){
-        let request;
-        switch(this._getState()){
-            case EClientStates.created:
-                request = new Request(this._clientGUID, this._parameters.getURL(), Enums.ERequestTypes.post, new Protocol.RequestHandshake({
-                    clientId: this._clientGUID
-                }));
-                this._registerRequest(request);
-                request.send();
-                break;
-            case EClientStates.listening:
-                const requestHeartbeat = new Protocol.RequestHeartbeat({
-                    clientId: this._clientGUID,
-                });
-                requestHeartbeat.setToken(this._getToken());
-                request = new Request(this._clientGUID, this._parameters.getURL(), Enums.ERequestTypes.post, requestHeartbeat);
-                this._registerRequest(request);
-                request.send();
-                break;
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 * Connection / reconnection 
+	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+    /**
+     * Made attempt to connect to server
+     * @returns {void}
+     */
+    private _connect() {
+        if (this._state.get() !== EClientStates.created && this._state.get() !== EClientStates.reconnectioning) {
+            throw new Error(this._logger.error(`Attempt to connect on state "${this._state.get()}".`));
         }
+        this._state.set(EClientStates.connecting);
+        const request = new Request(this._parameters.getURL(), (new Protocol.RequestHandshake({
+            clientId: this._clientGUID
+        })).getStr());
+        request.send()
+            .then((response: string) => {
+                this._logger.env(`Request guid: ${request.getId()} is finished successfuly: ${Tools.inspect(response)}`);
+                this._onResponseHandshake(response);
+            })
+            .catch((error: Tools.ExtError<IRequestError>) => {
+                this._logger.warn(`Attempt to connect to "${this._parameters.getURL()}" was failed (next attempt to connectin in ${SETTINGS.RECONNECTION_TIMEOUT}ms) due error: `, error);
+                this._reconnect();
+            });
     }
 
-    private _subscribeRequest(request: Request, resolve?: Function, reject?: Function){
-        request.subscribe(Request.EVENTS.expired,  this._onExpiredRequest.bind(this, resolve, reject, request));
-        request.subscribe(Request.EVENTS.error,    this._onErrorRequest.bind(this, resolve, reject, request));
-        request.subscribe(Request.EVENTS.done,     this._onDoneRequest.bind(this, resolve, reject, request));
+    /**
+     * Made attempt to reconnect in defined timeout
+     * @returns {void}
+     */
+    private _reconnect(){
+        this._state.set(EClientStates.reconnectioning);
+        this._token.drop();
+        this._hook.drop();
+        this._tasks.stop();
+        this._requests.drop();
+        setTimeout(() => {
+            this._connect();
+        }, SETTINGS.RECONNECTION_TIMEOUT);
     }
 
-    private _unsubscribeRequest(request: Request){
-        request.unsubscribeAll(Request.EVENTS.expired);
-        request.unsubscribeAll(Request.EVENTS.error);
-        request.unsubscribeAll(Request.EVENTS.done);
-    }
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 * Responses 
+	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-    private _registerRequest(request: Request, resolve?: Function, reject?: Function){
-        this._subscribeRequest(request, resolve, reject);
-        this._requests.set(request.getId(), request);
-    }
-
-    private _unregisterRequest(request: Request){
-        this._unsubscribeRequest(request);
-        this._requests.delete(request.getId());
-    }
-
-    private _onExpiredRequest(resolve: Function, reject: Function, request: Request, error: Error){
-        this._logger.dev(`Request guid: ${request.getId()} is expired due error: ${Tools.inspect(error)}`);
-        this._reset();
-        this._unregisterRequest(request);
-        if (Tools.getTypeOf(reject) !== Tools.EPrimitiveTypes.function) {
-            this._repeat(ERepeatReason.expired);
-        } else {
-            reject(error);
-        }
-    }
-
-    private _onErrorRequest(resolve: Function, reject: Function, request: Request, error: Error){
-        this.emit(EClientEvents.error, {
-            message: this._logger.dev(`Request guid: ${request.getId()} is finished with error.`),
-            reason: undefined,
-            details: error.message
-        });
-        this._reset();
-        this._unsubscribeRequest(request);
-        if (Tools.getTypeOf(reject) !== Tools.EPrimitiveTypes.function) {
-            this._repeat(ERepeatReason.error);
-        } else {
-            reject(error);
-        }
-    }
-
-    private _onDoneRequest(resolve: Function, reject: Function, request: Request, response: any){
-        resolve = Tools.getTypeOf(resolve) === Tools.EPrimitiveTypes.function ? resolve : () => {};
-        reject = Tools.getTypeOf(reject) === Tools.EPrimitiveTypes.function ? reject : () => {};
-        this._logger.dev(`Request guid: ${request.getId()} is finished successfuly: ${Tools.inspect(response)}`);
-        this._unsubscribeRequest(request);
+    /**
+     * Extract connection protocol message
+     * @param response {string}
+     * @returns {void}
+     */
+    private _getProtocolMessage(response: string): Protocol.TProtocolClasses | Error {
         const message = Protocol.extract(response);
         if (message instanceof Error) {
             this.emit(EClientEvents.error, {
@@ -171,127 +413,87 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                 reason: undefined,
                 details: undefined
             });
-            if (Tools.getTypeOf(reject) === Tools.EPrimitiveTypes.function) {
-                reject(message);
-            }
-            return this._repeat(ERepeatReason.done);
         }
-        switch(this._getState()){
-            case EClientStates.created:
-                if (message instanceof Protocol.ResponseHandshake) {
-                    if (message.allowed && message.getToken() !== ''){
-                        this._setToken(message.getToken());
-                        this._setState(EClientStates.listening);
-                        this.emit(EClientEvents.connected);
-                        resolve();
-                    } else {
-                        this.emit(EClientEvents.error, {
-                            message: this._logger.warn(`Fail to authorize request due reason: ${message.reason} ${message.error !== void 0 ? `(${message.error})`: ''}`),
-                            reason: message.reason,
-                            details: undefined
-                        });
-                        reject(message);
-                    }
-                } else {
-                    this.emit(EClientEvents.error, {
-                        message: this._logger.warn(`On this state (${this._getState()}) expected authorization confirmation, but gotten: ${Tools.inspect(message)}.`),
-                        reason: undefined,
-                        details: undefined
-                    });
-                    reject(message);
-                }
-                break;
-            case EClientStates.listening:
-                if (message instanceof Protocol.ResponseHeartbeat){
-                    if (!message.allowed) {
-                        this._reset();
-                        this.emit(EClientEvents.error, {
-                            message: this._logger.debug(`Token isn't accepted by server. Try reregister...`),
-                            reason: undefined,
-                            details: undefined
-                        });
-                        reject(message);
-                    } else {
-                        this.emit(EClientEvents.heartbeat);
-                        resolve();
-                        this._logger.debug(`Heartbeat [${(new Date()).toUTCString()}]...`);
-                    }
-                } else if (message instanceof Protocol.EventResponse) {
-                    this.emit(EClientEvents.eventSent, message);
-                    this._logger.debug(`Event sent to: ${message.sent}.`);
-                    return resolve(message);
-                } else if (message instanceof Protocol.IncomeEvent) {
-                    this._processIncomeEvent(message);
-                    resolve(message);
-                } else if (message instanceof Protocol.SubscribeResponse) {
-                    this.emit(EClientEvents.subscriptionDone, message);
-                    this._logger.debug(`Subscription to protocol ${message.protocol}, event ${message.signature} has status: ${message.status}.`);
-                    return resolve(message);
-                } else if (message instanceof Protocol.UnsubscribeResponse) {
-                    this.emit(EClientEvents.unsubscriptionDone, message);
-                    this._logger.debug(`Unsubscription from protocol ${message.protocol}, event ${message.signature} has status: ${message.status}.`);
-                    return resolve(message);
-                } else if (message instanceof Protocol.UnsubscribeAllResponse) {
-                    this.emit(EClientEvents.unsubscriptionAllDone, message);
-                    this._logger.debug(`Unsubscription from all events in scope of protocol ${message.protocol}  has status: ${message.status}.`);
-                    return resolve(message);
-                } else if (message instanceof Protocol.RequestResponse) {
-                    this.emit(EClientEvents.requestSent);
-                    this._logger.debug(`Request sent: ${message.processing}.`);
-                    return resolve(message);
-                } else if (message instanceof Protocol.RequestResultResponse) {
-                    this.emit(EClientEvents.requestDone);
-                    this._logger.debug(`Request result: ${message.body}.`);
-                    return resolve(message);
-                }
-                break;
-            default:
-                this.emit(EClientEvents.message);
-                return resolve(message);
-        }
-        this._repeat(ERepeatReason.done);
+        return message;
     }
 
-    private _repeat(reason: ERepeatReason){
-        if (ERepeatTimeout[reason] !== void 0) {
-            ERepeatTimeout[reason] > 0      && setTimeout(this._proceed.bind(this), ERepeatTimeout[reason]);
-            ERepeatTimeout[reason] === 0    && this._proceed();
+    /**
+     * Handle handshake response
+     * @param response {string}
+     * @returns {void}
+     */
+    _onResponseHandshake(response: string){
+        const message = this._getProtocolMessage(response) as Protocol.ResponseHandshake;
+        if (message instanceof Error || !(message instanceof Protocol.ResponseHandshake)) {
+            return this.emit(EClientEvents.error, {
+                message: this._logger.warn(`On this state (${this._state.get()}) expected authorization confirmation, but gotten: ${Tools.inspect(message)}.`),
+                reason: undefined,
+                details: undefined
+            });   
+        }
+        if (!message.allowed && message.getToken() === '') {
+            return this.emit(EClientEvents.error, {
+                message: this._logger.warn(`Fail to authorize request due reason: ${message.reason} ${message.error !== void 0 ? `(${message.error})`: ''}`),
+                reason: message.reason,
+                details: undefined
+            });
+        };
+        //Set token
+        this._token.set(message.getToken());
+        //Set state
+        this._state.set(EClientStates.connected);
+        //Create hook
+        this._hook.create(this._parameters.getURL(), this._clientGUID, this._token)
+            .then((error: Error)=>{
+                //Unexpected response
+            })
+            .catch((error: Tools.ExtError<IRequestError>) => {
+                //Connection dropping
+            });
+        //Create pending
+        this._tasks.start(this._parameters.getURL(), this._clientGUID, this._token);
+        //Trigger connection event
+        this.emit(EClientEvents.connected);
+    }
+
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 * Tasks 
+	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+    private _onTask(message: Protocol.TProtocolClasses){
+        if (message instanceof Protocol.IncomeEvent) {
+            this._emitIncomeEvent(message);
+        } else if (message instanceof Protocol.RequestResultResponse) {
+            this.emit(EClientEvents.requestDone);
+            this._logger.debug(`Request result: ${message.body}.`);
         }
     }
 
-    private _setToken(token: string){
-        if (Tools.getTypeOf(token) !== Tools.EPrimitiveTypes.string){
-            return this._logger.warn(`Cannot set token. Expected {string}, but has gotten: ${Tools.getTypeOf(token)}.`);
-        }
-        this._token = token;
+    private _onTaskError(error: Error) {
+
     }
 
-    private _getToken(): string {
-        return this._token;
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 * Events: private
+	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+    private _emitIncomeEvent(message: Protocol.IncomeEvent){
+        this._protocols.getImplementationFromStr(message.protocol, message.body)
+            .then((event) => {
+                this._subscriptions.emit(message.protocol, message.signature, event);
+            })
+            .catch((error: Error) => {
+                this._logger.env(`Error during emit income event.`, error);
+            });
     }
-
-    private _setState(state: EClientStates) {
-        this._state = state;
-    }
-
-    private _getState(): EClientStates {
-        return this._state;
-    }
-
-    private _reset() {
-        this._getState() === EClientStates.listening && this.emit(EClientEvents.disconnected);
-        this._setToken('');
-        this._setState(EClientStates.created);
-        this._clientGUID = Tools.guid();      
-    }
-
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 * Events: Public
+	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
     /**
      * Emit event 
      * @param event {any} implementation of event
      * @param protocol {Protocol} implementation of event's protocol
      * @returns Promise
      */
-    public eventEmit(event: any, protocol: any): Promise<any> {
+    public eventEmit(event: any, protocol: any): Promise<Protocol.EventResponse> {
         return new Promise((resolve, reject) => {
             const signature = Protocol.extractSignature(protocol);
             if (signature instanceof Error){
@@ -310,10 +512,20 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                 clientId: this._clientGUID,
                 signature: eventSignature
             });
-            instance.setToken(this._getToken());
-            const _request = new Request(this._clientGUID, this._parameters.getURL(), Enums.ERequestTypes.post, instance);
-            this._registerRequest(_request, resolve, reject);
-            _request.send();
+            instance.setToken(this._token.get());
+            this._requests.send(this._parameters.getURL(), instance.getStr())
+                .then((message: Protocol.TProtocolClasses) => {
+                    if (!(message instanceof Protocol.EventResponse)){
+                        return reject(new Error(`Unexpected server response (expected "EventResponse"): ${message.getStr()}`));
+                    }
+                    this._logger.env(`Event sent to: ${message.sent}.`);
+                    this.emit(EClientEvents.eventSent, message);
+                    resolve(message);
+                })
+                .catch((error: Tools.ExtError<IRequestError>) => {
+                    this._logger.env(`Error emit event.`, error);
+                    reject(error);
+                });
         });
     }
 
@@ -324,7 +536,8 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
      * @param handler {Function} handler
      * @returns Promise
      */
-    public subscribeEvent(event: any, protocol: any, handler: Function): Promise<any> {
+    public subscribeEvent(event: any, protocol: any, handler: Function): Promise<Protocol.SubscribeResponse> {
+        //TODO: subscription is already exist. Server doesn't allow subscribe twice. If user need it, he can do it by himself, but server should have only one subscription
         return new Promise((resolve, reject) => {
             const protocolSignature = Protocol.extractSignature(protocol);
             if (protocolSignature instanceof Error){
@@ -336,7 +549,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
             }
             this._protocols.add(protocol)
                 .then(() => {
-                    const subscription = this._holder.subscribe(protocolSignature, eventSignature, handler);
+                    const subscription = this._subscriptions.subscribe(protocolSignature, eventSignature, handler);
                     if (subscription instanceof Error){
                         return reject(subscription);
                     }
@@ -345,24 +558,37 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                         signature: eventSignature,
                         clientId: this._clientGUID
                     });
-                    instance.setToken(this._getToken());
-                    const _request = new Request(this._clientGUID, this._parameters.getURL(), Enums.ERequestTypes.post, instance);
-                    this._registerRequest(_request, resolve, reject);
-                    _request.send();
+                    instance.setToken(this._token.get());
+                    this._requests.send(this._parameters.getURL(), instance.getStr())
+                        .then((message: Protocol.TProtocolClasses) => {
+                            if (!(message instanceof Protocol.SubscribeResponse)) {
+                                this._subscriptions.unsubscribe(protocolSignature, eventSignature);
+                                return reject(new Error(`Unexpected server response (expected "EventResponse"): ${message.getStr()}`));
+                            }
+                            this._logger.env(`Subscription to protocol ${message.protocol}, event ${message.signature} has status: ${message.status}.`);
+                            this.emit(EClientEvents.subscriptionDone, message);
+                            resolve(message);
+                        })
+                        .catch((error: Tools.ExtError<IRequestError>) => {
+                            this._logger.env(`Error subscribe event.`, error);
+                            this._subscriptions.unsubscribe(protocolSignature, eventSignature);
+                            reject(error);
+                        });
                 })
-                .catch((e)=>{
-                    reject(e);
+                .catch((error: Error)=>{
+                    this._logger.env(`Error subscribe event.`, error);
+                    reject(error);
                 });
         });
     }
 
     /** 
-     * Unsubscribe handler from event 
+     * Unsubscribe from event 
      * @param event {any} implementation of event
      * @param protocol {Protocol} implementation of event's protocol
      * @returns Promise
      */
-    public unsubscribeEvent(event: any, protocol: any): Promise<any> {
+    public unsubscribeEvent(event: any, protocol: any): Promise<Protocol.UnsubscribeResponse> {
         return new Promise((resolve, reject) => {
             const protocolSignature = Protocol.extractSignature(protocol);
             if (protocolSignature instanceof Error){
@@ -372,18 +598,25 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
             if (eventSignature instanceof Error){
                 return reject(eventSignature);
             }
-            if (this._holder.unsubscribe(protocolSignature, eventSignature) !== true){
-                return resolve(true);
-            }
             const instance = new Protocol.UnsubscribeRequest({
                 protocol: protocolSignature,
                 signature: eventSignature,
                 clientId: this._clientGUID
             });
-            instance.setToken(this._getToken());
-            const _request = new Request(this._clientGUID, this._parameters.getURL(), Enums.ERequestTypes.post, instance);
-            this._registerRequest(_request, resolve, reject);
-            _request.send();
+            instance.setToken(this._token.get());
+            this._requests.send(this._parameters.getURL(), instance.getStr())
+                .then((message: Protocol.TProtocolClasses) => {
+                    if (!(message instanceof Protocol.UnsubscribeResponse)) {
+                        return reject(new Error(`Unexpected server response (expected "UnsubscribeResponse"): ${message.getStr()}`));
+                    }
+                    this._logger.env(`Unsubscription from protocol ${message.protocol}, event ${message.signature} has status: ${message.status}.`);
+                    this._subscriptions.unsubscribe(protocolSignature, eventSignature);
+                    resolve(message);
+                })
+                .catch((error: Tools.ExtError<IRequestError>) => {
+                    this._logger.env(`Error unsubscribe event.`, error);
+                    reject(error);
+                });
         });
     }
 
@@ -392,39 +625,34 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
      * @param protocol {Protocol} implementation of event's protocol
      * @returns Promise
      */
-    public unsubscribeAllEvents(protocol: any): Promise<any> {
+    public unsubscribeAllEvents(protocol: any): Promise<Protocol.UnsubscribeAllResponse> {
         return new Promise((resolve, reject) => {
             const protocolSignature = Protocol.extractSignature(protocol);
             if (protocolSignature instanceof Error){
                 return reject(protocolSignature);
             }
-
-            if (this._holder.unsubscribe(protocolSignature) !== true){
-                return resolve(true);
-            }
             const instance = new Protocol.UnsubscribeAllRequest({
                 protocol: protocolSignature,
                 clientId: this._clientGUID
             });
-            instance.setToken(this._getToken());
-            const _request = new Request(this._clientGUID, this._parameters.getURL(), Enums.ERequestTypes.post, instance);
-            this._registerRequest(_request, resolve, reject);
-            _request.send();
-        });
-    }
-
-    private _processIncomeEvent(message: Protocol.IncomeEvent){
-        return new Promise((resolve, reject) => {
-            this._protocols.getImplementationFromStr(message.protocol, message.body)
-                .then((event) => {
-                    this._holder.emit(message.protocol, message.signature, event);
-                    resolve(event);
+            instance.setToken(this._token.get());
+            this._requests.send(this._parameters.getURL(), instance.getStr())
+                .then((message: Protocol.TProtocolClasses) => {
+                    if (!(message instanceof Protocol.UnsubscribeAllResponse)) {
+                        return reject(new Error(`Unexpected server response (expected "UnsubscribeAllResponse"): ${message.getStr()}`));
+                    }
+                    this._logger.env(`Unsubscription from all events in scope of protocol ${message.protocol}  has status: ${message.status}.`);
+                    this._subscriptions.unsubscribe(protocolSignature);
+                    resolve(message);
                 })
-                .catch((e) => {
-                    reject(e);
+                .catch((error: Tools.ExtError<IRequestError>) => {
+                    this._logger.env(`Error unsubscribe all.`, error);
+                    reject(error);
                 });
         });
     }
+
+
 
     public request(request: any, protocol?: any) {
         return new Promise((resolve, reject) => {

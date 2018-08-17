@@ -539,6 +539,13 @@ ${Object.keys(this._enums).map((enumName: string)=>{
         `;
     }
 
+    private _getProtocolsClassesType() {
+        return `
+export type TProtocolClasses = \n\t${Object.keys(this._classes).map((className: string)=>{
+    return className;
+}).join(' |\n\t')};`;
+    }
+
     private _getInjections(){
         return this._injections.length === 0 ? '' : `
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -572,6 +579,7 @@ ${this._getSchemeOfClasses()}
 ${this._getSchemeOfEnums()}
 export const ${SIGNATURE} = '${this._getProtocolSignature()}';
 export function getSignature() { return '${this._getProtocolSignature()}'; };
+${this._getProtocolsClassesType()}
 ${this._getProtocolDescription()}
         `;
     }
