@@ -34,8 +34,8 @@
                 "eventId"   : { "type"  : "guid",       "optional": true }
             }],
             "EventResponse":[{ "response": "EVENT"}, {
-                "eventId"   : { "type"  : "string",     "required": true },
-                "sent"      : { "type"  : "number",     "required": true }
+                "eventId"       : { "type"  : "string",     "required": true },
+                "subscribers"   : { "type"  : "number",     "required": true }
             }],
             "IncomeEvent":[{ "response": "INCOME_EVENT"}, {
                 "body"      : { "type"  : "string",     "required": true },
@@ -80,13 +80,18 @@
             "RequestResultResponse":[{ "response": "REQUEST_RESULT"}, {
                 "requestId" : { "type"  : "string",     "required": true },
                 "body"      : { "type"  : "string",     "required": true }
+            }],
+            "ResponseError":[{ "response": "ERROR"}, {
+                "allowed"   : { "type"  : "boolean",    "required": true },
+                "reason"    : { "in"    : "Reasons",    "optional": true },
+                "error"     : { "type"  : "string",     "optional": true }
             }]
         },
     
         "definitions": {
             "Requests"  : ["HANDSHAKE", "HOOK", "PENDING", "EVENT", "SUBSCRIBE", "UNSUBSCRIBE", "UNSUBSCRIBE_ALL", "REQUEST"],
-            "Responses" : ["HANDSHAKE", "HOOK", "PENDING", "EVENT", "INCOME_EVENT", "SUBSCRIBE", "UNSUBSCRIBE", "UNSUBSCRIBE_ALL", "REQUEST", "REQUEST_RESULT"],
-            "Reasons"   : ["FAIL_AUTH", "NO_TOKEN_FOUND", "NO_CLIENT_ID_FOUND", "NO_TOKEN_PROVIDED", "TOKEN_IS_WRONG"]
+            "Responses" : ["ERROR", "HANDSHAKE", "HOOK", "PENDING", "EVENT", "INCOME_EVENT", "SUBSCRIBE", "UNSUBSCRIBE", "UNSUBSCRIBE_ALL", "REQUEST", "REQUEST_RESULT"],
+            "Reasons"   : ["FAIL_AUTH", "NO_TOKEN_FOUND", "NO_CLIENT_ID_FOUND", "NO_TOKEN_PROVIDED", "TOKEN_IS_WRONG", "SERVER_SHUTDOWN"]
         }
     },
     "version": "0.0.1"

@@ -1,5 +1,4 @@
 import * as Tools from '../../platform/tools/index';
-import * as Enums from '../../platform/enums/index';
 import * as DescConnection from './connection/index';
 import * as DescMiddleware from '../../infrastructure/middleware/index';
 import { Request, IRequestError } from './request';
@@ -8,17 +7,6 @@ import { ITransportInterface } from '../../platform/interfaces/interface.transpo
 
 const SETTINGS = {
     RECONNECTION_TIMEOUT: 3000 //ms
-};
-enum ERepeatTimeout {
-    error = 1000,
-    expired = 5000,
-    done = 0
-};
-
-enum ERepeatReason {
-    error = 'error',
-    expired = 'expired',
-    done = 'done'
 };
 
 export enum EClientStates {
@@ -518,7 +506,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                     if (!(message instanceof Protocol.EventResponse)){
                         return reject(new Error(`Unexpected server response (expected "EventResponse"): ${message.getStr()}`));
                     }
-                    this._logger.env(`Event sent to: ${message.sent}.`);
+                    this._logger.env(`For event found ${message.subscribers} subscribers.`);
                     this.emit(EClientEvents.eventSent, message);
                     resolve(message);
                 })

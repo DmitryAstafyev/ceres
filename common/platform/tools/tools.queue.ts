@@ -3,10 +3,11 @@ import * as Types from './tools.primitivetypes';
 const DEFAULT_TIMEOUT = 10000;
 const DEFAULT_EXECUTE_LIMIT = 3;
 
+export type TExecuter = () => Promise<void>;
+
 export interface ITask {
     id: symbol;
-    task: Function;
-    timer: number;
+    task: TExecuter;
     alias: string | symbol;
     executed: number;
 }
@@ -15,20 +16,39 @@ export default class Queue {
 
     private _tasks: Map<symbol, ITask> = new Map();
     private _timeout: number;
+    private _working: boolean = false;
+    private _repeatFlag: boolean = false;
+    private _destroyResolver: Function | null = null;
+    private _repeatTimer: NodeJS.Timer | number = -1;
     private _executeLimit: number;
 
     constructor(timeout = DEFAULT_TIMEOUT, executeLimit = DEFAULT_EXECUTE_LIMIT) {
         this._timeout = timeout;
         this._executeLimit = executeLimit;
     }
+
+    private _repeat(){
+        this._repeatTimer = setTimeout(this.procced, this._timeout);
+    }
+
+    private _stop() {
+        clearTimeout(this._repeatTimer as number);
+    }
+
+    private _clear(){
+        this._stop();
+        this._tasks.clear();
+        this._working = false;
+        this._repeatFlag = false;
+    }
     
     /**
      * Add task into queue 
-     * @param executer {function} task's function
+     * @param executer {TExecuter: () => boolean} task's function
      * @param alias {string | symbol} name of task's group. Is used to drop all tasks for group.
      * @returns symbol
      */
-    public add(executer: Function, alias: string | symbol = Symbol()): symbol | Error {
+    public add(executer: TExecuter, alias: string | symbol = Symbol()): symbol | Error {
         if (Types.getTypeOf(executer) !== Types.ETypes.function) {
             return new Error(`Cannot add task, because as task expected function, but was gotten: ${Types.getTypeOf(executer)}.`);
         }
@@ -38,27 +58,11 @@ export default class Queue {
         const task: ITask = {
             id: Symbol(),
             task: executer,
-            timer: -1,
             alias: alias,
             executed: 0
         };
         this._tasks.set(task.id, task);
-        this._setTimer(task.id);
         return task.id;
-    }
-
-    /**
-     * Remove task from queue 
-     * @param taskId {symbol} task's id
-     * @returns undefined
-     */
-    public remove(taskId: symbol) {
-        const task = this._tasks.get(taskId);
-        if (task === undefined) {
-            return;
-        }
-        this._clearTimer(taskId);
-        this._tasks.delete(taskId);
     }
 
     /**
@@ -67,9 +71,11 @@ export default class Queue {
      * @returns undefined
      */
     public drop(alias: string | symbol){
+        this._stop();
         this._tasks.forEach((task: ITask, taskId: symbol) => {
-            task.alias === alias && this.remove(taskId);
+            task.alias === alias && this._tasks.delete(taskId);
         });
+        this._repeat();
     }
 
     /**
@@ -77,17 +83,59 @@ export default class Queue {
      * @returns undefined
      */
     public procced(){
-        this._tasks.forEach((task: ITask, taskId: symbol) => {
-            if (task.task() === true) {
-                this.remove(taskId);
-            } else {
-                task.executed += 1;
-                if (task.executed >= this._executeLimit) {
-                    return this.remove(taskId);
+        if (this._destroyResolver !== null){
+            return;
+        }
+        if (this._working) {
+            this._repeatFlag = true;
+        } else {
+            const tasks: Array<Promise<void>> = [];
+            //Stop repeatinng by timer
+            this._stop();
+            //Mark as working
+            this._working = true;
+            //Execute tasks
+            this._tasks.forEach((task: ITask, taskId: symbol) => {
+                tasks.push(task.task()
+                    .then(() => {
+                        this._tasks.delete(taskId);
+                    })
+                    .catch((error: Error) => {
+                        task.executed += 1;
+                        if (task.executed >= this._executeLimit) {
+                            this._tasks.delete(taskId);
+                        } else {
+                            this._tasks.set(taskId, task);
+                        }
+                    }));
+            });
+            const resolver = () => {
+                if (this._destroyResolver !== null) {
+                    this._clear();
+                    return this._destroyResolver();
                 }
-                //comment
-                this._tasks.set(taskId, task);
+                this._repeat();
+                this._working = false;
+                this._repeatFlag && this.procced();
+                this._repeatFlag = false;
+            };
+            Promise.all(tasks)
+                .then(resolver)
+                .catch(resolver);
+        }
+    }
+
+    /**
+     * Destroy all tasks and clear queue without executing 
+     * @returns Promise<void>
+     */
+    public destory(){
+        return new Promise((resolve) => {
+            if (!this._working) {
+                this._clear();
+                return resolve();
             }
+            this._destroyResolver = resolve;
         });
     }
 
@@ -97,27 +145,6 @@ export default class Queue {
      */
     public getTasksCount(){
         return this._tasks.size;
-    }
-
-    private _setTimer(taskId: symbol){
-        const task = this._tasks.get(taskId);
-        if (task === undefined) {
-            return;
-        }
-        task.timer = setTimeout(this._onTimeout.bind(this, taskId), this._timeout);
-        this._tasks.set(taskId, task);
-    }
-
-    private _clearTimer(taskId: symbol){
-        const task = this._tasks.get(taskId);
-        if (task === undefined) {
-            return;
-        }
-        clearTimeout(task.timer);
-    }
-
-    private _onTimeout(taskId: symbol){
-        this.remove(taskId);
     }
 
 }

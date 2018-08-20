@@ -15,6 +15,7 @@ class ProtocolMessage {
             throw new Error(`Token already has value. It's impossible to set value of token more then once.`);
         }
         this.__token = token;
+        return this;
     }
 
     getStr() {

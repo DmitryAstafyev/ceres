@@ -1,20 +1,20 @@
 import * as Tools from '../../platform/tools/index';
 
-export interface IMiddleware<TRequest, TResponse> {
-    auth?    : (GUID: symbol, request: TRequest)                        => Promise<boolean>,
-    before?  : (GUID: symbol, request: TRequest, response: TResponse)   => Promise<void>,
-    after?   : (GUID: symbol)                                           => Promise<void>
+export interface IMiddleware<TConnection> {
+    auth?    : (clientId: string, request: TConnection) => Promise<void>,
+    before?  : (clientId: string, request: TConnection) => Promise<void>,
+    after?   : (clientId: string)                       => Promise<void>
 }
 
-export class Middleware<TRequest, TResponse> implements IMiddleware<TRequest, TResponse> {
+export class Middleware<TConnection> implements IMiddleware<TConnection> {
 
-    constructor(middleware: IMiddleware<TRequest, TResponse>){
+    constructor(middleware: IMiddleware<TConnection>){
 
         middleware = Tools.objectValidate(middleware, {
             auth    : this.auth,
             before  : this.before,
             after   : this.after
-        }) as IMiddleware<TRequest, TResponse>;
+        }) as IMiddleware<TConnection>;
 
         typeof middleware.auth      === 'function' && (this.auth    = middleware.auth);
         typeof middleware.before    === 'function' && (this.before  = middleware.before);
@@ -26,19 +26,19 @@ export class Middleware<TRequest, TResponse> implements IMiddleware<TRequest, TR
      * Dummy implementation of middleware functions
      */
 
-    public auth(GUID: symbol, request: TRequest): Promise<boolean> {
+    public auth(clientId: string, request: TConnection): Promise<void> {
         return new Promise((resolve, reject) => {
-            return resolve(true);
+            return resolve();
         });
     }
 
-    public before(GUID: symbol, request: TRequest, response: TResponse): Promise<void> {
+    public before(clientId: string, request: TConnection): Promise<void> {
         return new Promise((resolve, reject) => {
             resolve();
         });
     }
 
-    public after(GUID: symbol): Promise<void>{
+    public after(clientId: string): Promise<void>{
         return new Promise((resolve, reject) => {
             return resolve();
         });

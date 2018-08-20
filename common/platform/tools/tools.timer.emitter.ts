@@ -11,11 +11,11 @@ export default class TimerEmitter extends Emitter {
 
 	constructor(timeout: number) {
 		super();
-		if (typeof this._timeout !== 'number') {
+		if (typeof timeout !== 'number') {
 			throw new Error(`Expecting as timeout {number}.`);
 		}
-		if (this._timeout === 0) {
-			return;
+		if (timeout === 0) {
+			throw new Error(`Expecting as timeout {number} > 0.`);
 		}
         this._timeout = timeout;
         this.start();

@@ -93,7 +93,6 @@ export class Consumer {
             return false;
         }
         if (handlerId === null) {
-            this._events[signature] = null;
             delete this._events[signature];
             return null;
         }
