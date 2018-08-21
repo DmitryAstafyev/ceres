@@ -19,7 +19,7 @@ export default class Queue {
     private _working: boolean = false;
     private _repeatFlag: boolean = false;
     private _destroyResolver: Function | null = null;
-    private _repeatTimer: NodeJS.Timer | null = null;
+    private _repeatTimer: any = null;
     private _executeLimit: number;
 
     constructor(timeout = DEFAULT_TIMEOUT, executeLimit = DEFAULT_EXECUTE_LIMIT) {
@@ -35,7 +35,7 @@ export default class Queue {
         if (this._repeatTimer === null) {
             return;
         }
-        this._repeatTimer.unref();
+        clearTimeout(this._repeatTimer);
     }
 
     private _clear(){
