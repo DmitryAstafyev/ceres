@@ -1,47 +1,48 @@
 import * as Tools from '../../platform/tools/index';
 import * as FS from 'fs';
-import { ProtocolJSONConvertor  } from './protocol.JSON.convertor';
-import { Reader, IReaderResult  } from './protocol.reader';
+import { Reader } from './protocol.reader';
+import { Convertor } from './protocol.convertor';
 
 const logger: Tools.Logger = new Tools.Logger('ProtocolBuilder');
 
 export class Builder {
 
-    private _file: string;
-
-    constructor(file: string){
-        if (Tools.getTypeOf(file) !== Tools.EPrimitiveTypes.string){
-            throw new Error(logger.error(`Argument "file" should be a {string} type, but was gotten: ${Tools.inspect(file)}.`));
-        }
-        this._file = file;
-    }
-
-    public build(output: string, replace: boolean = false): Promise<boolean> {
-        if (Tools.getTypeOf(output) !== Tools.EPrimitiveTypes.string){
-            throw new Error(logger.error(`Argument "output" should be a {string} type, but was gotten: ${Tools.inspect(output)}.`));
-        }
+    public build(source: string, dest: string, replace: boolean = false): Promise<boolean> {
         return new Promise((resolve, reject) => {
-            const reader = new Reader(this._file);
-            reader.read()
-                .then((result: IReaderResult) => {
-                    try {
-                        const convertor = new ProtocolJSONConvertor(result.json);
-                        if (FS.existsSync(output) && replace){
-                            FS.unlinkSync(output);
-                            logger.error(`File "${output}" exists. This file will be overwritten.`)
-                        } else if (FS.existsSync(output)){
-                            return reject(new Error(logger.error(`File "${output}" already exists`)));
-                        }
-                        FS.writeFile(output, convertor.getImplementation(), (error) => {
-                            if (error){
-                                return reject(error);
+            if (Tools.getTypeOf(source) !== Tools.EPrimitiveTypes.string){
+                return reject(new Error(logger.error(`Argument "source" should be a {string} type, but was gotten: ${Tools.inspect(source)}.`)));
+            }
+            if (Tools.getTypeOf(dest) !== Tools.EPrimitiveTypes.string){
+                return reject(new Error(logger.error(`Argument "dest" should be a {string} type, but was gotten: ${Tools.inspect(dest)}.`)));
+            }
+            const reader = new Reader();
+            reader.read(source)
+                .then((json: any) => {
+                    const convertor = new Convertor();
+                    convertor.convert(json)
+                        .then((str: string) => {
+                            try {
+                                if (FS.existsSync(dest) && replace){
+                                    FS.unlinkSync(dest);
+                                    logger.warn(`File "${dest}" exists. This file will be overwritten.`)
+                                } else if (FS.existsSync(dest)){
+                                    return reject(new Error(logger.error(`File "${dest}" already exists`)));
+                                }
+                                FS.writeFile(dest, str, (error) => {
+                                    if (error){
+                                        return reject(error);
+                                    }
+                                    return resolve(true);
+                                });
+                            } catch (error) {
+                                reject(error);
                             }
-                            return resolve(true);
+                        })
+                        .catch((error: Error) => {
+                            reject(error);
                         });
-                    } catch (error) {
-                        reject(error);
-                    }
-                });
+                })
+                .catch(reject);
         });
     }
 }

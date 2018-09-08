@@ -40,7 +40,7 @@ export class LoggerParameters {
             allowedConsole  = DEFAUT_ALLOWED_CONSOLE 
         } : { 
             console?        : boolean , 
-            output?         : Function, 
+            output?         : Function | null, 
             allowedConsole? : {[key:string]: boolean} 
         }){
         this.console = console;

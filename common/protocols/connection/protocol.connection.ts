@@ -1,6 +1,6 @@
 
 /*
-* This file generated automaticaly (UTC: Mon, 20 Aug 2018 20:11:21 GMT). 
+* This file generated automaticaly (UTC: Wed, 22 Aug 2018 20:17:23 GMT). 
 * Do not remove or change this code.
 */
 
@@ -368,24 +368,24 @@ export enum Requests {
 	HANDSHAKE = 0,
 	HOOK = 1,
 	PENDING = 2,
-	EVENT = 3,
-	SUBSCRIBE = 4,
-	UNSUBSCRIBE = 5,
-	UNSUBSCRIBE_ALL = 6,
-	REQUEST = 7,
+	RECONNECTION = 3,
+	EVENT = 4,
+	SUBSCRIBE = 5,
+	UNSUBSCRIBE = 6,
+	UNSUBSCRIBE_ALL = 7,
+	REQUEST = 8,
 };
 export enum Responses {
 	ERROR = 0,
 	HANDSHAKE = 1,
-	HOOK = 2,
-	PENDING = 3,
-	EVENT = 4,
-	INCOME_EVENT = 5,
-	SUBSCRIBE = 6,
-	UNSUBSCRIBE = 7,
-	UNSUBSCRIBE_ALL = 8,
-	REQUEST = 9,
-	REQUEST_RESULT = 10,
+	RECONNECTION = 2,
+	EVENT = 3,
+	INCOME_EVENT = 4,
+	SUBSCRIBE = 5,
+	UNSUBSCRIBE = 6,
+	UNSUBSCRIBE_ALL = 7,
+	REQUEST = 8,
+	REQUEST_RESULT = 9,
 };
 export enum Reasons {
 	FAIL_AUTH = 0,
@@ -563,48 +563,6 @@ export class RequestHook extends Message{
 }
 
 
-export class ResponseHook extends Message{
-
-	public reason: Reasons;
-	public error: string | undefined;
-    static __signature: string = '574501BD';
-    public __signature: string = ResponseHook.__signature;
-    static getSignature(){
-        return ResponseHook.__signature;
-    }
-    public getSignature(){
-        return this.__signature;
-    }
-    static __rules : {[key:string]: any}   = {
-		"reason": { "in": "Reasons", "required": true },
-		"error": { "type": "string", "optional": true }
-    };
-    
-    constructor(properties: { reason:Reasons, error?:string, request?: Requests, response?: Responses, guid?: string, clientId: string }) {
-        super(Object.assign(properties, { 
-            	response: Responses.HOOK
-            }));
-
-        const name  : string = 'ResponseHook';
-
-        const errors = getInstanceErrors(name,
-            ResponseHook.__rules,
-            __SchemeEnums,
-            __SchemeClasses,
-            properties);
-        
-        if (errors instanceof Array){
-            throw new Error(`Cannot initialize ${name} due errors: ${errors.map((error: Error)=>{ return error.message; }).join(', ')}`);
-        }
-
-		this.reason = properties.reason;
-		this.error = properties.error;
-
-    }
-
-}
-
-
 export class RequestPending extends Message{
 
 
@@ -644,32 +602,30 @@ export class RequestPending extends Message{
 }
 
 
-export class ResponsePending extends Message{
+export class RequestReconnection extends Message{
 
-	public reason: Reasons;
-	public error: string | undefined;
-    static __signature: string = '39B1ED31';
-    public __signature: string = ResponsePending.__signature;
+
+    static __signature: string = 'DD00D79';
+    public __signature: string = RequestReconnection.__signature;
     static getSignature(){
-        return ResponsePending.__signature;
+        return RequestReconnection.__signature;
     }
     public getSignature(){
         return this.__signature;
     }
     static __rules : {[key:string]: any}   = {
-		"reason": { "in": "Reasons", "required": true },
-		"error": { "type": "string", "optional": true }
+
     };
     
-    constructor(properties: { reason:Reasons, error?:string, request?: Requests, response?: Responses, guid?: string, clientId: string }) {
+    constructor(properties: { request?: Requests, response?: Responses, guid?: string, clientId: string }) {
         super(Object.assign(properties, { 
-            	response: Responses.PENDING
+            	request: Requests.RECONNECTION
             }));
 
-        const name  : string = 'ResponsePending';
+        const name  : string = 'RequestReconnection';
 
         const errors = getInstanceErrors(name,
-            ResponsePending.__rules,
+            RequestReconnection.__rules,
             __SchemeEnums,
             __SchemeClasses,
             properties);
@@ -678,6 +634,50 @@ export class ResponsePending extends Message{
             throw new Error(`Cannot initialize ${name} due errors: ${errors.map((error: Error)=>{ return error.message; }).join(', ')}`);
         }
 
+
+
+    }
+
+}
+
+
+export class ResponseReconnection extends Message{
+
+	public allowed: boolean;
+	public reason: Reasons | undefined;
+	public error: string | undefined;
+    static __signature: string = '1AF98B55';
+    public __signature: string = ResponseReconnection.__signature;
+    static getSignature(){
+        return ResponseReconnection.__signature;
+    }
+    public getSignature(){
+        return this.__signature;
+    }
+    static __rules : {[key:string]: any}   = {
+		"allowed": { "type": "boolean", "required": true },
+		"reason": { "in": "Reasons", "optional": true },
+		"error": { "type": "string", "optional": true }
+    };
+    
+    constructor(properties: { allowed:boolean, reason?:Reasons, error?:string, request?: Requests, response?: Responses, guid?: string, clientId: string }) {
+        super(Object.assign(properties, { 
+            	response: Responses.RECONNECTION
+            }));
+
+        const name  : string = 'ResponseReconnection';
+
+        const errors = getInstanceErrors(name,
+            ResponseReconnection.__rules,
+            __SchemeEnums,
+            __SchemeClasses,
+            properties);
+        
+        if (errors instanceof Array){
+            throw new Error(`Cannot initialize ${name} due errors: ${errors.map((error: Error)=>{ return error.message; }).join(', ')}`);
+        }
+
+		this.allowed = properties.allowed;
 		this.reason = properties.reason;
 		this.error = properties.error;
 
@@ -969,9 +969,7 @@ export class UnsubscribeResponse extends Message{
     };
     
     constructor(properties: { signature:string, protocol:string, status:boolean, request?: Requests, response?: Responses, guid?: string, clientId: string }) {
-        super(Object.assign(properties, { 
-            	response: Responses.UNSUBSCRIBE
-            }));
+        super(Object.assign(properties, {}));
 
         const name  : string = 'UnsubscribeResponse';
 
@@ -1252,9 +1250,9 @@ const __SchemeClasses : {[key:string]: any} = {
 	RequestHandshake: RequestHandshake,
 	ResponseHandshake: ResponseHandshake,
 	RequestHook: RequestHook,
-	ResponseHook: ResponseHook,
 	RequestPending: RequestPending,
-	ResponsePending: ResponsePending,
+	RequestReconnection: RequestReconnection,
+	ResponseReconnection: ResponseReconnection,
 	EventRequest: EventRequest,
 	EventResponse: EventResponse,
 	IncomeEvent: IncomeEvent,
@@ -1277,17 +1275,17 @@ const __SchemeEnums : {[key:string]: any} = {
 	Reasons: Reasons
 }     
         
-export const __signature = '4789235A';
-export function getSignature() { return '4789235A'; };
+export const __signature = '-542B3FA1';
+export function getSignature() { return '-542B3FA1'; };
 
 export type TProtocolClasses = 
 	Message |
 	RequestHandshake |
 	ResponseHandshake |
 	RequestHook |
-	ResponseHook |
 	RequestPending |
-	ResponsePending |
+	RequestReconnection |
+	ResponseReconnection |
 	EventRequest |
 	EventResponse |
 	IncomeEvent |
@@ -1308,9 +1306,9 @@ export const Protocol : {[key:string]: any} = {
 	RequestHandshake: RequestHandshake,
 	ResponseHandshake: ResponseHandshake,
 	RequestHook: RequestHook,
-	ResponseHook: ResponseHook,
 	RequestPending: RequestPending,
-	ResponsePending: ResponsePending,
+	RequestReconnection: RequestReconnection,
+	ResponseReconnection: ResponseReconnection,
 	EventRequest: EventRequest,
 	EventResponse: EventResponse,
 	IncomeEvent: IncomeEvent,
@@ -1329,9 +1327,18 @@ export const Protocol : {[key:string]: any} = {
 	Responses: Responses,
 	Reasons: Reasons,
     extract: __parser.convert.bind(__parser),
-    __signature: "4789235A",
+    __signature: "-542B3FA1",
     extractSignature:  extractSignature,
-    getSignature: () => { return '4789235A'; }
+    getSignature: () => { return '-542B3FA1'; }
 }     
         
-        
+import { Message as ServerMessages } from './test';
+const request = new ServerMessages.Handshake.Request();
+const response = new ServerMessages.Handshake.Response();
+function proceed(res: ServerMessages.Handshake.Responses){
+    if (res instanceof ServerMessages.ConnectionError){
+        console.log(res.reason);
+        return;
+    }
+    res.clientId;
+}

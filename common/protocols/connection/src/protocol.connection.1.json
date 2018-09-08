@@ -1,0 +1,86 @@
+{
+    "Message": {
+        "clientId"  : "string",
+        "guid?"     : "guid",
+
+        "requests": {
+            "Handshake": {
+                "response"  : ["Handshake"]
+            },
+            "Reconnection":{
+                "response"  : ["Error", "Reconnection"]
+            },
+            "Hook": {
+                "response"  : ["Error", "Disconnect"]
+            },
+            "Pending":{
+                "response"  : ["Emit"]
+            },
+            "Event": {
+                "response"  : ["Event"],
+                "body"      : "string",
+                "protocol"  : "string",
+                "signature" : "string",
+                "eventId?"  : "guid"
+            },
+            "Subscribe": {
+                "response"  : ["Subscribe"],
+                "signature" : "string",
+                "protocol"  : "string"
+            },
+            "Unsubscribe": {
+                "response"  : ["Unsubscribe"],
+                "signature" : "string",
+                "protocol"  : "string"
+            },
+            "UnsubscribeAll": {
+                "response"  : ["UnsubscribeAll"],
+                "protocol"  : "string"
+            }
+        },
+
+        "responses": {
+            "Handshake": {
+                "allowed"       : "boolean",
+                "reason?"       : "Reasons",
+                "error?"        : "string",
+                "Reasons"       : ["FAIL_AUTH", "NO_TOKEN_FOUND", "NO_CLIENT_ID_FOUND"]
+            },
+            "Disconnect": {
+                "reason?"       : "Reasons",
+                "error?"        : "string",
+                "Reasons"       : ["SERVER_SHUTDOWN"]
+            },
+            "Reconnection": {
+                "allowed"       : "boolean",
+                "reason?"       : "Reasons",
+                "error?"        : "string",
+                "Reasons"       : ["FAIL_AUTH", "NO_TOKEN_FOUND", "NO_CLIENT_ID_FOUND", "NO_TOKEN_PROVIDED", "TOKEN_IS_WRONG"]
+            },
+            "Emit": {
+                "body"          : "string",
+                "signature"     : "string",
+                "protocol"      : "string",
+                "eventId?"      : "guid"
+            },
+            "Event": {
+                "eventId"       : "string",
+                "subscribers"   : "number"
+            },
+            "Subscribe": {
+                "status"        : "boolean"
+            },
+            "Unsubscribe": {
+                "status"        : "boolean"
+            },
+            "UnsubscribeAll": {
+                "status"        : "boolean"
+            }
+        }
+    },
+    "Event": {
+        "protocol": "string",
+        "event": "string",
+        "body": "string"
+    }
+}

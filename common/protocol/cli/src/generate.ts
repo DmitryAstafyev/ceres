@@ -111,8 +111,8 @@ if (process.argv instanceof Array){
                 OUTPUTS.help();
             } else if (~Object.keys(commands).indexOf(COMMANDS.source) && ~Object.keys(commands).indexOf(COMMANDS.output)){
                 try {
-                    let builder = new Builder(commands[COMMANDS.source]);
-                    builder.build(commands[COMMANDS.output], ~Object.keys(commands).indexOf(COMMANDS.replace) ? true : false)
+                    let builder = new Builder();
+                    builder.build(commands[COMMANDS.source], commands[COMMANDS.output], ~Object.keys(commands).indexOf(COMMANDS.replace) ? true : false)
                         .then(()=>{
                             let finished = (new Date()).getTime();
                             console.log(`File "${commands[COMMANDS.output]}" generated for ${((finished - started) / 1000).toFixed(2)} s.`);

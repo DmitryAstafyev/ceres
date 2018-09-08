@@ -1,6 +1,6 @@
 /**
- * Returns primitive GUID in format XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
- * @returns {string} GUID
+ * Returns hash of string
+ * @returns {string} hash
  */
 export default function hash(input: string, abs: boolean = false) {
     let hash = 0, i, chr;

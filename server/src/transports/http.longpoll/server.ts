@@ -297,6 +297,17 @@ export class Server {
                     });
                 });
         }
+        //Reconnection
+        if (message instanceof Protocol.RequestReconnection) {
+            return connection.close((new Protocol.ResponseReconnection({
+                clientId: clientId,
+                allowed: true
+            })).setToken(token).getStr()).then(() => {
+                this._logger.env(`Reconnection for client ${clientId} is allowed.`);
+            }).catch((error: Error) => {
+                this._logger.warn(`Fail to close connection ${clientId} due error: ${error.message}`);
+            });
+        }
         //Pending connnection
         if (message instanceof Protocol.RequestPending) {
             connection.setClientGUID(clientId);

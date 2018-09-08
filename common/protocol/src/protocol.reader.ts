@@ -1,34 +1,21 @@
 import * as Tools from '../../platform/tools/index';
 import * as FS from 'fs';
 import * as Path from 'path';
-import { SCHEME                 } from './protocol.scheme.definitions';
-import { ProtocolJSONConvertor  } from './protocol.JSON.convertor';
 
 const logger: Tools.Logger = new Tools.Logger('ProtocolFileLoader');
 
-export interface IReaderResult {
-    json: any,
-    body: any,
-    className: string
-};
-
 export class Reader {
 
-    private _file: string;
-    private _path: string;
+    private _path: string = '';
 
-    constructor(file: string){
-        if (Tools.getTypeOf(file) !== Tools.EPrimitiveTypes.string){
-            throw new Error(logger.error(`Argument "file" should be a {string} type, but was gotten: ${Tools.inspect(file)}.`));
-        }
-        this._file = file;
-        this._path = Path.dirname(this._file);
-    }
-
-    public read(file: string = '', root: boolean = true): Promise<IReaderResult>{
-        file = Tools.getTypeOf(file) === Tools.EPrimitiveTypes.string ? (file.trim() !== '' ? Path.join(this._path, file) : this._file) : this._file;
+    public read(file: string): Promise<any>{
         return new Promise((resolve, reject) => {
-
+            if (this._path === '') {
+                this._path = Path.dirname(file);
+            }
+            if (Tools.getTypeOf(file) !== Tools.EPrimitiveTypes.string || file.trim() === '') {
+                return reject(new Error(logger.error(`Wrong format of filename.`)));
+            }
             if (!FS.existsSync(file)) {
                 return reject(new Error(logger.error(`File "${file}" doesn't exsist.`)));
             }
@@ -44,87 +31,56 @@ export class Reader {
                     reject(json);
                 }
 
-                this._validate(json, root).then(resolve).catch(reject);
+                this._getNested(json).then(resolve).catch(reject);
+
             });
         });
     }
 
-    private _getJSONFromBuffer(buffer: Buffer){
-        let json = null;
-        try {
-            json = JSON.parse(buffer.toString('utf8'));
-        } catch(e){
-            json = new Error(logger.error(`Error during parsing file: ${e.message}`));
-        }
-        return json;
-    }
-
-    private _validate(json: any, root: boolean = false): Promise<IReaderResult> {
+    private _getNested(json: any): Promise<any> {
         return new Promise((resolve, reject) => {
-            if (Tools.getTypeOf(json) !== Tools.EPrimitiveTypes.object){
-                return reject(new Error(logger.error(`Target entity isn't an object.`)));
+            if (Tools.getTypeOf(json) !== Tools.EPrimitiveTypes.object) {
+                return reject(new Error(`Target isn't an object.`));
             }
-            if (root){
-                if (Tools.getTypeOf(json.version) !== Tools.EPrimitiveTypes.string){
-                    return reject(new Error(logger.error(`Root level of protocol should have property "version" {string}.`)));
+            const promises: Array<Promise<any>> = [];
+            Object.keys(json).forEach((key: string) => {
+                const value: any = json[key];
+                if (Tools.getTypeOf(value) === Tools.EPrimitiveTypes.object) {
+                    promises.push(this._getNested(value).then((nested: any) => {
+                        json[key] = nested;
+                    }));
                 }
-                if (Object.keys(json).length !== 2){
-                    return reject(new Error(logger.error(`Expected on root level one property - name of entity (class) and property "version" {string}.`)));
-                }
-            } else {
-                if (Object.keys(json).length !== 1){
-                    return reject(new Error(logger.error(`Expected on root level one property - name of entity (class).`)));
-                }
-            }
-            const className = Object.keys(json)[0];
-            let body = json[className];
-
-            if (Tools.getTypeOf(body[SCHEME.ENTITY.default]) !== Tools.EPrimitiveTypes.object){
-                return reject(new Error(logger.error(`Expected type of section "${SCHEME.ENTITY.default}": {object}, but gotten: ${Tools.getTypeOf(body[SCHEME.ENTITY.default])}`)));
-            }
-            let error: Error | null = null;
-            Object.keys(body[SCHEME.ENTITY.default]).forEach((prop: string)=>{
-                if (error !== null){
-                    return;
-                }
-                const description = body[SCHEME.ENTITY.default][prop];
-                if (Tools.getTypeOf(description) !== Tools.EPrimitiveTypes.object) {
-                    error = new Error(logger.error(`Expected type of field "${prop}" in section "${SCHEME.ENTITY.default}": {object}, but gotten: ${Tools.getTypeOf(description)}`));
+                if (Tools.getTypeOf(value) === Tools.EPrimitiveTypes.string) {
+                    if (key.indexOf(':findin') !== -1) {
+                        const file: string = value;
+                        const prop: string = key.replace(':findin', '');
+                        delete json[key];
+                        promises.push(this.read(Path.resolve(this._path, file)).then((nested: any) => {
+                            json[prop] = nested;
+                        }));
+                    }
                 }
             });
-            if (error !== null){
-                return reject(error);
-            }
-            let refs : {[key:string] : string} = {};
-            Object.keys(body[SCHEME.ENTITY.default]).forEach((prop: string)=>{
-                const description = body[SCHEME.ENTITY.default][prop];
-                if (Tools.getTypeOf(description[SCHEME.FIELDS.findin]) === Tools.EPrimitiveTypes.string) {
-                    refs[prop] = description[SCHEME.FIELDS.findin];
-                }
-            });
-            if (Object.keys(refs).length === 0) {
-                return resolve({
-                    json: json,
-                    className: className,
-                    body: body
-                } as IReaderResult);
-            }
-            Promise.all(Object.keys(refs).map((prop: string) => {
-                return this.read(refs[prop], false)
-                    .then((nested: IReaderResult)=>{
-                        body[SCHEME.ENTITY.default][prop][SCHEME.TYPE_DEF.type] = nested.className;
-                        if (body[SCHEME.ENTITY.definitions] === void 0){
-                            body[SCHEME.ENTITY.definitions] = {};
-                        }
-                        body[SCHEME.ENTITY.definitions][nested.className] = nested.body;
-                    });
-            })).then(()=>{
-                return resolve({
-                    json: json,
-                    className: className,
-                    body: body
-                } as IReaderResult);
+            Promise.all(promises).then(() => {
+                resolve(json);
+            }).catch((error: Error) => {
+                reject(error);
             });
         });
     }
+
+    private _clearComments(str: string): string {
+        return str.replace(/[\n\r]/gi, '').replace(/\/\*[^(\*\/)]*\*\//gi, '')
+    }
+
+    private _getJSONFromBuffer(buffer: Buffer): string | Error {
+        try {
+            return JSON.parse(
+                this._clearComments(buffer.toString('utf8'))
+            );
+        } catch(e){
+            return new Error(logger.error(`Error during parsing file: ${e.message}`));
+        }
+    }
+
 }

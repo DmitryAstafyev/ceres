@@ -60,4 +60,11 @@ export default class EventHandlers {
         emitter.emit(event, ...args);
         return true;
     }
+
+    clear(){
+        this._handlers.forEach((emitter: EventEmitter) => {
+            emitter.clear();
+        });
+        this._handlers.clear();
+    }
 }

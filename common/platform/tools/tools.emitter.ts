@@ -77,4 +77,8 @@ export default class Emitter {
         return handlers instanceof Array ? this.__handlers.get(signature) : [];
     }
 
+    clear(){
+        this.__handlers.clear();
+    }
+
 }

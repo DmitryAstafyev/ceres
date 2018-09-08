@@ -95,7 +95,7 @@ class Hook {
      * Create hook request. This request never finish.
      * @returns {Promise<Error>}
      */
-    public create(url: string, clientGUID: string, token: Token): Promise<Error>{
+    public create(url: string, clientGUID: string, token: Token): Promise<Protocol.ResponseError>{
         return new Promise((resolve, reject) => {
             if (this._request !== null) {
                 return reject(new Error(`Attempt to create hook, even hook is already created.`));
@@ -108,8 +108,15 @@ class Hook {
             const requestId = this._request.getId();
             this._request.send()
                 .then((response: string) => {
+                    const message = Protocol.extract(response);
                     this._request = null;
-                    resolve(new Error(`Hook request guid "${requestId}" made unexpected response: ${Tools.inspect(response)}`));
+                    if (message instanceof Error) {
+                        return reject(message);
+                    }
+                    if (!(message instanceof Protocol.ResponseError)) {
+                        return reject(message);
+                    }
+                    resolve(message);
                 })
                 .catch((error: Tools.ExtError<IRequestError>) => {
                     this._request = null;
@@ -216,8 +223,8 @@ class PendingTasks extends Tools.EventEmitter {
                 if (message instanceof Error) {
                     return this.emit(PendingTasks.EVENTS.onError, message);
                 }
-                if (message instanceof Protocol.RequestPending) {
-                    return this.emit(PendingTasks.EVENTS.onError, new Error(`Pending connection returns unexpected response.`));
+                if (message instanceof Protocol.ResponseError) {
+                    return this.emit(PendingTasks.EVENTS.onError, new Error(`Pending connection returns error response: ${message.getStr()}.`));
                 }
                 //Remove current
                 this._pending.delete(guid);
@@ -337,8 +344,9 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
      * @returns {Promise<void>}
      */
     public destroy(): Promise<void> {
-        return new Promise((resolve, reject) => {
-            resolve();
+        return this._drop().then(() => {
+            this._token.drop();
+            this._subscriptions.clear();
         });
     }
 
@@ -365,23 +373,75 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
             })
             .catch((error: Tools.ExtError<IRequestError>) => {
                 this._logger.warn(`Attempt to connect to "${this._parameters.getURL()}" was failed (next attempt to connectin in ${SETTINGS.RECONNECTION_TIMEOUT}ms) due error: `, error);
-                this._reconnect();
+                this._hardReconnection();
             });
     }
 
     /**
-     * Made attempt to reconnect in defined timeout
+     * Made attempt to reconnect to server
      * @returns {void}
      */
-    private _reconnect(){
+    private _reconnect() {
+        if (this._state.get() !== EClientStates.created && this._state.get() !== EClientStates.reconnectioning) {
+            throw new Error(this._logger.error(`Attempt to reconnect on state "${this._state.get()}".`));
+        }
+        this._state.set(EClientStates.connecting);
+        const request = new Request(this._parameters.getURL(), (new Protocol.RequestReconnection({
+            clientId: this._clientGUID
+        })).setToken(this._token.get()).getStr());
+        request.send()
+            .then((response: string) => {
+                this._logger.env(`Request guid: ${request.getId()} is finished successfuly: ${Tools.inspect(response)}`);
+                this._onResponseReconnection(response);
+            })
+            .catch((error: Tools.ExtError<IRequestError>) => {
+                this._logger.warn(`Attempt to connect to "${this._parameters.getURL()}" was failed (next attempt to connectin in ${SETTINGS.RECONNECTION_TIMEOUT}ms) due error: `, error);
+                this._hardReconnection();
+            });
+    }
+
+    /**
+     * Made attempt to reconnect softly (without authorization) in defined timeout
+     * @returns {void}
+     */
+    private _softReconnection(){
         this._state.set(EClientStates.reconnectioning);
-        this._token.drop();
-        this._hook.drop();
-        this._tasks.stop();
-        this._requests.drop();
-        setTimeout(() => {
-            this._connect();
-        }, SETTINGS.RECONNECTION_TIMEOUT);
+        if (this._token.get() === '') {
+            this._logger.warn(`Cannot do soft reconnection, because token isn't set. Will do hard reconnection.`);
+            return this._hardReconnection();
+        }
+        this._drop().then(() => {
+            setTimeout(() => {
+                this._reconnect();
+            }, SETTINGS.RECONNECTION_TIMEOUT);
+        });
+    }
+
+    /**
+     * Made attempt to reconnect hardly (with authorization) in defined timeout
+     * @returns {void}
+     */
+    private _hardReconnection(){
+        this._state.set(EClientStates.reconnectioning);
+        this._drop().then(() => {
+            this._token.drop();
+            setTimeout(() => {
+                this._connect();
+            }, SETTINGS.RECONNECTION_TIMEOUT);
+        });
+    }
+
+    /**
+     * Drop all services and requests
+     * @returns {Promise<void>}
+     */
+    private _drop(): Promise<void> {
+        return new Promise((resolve) => {
+            this._hook.drop();
+            this._tasks.stop();
+            this._requests.drop();
+            resolve();
+        });
     }
 
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -428,15 +488,55 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
         };
         //Set token
         this._token.set(message.getToken());
+        //Initialize connection
+        this._initialize();
+    }
+
+    /**
+     * Handle reconnection response
+     * @param response {string}
+     * @returns {void}
+     */
+    _onResponseReconnection(response: string){
+        const message = this._getProtocolMessage(response) as Protocol.ResponseReconnection;
+        if (message instanceof Error) {
+            this._hardReconnection();
+            return this.emit(EClientEvents.error, {
+                message: this._logger.warn(`On this state (${this._state.get()}) expected reconnection confirmation, but request failed due error: ${message.message}.`),
+                reason: undefined,
+                details: undefined
+            });   
+        }
+        if (message instanceof Protocol.ResponseError) {
+            this._hardReconnection();
+            return this.emit(EClientEvents.error, {
+                message: this._logger.warn(`Fail to reconnect request due reason: ${message.reason} ${message.error !== void 0 ? `(${message.error})`: ''}`),
+                reason: message.reason,
+                details: undefined
+            });
+        };
+        //Note: If server doesn't returns Protocol.ResponseError, it means - reconnection allowed. Doesn't need addition check response
+        //Initialize connection
+        this._initialize();
+    }
+
+    private _initialize(){
         //Set state
         this._state.set(EClientStates.connected);
         //Create hook
         this._hook.create(this._parameters.getURL(), this._clientGUID, this._token)
-            .then((error: Error)=>{
-                //Unexpected response
+            .then((message: Protocol.ResponseError) => {
+                this._logger.warn(`Hook connection is finished with reason: ${message.reason} (error: ${message.error}). Initialize hard reconnection.`);
+                this._hardReconnection();
             })
-            .catch((error: Tools.ExtError<IRequestError>) => {
-                //Connection dropping
+            .catch((error: Tools.ExtError<IRequestError> | Protocol.TProtocolClasses) => {
+                if (error instanceof Tools.ExtError){
+                    this._logger.warn(`Hook connection is finished with  error: ${error.error.message}. Initialize soft reconnection.`);
+                    this._softReconnection();
+                } else {
+                    this._logger.warn(`Server returns unexpected response: ${error.getStr()}. Initialize hard reconnection.`);
+                    this._hardReconnection();
+                }
             });
         //Create pending
         this._tasks.start(this._parameters.getURL(), this._clientGUID, this._token);
@@ -457,7 +557,8 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
     }
 
     private _onTaskError(error: Error) {
-
+        this._logger.warn(`Pending task is finished with error: ${error.message}. Initialize reconnection.`);
+        //Note: We should not reconnect here, because hooks care about it
     }
 
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -472,6 +573,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                 this._logger.env(`Error during emit income event.`, error);
             });
     }
+
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Events: Public
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -526,6 +628,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
      */
     public subscribeEvent(event: any, protocol: any, handler: Function): Promise<Protocol.SubscribeResponse> {
         //TODO: subscription is already exist. Server doesn't allow subscribe twice. If user need it, he can do it by himself, but server should have only one subscription
+        //TODO: restore subscription after reconnection. Server unsubscribe all if client was disconnected
         return new Promise((resolve, reject) => {
             const protocolSignature = Protocol.extractSignature(protocol);
             if (protocolSignature instanceof Error){

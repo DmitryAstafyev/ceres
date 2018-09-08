@@ -17,14 +17,13 @@
             }],
             "RequestHook":[{ "request": "HOOK"}, {
             }],
-            "ResponseHook":[{ "response": "HOOK"}, {
-                "reason"    : { "in"    : "Reasons",    "required": true },
-                "error"     : { "type"  : "string",     "optional": true }
-            }],
             "RequestPending":[{ "request": "PENDING"}, {
             }],
-            "ResponsePending":[{ "response": "PENDING"}, {
-                "reason"    : { "in"    : "Reasons",    "required": true },
+            "RequestReconnection":[{ "request": "RECONNECTION"}, {
+            }],
+            "ResponseReconnection":[{ "response": "RECONNECTION"}, {
+                "allowed"   : { "type"  : "boolean",    "required": true },
+                "reason"    : { "in"    : "Reasons",    "optional": true },
                 "error"     : { "type"  : "string",     "optional": true }
             }],
             "EventRequest":[{ "request": "EVENT"}, {
@@ -89,8 +88,8 @@
         },
     
         "definitions": {
-            "Requests"  : ["HANDSHAKE", "HOOK", "PENDING", "EVENT", "SUBSCRIBE", "UNSUBSCRIBE", "UNSUBSCRIBE_ALL", "REQUEST"],
-            "Responses" : ["ERROR", "HANDSHAKE", "HOOK", "PENDING", "EVENT", "INCOME_EVENT", "SUBSCRIBE", "UNSUBSCRIBE", "UNSUBSCRIBE_ALL", "REQUEST", "REQUEST_RESULT"],
+            "Requests"  : ["HANDSHAKE", "HOOK", "PENDING", "RECONNECTION", "EVENT", "SUBSCRIBE", "UNSUBSCRIBE", "UNSUBSCRIBE_ALL", "REQUEST"],
+            "Responses" : ["ERROR", "HANDSHAKE", "RECONNECTION", "EVENT", "INCOME_EVENT", "SUBSCRIBE", "UNSUBSCRIBE", "UNSUBSCRIBE_ALL", "REQUEST", "REQUEST_RESULT"],
             "Reasons"   : ["FAIL_AUTH", "NO_TOKEN_FOUND", "NO_CLIENT_ID_FOUND", "NO_TOKEN_PROVIDED", "TOKEN_IS_WRONG", "SERVER_SHUTDOWN"]
         }
     },
