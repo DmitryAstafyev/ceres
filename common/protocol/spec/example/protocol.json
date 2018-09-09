@@ -1,11 +1,95 @@
 {
-
-    "Message":{
-        "default": {
-            "event"     : { "findin": "protocol.events.json",   "optional": true },
-            "request"   : { "findin": "protocol.requests.json", "optional": true }
-        }
+    /* Attach description of State section*/
+    "State:findin": "protocol.state.json",
+    /* Attach description of Data section*/
+    "Data:findin": "protocol.data.json",
+    /* Description of message section */
+    "Message": {
+        "clientId"  : "string",
+        "guid?"     : "guid",
+        "Handshake": {
+            "Response": {
+                "allowed"   : "boolean",
+                "reason?"   : "Reasons",
+                "error?"    : "string",
+                "Reasons"   : ["FAIL_AUTH", "NO_TOKEN_FOUND", "NO_CLIENT_ID_FOUND"]
+            }
+        },
+        /* This is test of multiple lines comment 
+           This is test of multiple lines comment
+           This is test of multiple lines comment */
+        "Reconnection": {
+            "Response": {
+                "allowed": "boolean"
+            },
+            "Responses": ["ConnectionError"]
+        },
+        "Hook": {
+            "Responses": ["ConnectionError", "Disconnect"]
+        },
+        "Pending": {
+            "Response": {
+                "event": "EventDefinition"
+            },
+            "Responses": ["Disconnect"]
+        },
+        "Event": {
+            "Request": {
+                "event": "EventDefinition"
+            },
+            "Response": {
+                "eventGUID?": "string",
+                "subscribers": "integer"
+            },
+            "Responses" : ["ConnectionError"]
+        },
+        "Subscribe": {
+            "Request": {
+                "subscription" : "Subscription"
+            },
+            "Response": {
+                "status": "boolean"
+            },
+            "Responses" : ["ConnectionError"]
+        },
+        "Unsubscribe": {
+            "Request": {
+                "subscription": "Subscription"
+            },
+            "Response": {
+                "status": "boolean"
+            },
+            "Responses" : ["ConnectionError"]
+        },
+        "UnsubscribeAll": {
+            "Request": {
+                "subscription": "Subscription"
+            },
+            "Response": {
+                "status": "boolean"
+            },
+            "Responses" : ["ConnectionError"]
+        } 
+    },
+    "EventDefinition": {
+        "protocol": "string",
+        "event": "string",
+        "body": "string",
+        "eventGUID?": "guid"
+    },
+    "Subscription": {
+        "protocol": "string",
+        "event?": "string"
+    },
+    "ConnectionError": {
+        "reason": "array<Reasons>",
+        "message": "string",
+        "Reasons": ["FAIL_AUTH", "NO_TOKEN_FOUND", "NO_CLIENT_ID_FOUND", "NO_TOKEN_PROVIDED", "TOKEN_IS_WRONG"]
+    },
+    "Disconnect": {
+        "reason": "Reasons",
+        "message": "string",
+        "Reasons": ["SHUTDOWN"]
     },
     "version": "0.0.1"
-
 }

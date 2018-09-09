@@ -1,0 +1,29 @@
+{
+    "clientId"  : "string",
+    "guid?"     : "guid",
+    "Get": {
+        "Response": {
+            "state": "ServerState"
+        },
+        "@ServerState": {
+            "clients": "integer",
+            "started": "datetime",
+            "status": "Status",
+            "Status": ["WORKING", "PENDING"]
+        }
+    },
+    "Set": {
+        "Request": {
+            "state": "ServerState"
+        }, 
+        "Response": {
+            "status": "boolean"
+        },
+        "@ServerState": {
+            "clients": "integer",
+            "started": "datetime",
+            "status": "Status",
+            "Status": ["WORKING", "PENDING"]
+        }
+    }
+}

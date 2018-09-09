@@ -1,0 +1,18 @@
+{
+    "clientId"  : "string",
+    "guid?"     : "guid",
+    "Write": {
+        "Request": {
+            "binary": "array<byte>"
+        }, 
+        "Response": {
+            "status": "Status"
+        },
+        /* Symbol @ is used as mark of single class. It means, this class will not extends properties from parent ("Write") */
+        "@Status": {
+            "bytes": "integer",
+            "started": "datetime",
+            "finished": "datetime"
+        }
+    }
+}

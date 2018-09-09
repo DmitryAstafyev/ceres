@@ -7,7 +7,7 @@ const logger: Tools.Logger = new Tools.Logger('ProtocolBuilder');
 
 export class Builder {
 
-    public build(source: string, dest: string, replace: boolean = false): Promise<boolean> {
+    public build(source: string, dest: string, replace: boolean = false): Promise<void> {
         return new Promise((resolve, reject) => {
             if (Tools.getTypeOf(source) !== Tools.EPrimitiveTypes.string){
                 return reject(new Error(logger.error(`Argument "source" should be a {string} type, but was gotten: ${Tools.inspect(source)}.`)));
@@ -21,28 +21,36 @@ export class Builder {
                     const convertor = new Convertor();
                     convertor.convert(json)
                         .then((str: string) => {
-                            try {
-                                if (FS.existsSync(dest) && replace){
-                                    FS.unlinkSync(dest);
-                                    logger.warn(`File "${dest}" exists. This file will be overwritten.`)
-                                } else if (FS.existsSync(dest)){
-                                    return reject(new Error(logger.error(`File "${dest}" already exists`)));
-                                }
-                                FS.writeFile(dest, str, (error) => {
-                                    if (error){
-                                        return reject(error);
-                                    }
-                                    return resolve(true);
-                                });
-                            } catch (error) {
-                                reject(error);
-                            }
+                            this.write(dest, str, replace)
+                                .then(resolve)
+                                .catch(reject);
                         })
                         .catch((error: Error) => {
                             reject(error);
                         });
                 })
                 .catch(reject);
+        });
+    }
+
+    public write(dest: string, content: string, replace: boolean = false): Promise<void> {
+        return new Promise((resolve, reject) => {
+            try {
+                if (FS.existsSync(dest) && replace){
+                    FS.unlinkSync(dest);
+                    logger.warn(`File "${dest}" exists. This file will be overwritten.`)
+                } else if (FS.existsSync(dest)){
+                    return reject(new Error(logger.error(`File "${dest}" already exists`)));
+                }
+                FS.writeFile(dest, content, (error) => {
+                    if (error){
+                        return reject(error);
+                    }
+                    return resolve();
+                });
+            } catch (error) {
+                reject(error);
+            }
         });
     }
 }

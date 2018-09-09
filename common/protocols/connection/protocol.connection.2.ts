@@ -1,3 +1,9 @@
+/*
+* This file generated automaticaly (Mon Sep 10 2018 01:29:24 GMT+0200 (CEST))
+* Do not remove or change this code.
+* Protocol version: 0.0.1
+*/
+
 namespace Protocol {
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	* Injection: map of types

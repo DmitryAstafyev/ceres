@@ -70,7 +70,7 @@ export class Reader {
     }
 
     private _clearComments(str: string): string {
-        return str.replace(/[\n\r]/gi, '').replace(/\/\*[^(\*\/)]*\*\//gi, '')
+        return str.replace(/[\n\r]/gi, '').replace(/\/\*[^\*\/]*\*\//gi, '')
     }
 
     private _getJSONFromBuffer(buffer: Buffer): string | Error {

@@ -86,13 +86,19 @@ export class Convertor {
                     injection.content.split(/[\n\r]/gi).map((row: string) => { return `\t${row}`;}).join('\n') + 
                     '\n';
                 });
+                let greeting: string = '';
+                greeting += `/*\n`;
+                greeting += `* This file generated automaticaly (${(new Date()).toString()})\n`;
+                greeting += `* Do not remove or change this code.\n`;
+                greeting += `* Protocol version: ${this._version}\n`;
+                greeting += `*/\n\n`;
                 let protocolNamespace: string = '';
                 protocolNamespace += `namespace Protocol {\n`;
                 protocolNamespace += this._getTypes() + '\n';
                 protocolNamespace += injectStr + '\n';
                 protocolNamespace += this._getMap() + '\n';
                 protocolNamespace += '}\n';
-                base = protocolNamespace + base + '\n';
+                base = greeting + protocolNamespace + base + '\n';
                 base += this._getInitialization();
                 resolve(base);
             }).catch((errors: Array<Error> | Error) => {
@@ -443,7 +449,8 @@ export class Convertor {
                     output += `${tab}\t\t${name}: { name: "${name}", value: "${arg.protoType}", type: Protocol.EEntityType.${arg.type}, optional: ${arg.optional} }, \n`;
                     break;
                 case EEntityType.repeated:
-                    let repeatedType: string = this._entityType.getRepeatedType(arg.tsType);
+                    let repeatedType: string = this._entityType.getRepeatedType(arg.protoType);
+                    repeatedType = this._entityType.isPrimitive(repeatedType) ? `"${repeatedType}"` : this._entityType.getRepeatedType(arg.tsType);
                     output += `${tab}\t\t${name}: { name: "${name}", value: ${repeatedType}, type: Protocol.EEntityType.${arg.type}, optional: ${arg.optional} }, \n`;
                     break;
                 case EEntityType.enum:
