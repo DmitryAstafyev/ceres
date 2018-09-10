@@ -1,5 +1,5 @@
 /*
-* This file generated automaticaly (Mon Sep 10 2018 01:29:24 GMT+0200 (CEST))
+* This file generated automaticaly (Mon Sep 10 2018 14:48:46 GMT+0200 (CEST))
 * Do not remove or change this code.
 * Protocol version: 0.0.1
 */
@@ -532,7 +532,7 @@ export namespace Message {
 					clientId: { name: "clientId", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
 					guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
 					allowed: { name: "allowed", value: "boolean", type: Protocol.EEntityType.primitive, optional: false }, 
-					reason: { name: "reason", value: Response.Reasons, type: Protocol.EEntityType.reference, optional: true }, 
+					reason: { name: "reason", value: Message.Handshake.Response.Reasons, type: Protocol.EEntityType.reference, optional: true }, 
 					error: { name: "error", value: "string", type: Protocol.EEntityType.primitive, optional: true }, 
 				}
 			}
@@ -551,10 +551,10 @@ export namespace Message {
 				return Protocol.stringify(this, Response);
 			}
 			public allowed: boolean = false;
-			public reason?: Response.Reasons;
+			public reason?: Message.Handshake.Response.Reasons;
 			public error?: string = "";
 
-			constructor(args: { clientId: string, guid?: string, allowed: boolean, reason?: Response.Reasons, error?: string }) {
+			constructor(args: { clientId: string, guid?: string, allowed: boolean, reason?: Message.Handshake.Response.Reasons, error?: string }) {
 				super(Object.assign(args, {}));
 				this.allowed = args.allowed;
 				args.reason !== void 0 && (this.reason = args.reason);

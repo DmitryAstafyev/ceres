@@ -251,29 +251,54 @@ export class Convertor {
                     throw new Error(`Field "Responses" is reserved. Value can be only Array<string>. Check prop "${entity.name}".`);
                 }
                 entity.children.Responses.value.forEach((ref: string) => {
-                    if (entity.children[ref] === void 0 && entity.children[ref] === void 0 && this._entities.root.children[ref] === void 0) {
-                        ref = `@${ref}`;
-                        if (entity.children[ref] === void 0 && entity.children[ref] === void 0 && this._entities.root.children[ref] === void 0) {
-                            ref = this._entityType.serializeName(ref);
-                            throw new Error(this._logger.error(`Cannot find definition for "${ref}". Define "${ref}" on root level or on level of "${entity.name}".`));
-                        } 
+                    const refImpl: string = this._findRefImpl(entity, ref);
+                    if (refImpl === '') {
+                        throw new Error(this._logger.error(`Cannot find definition for "${ref}". Define "${ref}" on root level or on parent levels of "${entity.name}".`));
                     }
-                    ref = target.value;
                 });
             }
             if (target.type !== EEntityType.reference) {
                 return this._validateEntities(target);
             }
-            //Check parent level
-            if (entity.parent.children[ref] === void 0 && entity.children[ref] === void 0 && this._entities.root.children[ref] === void 0) {
-                ref = `@${ref}`;
-                if (entity.parent.children[ref] === void 0 && entity.children[ref] === void 0 && this._entities.root.children[ref] === void 0) {
-                    ref = this._entityType.serializeName(ref);
-                    throw new Error(this._logger.error(`Cannot find definition for "${ref}". Define "${ref}" on root level or on level of "${entity.parent.name}" or "${entity.parent.name}.${entity.name}".`));
-                }                
+            //Check reference implementation
+            const refImpl: string = this._findRefImpl(entity, ref);
+            if (refImpl === '') {
+                throw new Error(this._logger.error(`Cannot find definition for "${ref}". Define "${ref}" on root level or on parent levels of "${entity.name}".`));
             }
             this._validateEntities(target);
         });
+    }
+
+    private _findEntityWithRefImpl(entity: IEntity, ref: string): IEntity | undefined {
+        const _ref: string = `@${ref}`;
+        if (entity.children[ref] === void 0 && entity.children[_ref] === void 0) {
+            if (entity.parent !== null) {
+                return this._findEntityWithRefImpl(entity.parent, ref);
+            }
+            return undefined;
+        }
+        return entity;
+    }
+
+    private _getPathToRef(parent: IEntity, path: Array<string> = []): string {
+        parent.type !== EEntityType.root && path.unshift(parent.name);
+        if (parent.parent !== null){
+            this._getPathToRef(parent.parent, path);
+        }
+        return path.join('.');
+    }
+
+    private _findRefImpl(parent: IEntity, ref: string): string {
+        const entity: IEntity | undefined = this._findEntityWithRefImpl(parent, ref);
+        if (entity === undefined) {
+            return '';
+        }
+        if (entity.type === EEntityType.root) {
+            //Implementation of reference on root level - don't need full path
+            return ref;
+        }
+        const path: string = this._getPathToRef(entity);
+        return path === '' ? ref : `${path}.${ref}`;
     }
 
     private _getClassConstructor(entity: IEntity, deep: number = 0): string {
@@ -328,12 +353,11 @@ export class Convertor {
                     });
                     break;
                 case EEntityType.reference:
-                    let namespace: string = this._getReferenceNamespace(target);
                     args.push({
                         name: target.name.replace(/\?/gi, ''),
                         type: target.type,
                         protoType: target.value,
-                        tsType: `${namespace !== '' ? `${namespace}.` : ''}${target.value}`,
+                        tsType: this._findRefImpl(target.parent as IEntity, target.value),
                         optional: target.name.indexOf('?') !== -1
                     });
                     break;
@@ -343,8 +367,7 @@ export class Convertor {
                     if (this._entityType.isPrimitive(typeAlias)){
                         tsType = this._entityType.getTypes()[typeAlias].tsType;
                     } else {
-                        let namespace: string = this._getReferenceNamespace(target);
-                        tsType = `${namespace !== '' ? `${namespace}.` : ''}${typeAlias}`;
+                        tsType = this._findRefImpl(target.parent as IEntity, typeAlias);
                     }
                     args.push({
                         name: target.name.replace(/\?/gi, ''),
@@ -462,14 +485,6 @@ export class Convertor {
         return output;
     }
 
-    private _getReferenceNamespace(entity: IEntity): string {
-        let namespace: string = '';
-        if (entity.parent !== null && (entity.parent.children[entity.value] !== void 0 || entity.parent.children[this._entityType.getRepeatedType(entity.value)] !== void 0)) {
-            namespace = entity.parent.name; 
-        }
-        return namespace;
-    }
-
     private _getImplementation(entity: IEntity, deep: number = 0): string {
         let output: string = '';
         const tab = '\t'.repeat(deep);
@@ -527,8 +542,7 @@ export class Convertor {
                 output += `${tab}public ${entity.name}: ${type.tsType} = ${type.init};\n`;
                 break;
             case EEntityType.reference:
-                let namespace: string = this._getReferenceNamespace(entity);
-                output += `${tab}public ${entity.name}: ${namespace !== '' ? `${namespace}.` : ''}${entity.value};\n`; 
+                output += `${tab}public ${entity.name}: ${this._findRefImpl(entity.parent as IEntity, entity.value)};\n`; 
                 break;
             case EEntityType.repeated:
                 const typeAlias: string = this._entityType.getRepeatedType(entity.value);
@@ -536,8 +550,7 @@ export class Convertor {
                 if (this._entityType.isPrimitive(typeAlias)){
                     tsType = this._entityType.getTypes()[typeAlias].tsType;
                 } else {
-                    let namespace: string = this._getReferenceNamespace(entity);
-                    tsType = `${namespace !== '' ? `${namespace}.` : ''}${typeAlias}`;
+                    tsType = this._findRefImpl(entity.parent as IEntity, typeAlias);
                 }
                 output += `${tab}public ${entity.name}: Array<${tsType}> = [];\n`;
                 break;

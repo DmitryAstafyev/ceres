@@ -4,12 +4,6 @@
     "Get": {
         "Response": {
             "state": "ServerState"
-        },
-        "@ServerState": {
-            "clients": "integer",
-            "started": "datetime",
-            "status": "Status",
-            "Status": ["WORKING", "PENDING"]
         }
     },
     "Set": {
@@ -18,12 +12,12 @@
         }, 
         "Response": {
             "status": "boolean"
-        },
-        "@ServerState": {
-            "clients": "integer",
-            "started": "datetime",
-            "status": "Status",
-            "Status": ["WORKING", "PENDING"]
         }
+    },
+    "@ServerState": {
+        "clients": "integer",
+        "started": "datetime",
+        "status": "Status",
+        "Status": ["WORKING", "PENDING"]
     }
 }
