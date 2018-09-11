@@ -333,6 +333,11 @@ export class Convertor {
                 output += `\n${nested}this.${arg.name} = args.${arg.name};`;
             }
         });
+        output += `\n`;
+        output += `${nested}const errors: Array<Error> = Protocol.validateParams(args, ${entity.name});\n`
+        output += `${nested}if (errors.length > 0) {\n`;
+        output += `${nested}\tthrow new Error(\`Cannot create class of "${entity.name}" due error(s):\\n\${errors.map((error: Error) => { return \`\\t- \${error.message}\`; }).join('\\n')}\`);\n`;
+        output += `${nested}}\n`;
         output += `\n${tab}}\n`;
         return output;
     }

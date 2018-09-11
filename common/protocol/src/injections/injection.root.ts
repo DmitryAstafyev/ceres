@@ -231,6 +231,94 @@ export function parse(str: string, target?: any): TTypes | Array<Error> {
     return extract(json, target);
 }
 
-export class Root {
+export function typeOf(smth: any): string {
+    switch(typeof smth) {
+        case 'object':
+            if (smth === null) {
+                return 'null';
+            }
+            if (smth.constructor !== void 0) {
+                return smth.constructor.name;
+            }
+            return 'object';
+        default:
+            return typeof smth;
+    }
 
+}
+
+export function validateParams(params: any, classRef: any): Array<Error> {
+    const errors: Array<Error> = [];
+    const description: {[key: string]: any} = classRef.getDescription();
+    const types: {[key: string]: any} = getTypes();
+    const classRefName: string = classRef.name;
+    if (Object.keys(description).length === 0 && params === undefined) {
+        return errors;
+    }
+    if (typeof params !== 'object' || params === null) {
+        errors.push(new Error(`Expecting "params" will be an object on "${classRefName}".`));
+        return errors;
+    }
+    Object.keys(description).forEach((prop: string) => {
+        const desc: any = description[prop];
+        if (!desc.optional && params[prop] === void 0) {
+            errors.push(new Error(`Property "${prop}" isn't defined, but it's obligatory property for "${classRefName}".`));
+            return;
+        }
+        if (desc.optional && params[prop] === void 0) {
+            return;
+        }
+        switch(desc.type) {
+            case EEntityType.repeated:
+                if (!(params[prop] instanceof Array)){
+                    errors.push(new Error(`Property "${prop}" has wrong format. Expected an array (repeated). Reference: "${classRefName}"`));
+                    break;
+                }
+                if (typeof desc.value === 'string') {
+                    params[prop] = params[prop].map((value: any) => {
+                        const type = types[desc.value];
+                        if (typeOf(value) !== type.tsType){
+                            errors.push(new Error(`Property "${prop}" has wrong format. Expected an array (repeated) of "${type.tsType}"`));
+                        }
+                    });
+                } else if (typeof desc.value === 'function') {
+                    //It's reference to class
+                    if (!(params[prop] instanceof desc.value)) {
+                        errors.push(new Error(`Expecting property "${prop}" will be instance of "${desc.value.name}".`));
+                    }
+                } else if (typeof desc.value === 'object') {
+                    //It's reference to enum
+                    params[prop].forEach((value: any) => {
+                        if (desc.value[value] === void 0) {
+                            errors.push(new Error(`Property "${prop}" has wrong value: "${value}". Available values: ${Object.keys(desc.value).join(', ')}.`));
+                        }
+                    });
+                }
+                break;
+            case EEntityType.primitive:
+                const type = types[desc.value];
+                if (typeOf(params[prop]) !== type.tsType){
+                    errors.push(new Error(`Property "${prop}" has wrong format. Expected: "${type.tsType}".`));
+                }
+                break;
+            case EEntityType.reference:
+                if (typeof desc.value === 'function') {
+                    //It's reference to class
+                    if (!(params[prop] instanceof desc.value)) {
+                        errors.push(new Error(`Expecting property "${prop}" will be instance of "${desc.value.name}".`));
+                    }
+                } else if (typeof desc.value === 'object') {
+                    //It's reference to enum
+                    if (desc.value[params[prop]] === void 0) {
+                        errors.push(new Error(`Property "${prop}" has wrong value: "${params[prop]}". Available values: ${Object.keys(desc.value).join(', ')}.`));
+                    }
+                }
+                break;
+        }
+    });
+    return errors;
+};
+
+export class Root {
+    
 }

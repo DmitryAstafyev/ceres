@@ -6,7 +6,6 @@
 import Logger from '../../platform/tools/tools.logger';
 import { Builder, Reader, Convertor } from '../src/index';
 import { AdvancedTypes } from './example/test.advanced.types';
-import * as FS from 'fs';
 
 const TEST_SOURCE_PROTOCOL_FILE = './spec/example/protocol.json';
 const TEST_DEST_PROTOCOL_FILE = './spec/example/example.ts';
@@ -59,7 +58,7 @@ describe('[Test][platform][protocol]', () => {
             });
     });
 
-    it('[Builder]', (done: Function)=>{
+    it('[Writer]', (done: Function)=>{
         const logger = new Logger('Test: Reader');
         const reader: Reader = new Reader();
         return reader.read(TEST_SOURCE_PROTOCOL_FILE)
@@ -72,6 +71,68 @@ describe('[Test][platform][protocol]', () => {
                     const builder: Builder = new Builder();
                     builder.write(TEST_DEST_PROTOCOL_FILE, protocol, true).then(() => {
                         return done();
+                    }).catch((e: Error) => {
+                        logger.error(e.message);
+                        fail(e);
+                        return done();
+                    });                    
+                }).catch((e: Error) => {
+                    logger.error(e.message);
+                    fail(e);
+                    return done();
+                });
+            }).catch((e)=>{
+                logger.error(e.message);
+                fail(e);
+                return done();
+            });
+    });
+
+    it('[Usage]', (done: Function)=>{
+        const logger = new Logger('Test: Reader');
+        const reader: Reader = new Reader();
+        return reader.read(TEST_SOURCE_PROTOCOL_FILE)
+            .then((json: any) => {
+                const convertor: Convertor = new Convertor();
+                convertor.convert(json, [], {
+                    implementation: AdvancedTypes,
+                    path: '../spec/example/test.advanced.types.ts'
+                }).then((protocol: string) => {
+                    const builder: Builder = new Builder();
+                    builder.write(TEST_DEST_PROTOCOL_FILE, protocol, true).then(() => {
+                        import(TEST_DEST_PROTOCOL_MODULE_REF).then((proto: any) => {
+                            try {
+                                const HandshakeResponse: any = new proto.Message.Handshake.Response({
+                                    clientId: 'xxx-xxx-xxxx',
+                                    allowed: true,
+                                    reason: proto.Message.Handshake.Response.Reasons.NO_TOKEN_FOUND
+                                });
+                                expect(HandshakeResponse instanceof proto.Message.Handshake.Response).toBe(true);
+                                const DataWriteRequest: any = new proto.Data.Write.Request({
+                                    clientId: 'xxx-xxx-xxxx',
+                                    binary: [0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1]
+                                });
+                                expect(DataWriteRequest instanceof proto.Data.Write.Request).toBe(true);
+                                const DataWriteResponse: any = new proto.Data.Write.Response({
+                                    clientId: 'xxx-xxx-xxxx',
+                                    status: new proto.Data.Write.Status({
+                                        bytes: 100,
+                                        started: new Date(),
+                                        finished: new Date()
+                                    })
+                                });
+                                expect(DataWriteResponse instanceof proto.Data.Write.Response).toBe(true);
+                                return done();
+                            } catch(e) {
+                                logger.error(e.message);
+                                fail(e);
+                                return done();
+                            }
+                        }).catch((e: Error) => {
+                            logger.error(e.message);
+                            fail(e);
+                            return done();
+                        });
                     }).catch((e: Error) => {
                         logger.error(e.message);
                         fail(e);
