@@ -1,97 +1,87 @@
 {
     "Message": {
-        "default": {
-            "request"   : { "in"    : "Requests",   "optional": true },
-            "response"  : { "in"    : "Responses",  "optional": true },
-            "guid"      : { "type"  : "guid",       "optional": true },
-            "clientId"  : { "type"  : "string",     "required": true }
+        "clientId"  : "string",
+        "guid?"     : "guid",
+        "Handshake": {
+            "Response": {
+                "allowed"   : "boolean",
+                "reason?"   : "Reasons",
+                "error?"    : "string",
+                "Reasons"   : ["FAIL_AUTH", "NO_TOKEN_FOUND", "NO_CLIENT_ID_FOUND"]
+            }
         },
-    
-        "cases":{
-            "RequestHandshake":[{ "request": "HANDSHAKE"}, {
-            }],
-            "ResponseHandshake":[{ "response": "HANDSHAKE"}, {
-                "allowed"   : { "type"  : "boolean",    "required": true },
-                "reason"    : { "in"    : "Reasons",    "optional": true },
-                "error"     : { "type"  : "string",     "optional": true }
-            }],
-            "RequestHook":[{ "request": "HOOK"}, {
-            }],
-            "RequestPending":[{ "request": "PENDING"}, {
-            }],
-            "RequestReconnection":[{ "request": "RECONNECTION"}, {
-            }],
-            "ResponseReconnection":[{ "response": "RECONNECTION"}, {
-                "allowed"   : { "type"  : "boolean",    "required": true },
-                "reason"    : { "in"    : "Reasons",    "optional": true },
-                "error"     : { "type"  : "string",     "optional": true }
-            }],
-            "EventRequest":[{ "request": "EVENT"}, {
-                "body"      : { "type"  : "string",     "required": true },
-                "protocol"  : { "type"  : "string",     "required": true },
-                "signature" : { "type"  : "string",     "required": true },
-                "eventId"   : { "type"  : "guid",       "optional": true }
-            }],
-            "EventResponse":[{ "response": "EVENT"}, {
-                "eventId"       : { "type"  : "string",     "required": true },
-                "subscribers"   : { "type"  : "number",     "required": true }
-            }],
-            "IncomeEvent":[{ "response": "INCOME_EVENT"}, {
-                "body"      : { "type"  : "string",     "required": true },
-                "signature" : { "type"  : "string",     "required": true },
-                "protocol"  : { "type"  : "string",     "required": true },
-                "eventId"   : { "type"  : "guid",       "optional": true }
-            }],
-            "SubscribeRequest":[{ "request": "SUBSCRIBE"}, {
-                "signature" : { "type"  : "string",     "required": true },
-                "protocol"  : { "type"  : "string",     "required": true }
-            }],
-            "SubscribeResponse":[{ "response": "SUBSCRIBE"}, {
-                "signature" : { "type"  : "string",     "required": true },
-                "protocol"  : { "type"  : "string",     "required": true },
-                "status"    : { "type"  : "boolean",    "required": true }
-            }],
-            "UnsubscribeRequest":[{ "request": "UNSUBSCRIBE"}, {
-                "signature" : { "type"  : "string",     "required": true },
-                "protocol"  : { "type"  : "string",     "required": true }
-            }],
-            "UnsubscribeResponse":[{ "response": "UNSUBSCRIBE"}, {
-                "signature" : { "type"  : "string",     "required": true },
-                "protocol"  : { "type"  : "string",     "required": true },
-                "status"    : { "type"  : "boolean",    "required": true }
-            }],
-            "UnsubscribeAllRequest":[{ "request": "UNSUBSCRIBE_ALL"}, {
-                "protocol"  : { "type"  : "string",     "required": true }
-            }],
-            "UnsubscribeAllResponse":[{ "response": "UNSUBSCRIBE_ALL"}, {
-                "protocol"  : { "type"  : "string",     "required": true },
-                "status"    : { "type"  : "boolean",    "required": true }
-            }],
-            "RequestRequest":[{ "request": "REQUEST"}, {
-                "body"      : { "type"  : "string",     "required": true },
-                "protocol"  : { "type"  : "string",     "required": true },
-                "requestId" : { "type"  : "guid",       "optional": true }
-            }],
-            "RequestResponse":[{ "response": "REQUEST"}, {
-                "requestId" : { "type"  : "string",     "required": true },
-                "processing": { "type"  : "boolean",    "required": true }
-            }],
-            "RequestResultResponse":[{ "response": "REQUEST_RESULT"}, {
-                "requestId" : { "type"  : "string",     "required": true },
-                "body"      : { "type"  : "string",     "required": true }
-            }],
-            "ResponseError":[{ "response": "ERROR"}, {
-                "allowed"   : { "type"  : "boolean",    "required": true },
-                "reason"    : { "in"    : "Reasons",    "optional": true },
-                "error"     : { "type"  : "string",     "optional": true }
-            }]
+        "Reconnection": {
+            "Response": {
+                "allowed": "boolean"
+            },
+            "Responses": ["ConnectionError"]
         },
-    
-        "definitions": {
-            "Requests"  : ["HANDSHAKE", "HOOK", "PENDING", "RECONNECTION", "EVENT", "SUBSCRIBE", "UNSUBSCRIBE", "UNSUBSCRIBE_ALL", "REQUEST"],
-            "Responses" : ["ERROR", "HANDSHAKE", "RECONNECTION", "EVENT", "INCOME_EVENT", "SUBSCRIBE", "UNSUBSCRIBE", "UNSUBSCRIBE_ALL", "REQUEST", "REQUEST_RESULT"],
-            "Reasons"   : ["FAIL_AUTH", "NO_TOKEN_FOUND", "NO_CLIENT_ID_FOUND", "NO_TOKEN_PROVIDED", "TOKEN_IS_WRONG", "SERVER_SHUTDOWN"]
-        }
+        "Hook": {
+            "Responses": ["ConnectionError", "Disconnect"]
+        },
+        "Pending": {
+            "Response": {
+                "event": "EventDefinition"
+            },
+            "Responses": ["Disconnect"]
+        },
+        "Event": {
+            "Request": {
+                "event": "EventDefinition"
+            },
+            "Response": {
+                "eventGUID?": "string",
+                "subscribers": "integer"
+            },
+            "Responses" : ["ConnectionError"]
+        },
+        "Subscribe": {
+            "Request": {
+                "subscription" : "Subscription"
+            },
+            "Response": {
+                "status": "boolean"
+            },
+            "Responses" : ["ConnectionError"]
+        },
+        "Unsubscribe": {
+            "Request": {
+                "subscription": "Subscription"
+            },
+            "Response": {
+                "status": "boolean"
+            },
+            "Responses" : ["ConnectionError"]
+        },
+        "UnsubscribeAll": {
+            "Request": {
+                "subscription": "Subscription"
+            },
+            "Response": {
+                "status": "boolean"
+            },
+            "Responses" : ["ConnectionError"]
+        } 
+    },
+    "EventDefinition": {
+        "protocol": "string",
+        "event": "string",
+        "body": "string",
+        "eventGUID?": "guid"
+    },
+    "Subscription": {
+        "protocol": "string",
+        "event?": "string"
+    },
+    "ConnectionError": {
+        "reason": "array<Reasons>",
+        "message": "string",
+        "Reasons": ["FAIL_AUTH", "NO_TOKEN_FOUND", "NO_CLIENT_ID_FOUND", "NO_TOKEN_PROVIDED", "TOKEN_IS_WRONG"]
+    },
+    "Disconnect": {
+        "reason": "Reasons",
+        "message": "string",
+        "Reasons": ["SHUTDOWN"]
     },
     "version": "0.0.1"
 }
