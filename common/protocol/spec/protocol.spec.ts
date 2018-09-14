@@ -108,11 +108,19 @@ describe('[Test][platform][protocol]', () => {
                                     reason: proto.Message.Handshake.Response.Reasons.NO_TOKEN_FOUND
                                 });
                                 expect(HandshakeResponse instanceof proto.Message.Handshake.Response).toBe(true);
+                                console.log(`HandshakeResponse created.`);
                                 const DataWriteRequest: any = new proto.Data.Write.Request({
                                     clientId: 'xxx-xxx-xxxx',
                                     binary: [0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1]
                                 });
                                 expect(DataWriteRequest instanceof proto.Data.Write.Request).toBe(true);
+                                console.log(`DataWriteRequest created.`);
+                                const strDataWriteRequest: string = DataWriteRequest.stringify();
+                                expect(typeof strDataWriteRequest).toBe('string');
+                                console.log(`DataWriteRequest converted to string.`);
+                                const parsedDataWriteRequest: any = proto.Data.Write.Request.parse(strDataWriteRequest);
+                                expect(parsedDataWriteRequest instanceof proto.Data.Write.Request).toBe(true);
+                                console.log(`DataWriteRequest created from string.`);
                                 const DataWriteResponse: any = new proto.Data.Write.Response({
                                     clientId: 'xxx-xxx-xxxx',
                                     status: new proto.Data.Write.Status({
@@ -122,6 +130,7 @@ describe('[Test][platform][protocol]', () => {
                                     })
                                 });
                                 expect(DataWriteResponse instanceof proto.Data.Write.Response).toBe(true);
+                                console.log(`DataWriteResponse created.`);
                                 return done();
                             } catch(e) {
                                 logger.error(e.message);

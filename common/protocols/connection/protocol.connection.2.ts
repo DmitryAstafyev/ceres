@@ -1,5 +1,5 @@
 /*
-* This file generated automaticaly (Tue Sep 11 2018 10:52:57 GMT+0200 (CEST))
+* This file generated automaticaly (Fri Sep 14 2018 21:30:56 GMT+0200 (CEST))
 * Do not remove or change this code.
 * Protocol version: 0.0.1
 */
@@ -408,8 +408,96 @@ namespace Protocol {
 	    return extract(json, target);
 	}
 	
-	export class Root {
+	export function typeOf(smth: any): string {
+	    switch(typeof smth) {
+	        case 'object':
+	            if (smth === null) {
+	                return 'null';
+	            }
+	            if (smth.constructor !== void 0) {
+	                return smth.constructor.name;
+	            }
+	            return 'object';
+	        default:
+	            return typeof smth;
+	    }
 	
+	}
+	
+	export function validateParams(params: any, classRef: any): Array<Error> {
+	    const errors: Array<Error> = [];
+	    const description: {[key: string]: any} = classRef.getDescription();
+	    const types: {[key: string]: any} = getTypes();
+	    const classRefName: string = classRef.name;
+	    if (Object.keys(description).length === 0 && params === undefined) {
+	        return errors;
+	    }
+	    if (typeof params !== 'object' || params === null) {
+	        errors.push(new Error(`Expecting "params" will be an object on "${classRefName}".`));
+	        return errors;
+	    }
+	    Object.keys(description).forEach((prop: string) => {
+	        const desc: any = description[prop];
+	        if (!desc.optional && params[prop] === void 0) {
+	            errors.push(new Error(`Property "${prop}" isn't defined, but it's obligatory property for "${classRefName}".`));
+	            return;
+	        }
+	        if (desc.optional && params[prop] === void 0) {
+	            return;
+	        }
+	        switch(desc.type) {
+	            case EEntityType.repeated:
+	                if (!(params[prop] instanceof Array)){
+	                    errors.push(new Error(`Property "${prop}" has wrong format. Expected an array (repeated). Reference: "${classRefName}"`));
+	                    break;
+	                }
+	                if (typeof desc.value === 'string') {
+	                    params[prop] = params[prop].map((value: any) => {
+	                        const type = types[desc.value];
+	                        if (typeOf(value) !== type.tsType){
+	                            errors.push(new Error(`Property "${prop}" has wrong format. Expected an array (repeated) of "${type.tsType}"`));
+	                        }
+	                    });
+	                } else if (typeof desc.value === 'function') {
+	                    //It's reference to class
+	                    if (!(params[prop] instanceof desc.value)) {
+	                        errors.push(new Error(`Expecting property "${prop}" will be instance of "${desc.value.name}".`));
+	                    }
+	                } else if (typeof desc.value === 'object') {
+	                    //It's reference to enum
+	                    params[prop].forEach((value: any) => {
+	                        if (desc.value[value] === void 0) {
+	                            errors.push(new Error(`Property "${prop}" has wrong value: "${value}". Available values: ${Object.keys(desc.value).join(', ')}.`));
+	                        }
+	                    });
+	                }
+	                break;
+	            case EEntityType.primitive:
+	                const type = types[desc.value];
+	                if (typeOf(params[prop]) !== type.tsType){
+	                    errors.push(new Error(`Property "${prop}" has wrong format. Expected: "${type.tsType}".`));
+	                }
+	                break;
+	            case EEntityType.reference:
+	                if (typeof desc.value === 'function') {
+	                    //It's reference to class
+	                    if (!(params[prop] instanceof desc.value)) {
+	                        errors.push(new Error(`Expecting property "${prop}" will be instance of "${desc.value.name}".`));
+	                    }
+	                } else if (typeof desc.value === 'object') {
+	                    //It's reference to enum
+	                    if (desc.value[params[prop]] === void 0) {
+	                        errors.push(new Error(`Property "${prop}" has wrong value: "${params[prop]}". Available values: ${Object.keys(desc.value).join(', ')}.`));
+	                    }
+	                }
+	                break;
+	        }
+	    });
+	    return errors;
+	};
+	
+	export class Root {
+	    
 	}
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -496,6 +584,11 @@ export class Message extends Protocol.Root {
 		super();
 		this.clientId = args.clientId;
 		args.guid !== void 0 && (this.guid = args.guid);
+		const errors: Array<Error> = Protocol.validateParams(args, Message);
+		if (errors.length > 0) {
+			throw new Error(`Cannot create class of "Message" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+		}
+
 	}
 }
 export namespace Message {
@@ -523,6 +616,11 @@ export namespace Message {
 
 		constructor(args: { clientId: string, guid?: string }) {
 			super(Object.assign(args, {}));
+			const errors: Array<Error> = Protocol.validateParams(args, Handshake);
+			if (errors.length > 0) {
+				throw new Error(`Cannot create class of "Handshake" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+			}
+
 		}
 	}
 	export namespace Handshake {
@@ -559,6 +657,11 @@ export namespace Message {
 				this.allowed = args.allowed;
 				args.reason !== void 0 && (this.reason = args.reason);
 				args.error !== void 0 && (this.error = args.error);
+				const errors: Array<Error> = Protocol.validateParams(args, Response);
+				if (errors.length > 0) {
+					throw new Error(`Cannot create class of "Response" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+				}
+
 			}
 		}
 		export namespace Response {
@@ -592,6 +695,11 @@ export namespace Message {
 
 			constructor(args: { clientId: string, guid?: string }) {
 				super(Object.assign(args, {}));
+				const errors: Array<Error> = Protocol.validateParams(args, Request);
+				if (errors.length > 0) {
+					throw new Error(`Cannot create class of "Request" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+				}
+
 			}
 		}
 		type TResponses = Response;
@@ -620,6 +728,11 @@ export namespace Message {
 
 		constructor(args: { clientId: string, guid?: string }) {
 			super(Object.assign(args, {}));
+			const errors: Array<Error> = Protocol.validateParams(args, Reconnection);
+			if (errors.length > 0) {
+				throw new Error(`Cannot create class of "Reconnection" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+			}
+
 		}
 	}
 	export namespace Reconnection {
@@ -650,6 +763,11 @@ export namespace Message {
 			constructor(args: { clientId: string, guid?: string, allowed: boolean }) {
 				super(Object.assign(args, {}));
 				this.allowed = args.allowed;
+				const errors: Array<Error> = Protocol.validateParams(args, Response);
+				if (errors.length > 0) {
+					throw new Error(`Cannot create class of "Response" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+				}
+
 			}
 		}
 		export enum Responses {
@@ -679,6 +797,11 @@ export namespace Message {
 
 			constructor(args: { clientId: string, guid?: string }) {
 				super(Object.assign(args, {}));
+				const errors: Array<Error> = Protocol.validateParams(args, Request);
+				if (errors.length > 0) {
+					throw new Error(`Cannot create class of "Request" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+				}
+
 			}
 		}
 		type TResponses = Response | ConnectionError;
@@ -707,6 +830,11 @@ export namespace Message {
 
 		constructor(args: { clientId: string, guid?: string }) {
 			super(Object.assign(args, {}));
+			const errors: Array<Error> = Protocol.validateParams(args, Hook);
+			if (errors.length > 0) {
+				throw new Error(`Cannot create class of "Hook" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+			}
+
 		}
 	}
 	export namespace Hook {
@@ -738,6 +866,11 @@ export namespace Message {
 
 			constructor(args: { clientId: string, guid?: string }) {
 				super(Object.assign(args, {}));
+				const errors: Array<Error> = Protocol.validateParams(args, Request);
+				if (errors.length > 0) {
+					throw new Error(`Cannot create class of "Request" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+				}
+
 			}
 		}
 		export class Response extends Hook {
@@ -764,6 +897,11 @@ export namespace Message {
 
 			constructor(args: { clientId: string, guid?: string }) {
 				super(Object.assign(args, {}));
+				const errors: Array<Error> = Protocol.validateParams(args, Response);
+				if (errors.length > 0) {
+					throw new Error(`Cannot create class of "Response" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+				}
+
 			}
 		}
 		type TResponses = Response | ConnectionError | Disconnect;
@@ -792,6 +930,11 @@ export namespace Message {
 
 		constructor(args: { clientId: string, guid?: string }) {
 			super(Object.assign(args, {}));
+			const errors: Array<Error> = Protocol.validateParams(args, Pending);
+			if (errors.length > 0) {
+				throw new Error(`Cannot create class of "Pending" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+			}
+
 		}
 	}
 	export namespace Pending {
@@ -822,6 +965,11 @@ export namespace Message {
 			constructor(args: { clientId: string, guid?: string, event: EventDefinition }) {
 				super(Object.assign(args, {}));
 				this.event = args.event;
+				const errors: Array<Error> = Protocol.validateParams(args, Response);
+				if (errors.length > 0) {
+					throw new Error(`Cannot create class of "Response" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+				}
+
 			}
 		}
 		export enum Responses {
@@ -851,6 +999,11 @@ export namespace Message {
 
 			constructor(args: { clientId: string, guid?: string }) {
 				super(Object.assign(args, {}));
+				const errors: Array<Error> = Protocol.validateParams(args, Request);
+				if (errors.length > 0) {
+					throw new Error(`Cannot create class of "Request" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+				}
+
 			}
 		}
 		type TResponses = Response | Disconnect;
@@ -879,6 +1032,11 @@ export namespace Message {
 
 		constructor(args: { clientId: string, guid?: string }) {
 			super(Object.assign(args, {}));
+			const errors: Array<Error> = Protocol.validateParams(args, Event);
+			if (errors.length > 0) {
+				throw new Error(`Cannot create class of "Event" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+			}
+
 		}
 	}
 	export namespace Event {
@@ -909,6 +1067,11 @@ export namespace Message {
 			constructor(args: { clientId: string, guid?: string, event: EventDefinition }) {
 				super(Object.assign(args, {}));
 				this.event = args.event;
+				const errors: Array<Error> = Protocol.validateParams(args, Request);
+				if (errors.length > 0) {
+					throw new Error(`Cannot create class of "Request" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+				}
+
 			}
 		}
 		export class Response extends Event {
@@ -941,6 +1104,11 @@ export namespace Message {
 				super(Object.assign(args, {}));
 				args.eventGUID !== void 0 && (this.eventGUID = args.eventGUID);
 				this.subscribers = args.subscribers;
+				const errors: Array<Error> = Protocol.validateParams(args, Response);
+				if (errors.length > 0) {
+					throw new Error(`Cannot create class of "Response" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+				}
+
 			}
 		}
 		export enum Responses {
@@ -972,6 +1140,11 @@ export namespace Message {
 
 		constructor(args: { clientId: string, guid?: string }) {
 			super(Object.assign(args, {}));
+			const errors: Array<Error> = Protocol.validateParams(args, Subscribe);
+			if (errors.length > 0) {
+				throw new Error(`Cannot create class of "Subscribe" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+			}
+
 		}
 	}
 	export namespace Subscribe {
@@ -1002,6 +1175,11 @@ export namespace Message {
 			constructor(args: { clientId: string, guid?: string, subscription: Subscription }) {
 				super(Object.assign(args, {}));
 				this.subscription = args.subscription;
+				const errors: Array<Error> = Protocol.validateParams(args, Request);
+				if (errors.length > 0) {
+					throw new Error(`Cannot create class of "Request" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+				}
+
 			}
 		}
 		export class Response extends Subscribe {
@@ -1031,6 +1209,11 @@ export namespace Message {
 			constructor(args: { clientId: string, guid?: string, status: boolean }) {
 				super(Object.assign(args, {}));
 				this.status = args.status;
+				const errors: Array<Error> = Protocol.validateParams(args, Response);
+				if (errors.length > 0) {
+					throw new Error(`Cannot create class of "Response" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+				}
+
 			}
 		}
 		export enum Responses {
@@ -1062,6 +1245,11 @@ export namespace Message {
 
 		constructor(args: { clientId: string, guid?: string }) {
 			super(Object.assign(args, {}));
+			const errors: Array<Error> = Protocol.validateParams(args, Unsubscribe);
+			if (errors.length > 0) {
+				throw new Error(`Cannot create class of "Unsubscribe" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+			}
+
 		}
 	}
 	export namespace Unsubscribe {
@@ -1092,6 +1280,11 @@ export namespace Message {
 			constructor(args: { clientId: string, guid?: string, subscription: Subscription }) {
 				super(Object.assign(args, {}));
 				this.subscription = args.subscription;
+				const errors: Array<Error> = Protocol.validateParams(args, Request);
+				if (errors.length > 0) {
+					throw new Error(`Cannot create class of "Request" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+				}
+
 			}
 		}
 		export class Response extends Unsubscribe {
@@ -1121,6 +1314,11 @@ export namespace Message {
 			constructor(args: { clientId: string, guid?: string, status: boolean }) {
 				super(Object.assign(args, {}));
 				this.status = args.status;
+				const errors: Array<Error> = Protocol.validateParams(args, Response);
+				if (errors.length > 0) {
+					throw new Error(`Cannot create class of "Response" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+				}
+
 			}
 		}
 		export enum Responses {
@@ -1152,6 +1350,11 @@ export namespace Message {
 
 		constructor(args: { clientId: string, guid?: string }) {
 			super(Object.assign(args, {}));
+			const errors: Array<Error> = Protocol.validateParams(args, UnsubscribeAll);
+			if (errors.length > 0) {
+				throw new Error(`Cannot create class of "UnsubscribeAll" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+			}
+
 		}
 	}
 	export namespace UnsubscribeAll {
@@ -1182,6 +1385,11 @@ export namespace Message {
 			constructor(args: { clientId: string, guid?: string, subscription: Subscription }) {
 				super(Object.assign(args, {}));
 				this.subscription = args.subscription;
+				const errors: Array<Error> = Protocol.validateParams(args, Request);
+				if (errors.length > 0) {
+					throw new Error(`Cannot create class of "Request" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+				}
+
 			}
 		}
 		export class Response extends UnsubscribeAll {
@@ -1211,6 +1419,11 @@ export namespace Message {
 			constructor(args: { clientId: string, guid?: string, status: boolean }) {
 				super(Object.assign(args, {}));
 				this.status = args.status;
+				const errors: Array<Error> = Protocol.validateParams(args, Response);
+				if (errors.length > 0) {
+					throw new Error(`Cannot create class of "Response" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+				}
+
 			}
 		}
 		export enum Responses {
@@ -1253,6 +1466,11 @@ export class EventDefinition extends Protocol.Root {
 		this.event = args.event;
 		this.body = args.body;
 		args.eventGUID !== void 0 && (this.eventGUID = args.eventGUID);
+		const errors: Array<Error> = Protocol.validateParams(args, EventDefinition);
+		if (errors.length > 0) {
+			throw new Error(`Cannot create class of "EventDefinition" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+		}
+
 	}
 }
 export class Subscription extends Protocol.Root {
@@ -1283,6 +1501,11 @@ export class Subscription extends Protocol.Root {
 		super();
 		this.protocol = args.protocol;
 		args.event !== void 0 && (this.event = args.event);
+		const errors: Array<Error> = Protocol.validateParams(args, Subscription);
+		if (errors.length > 0) {
+			throw new Error(`Cannot create class of "Subscription" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+		}
+
 	}
 }
 export class ConnectionError extends Protocol.Root {
@@ -1313,6 +1536,11 @@ export class ConnectionError extends Protocol.Root {
 		super();
 		this.reason = args.reason;
 		this.message = args.message;
+		const errors: Array<Error> = Protocol.validateParams(args, ConnectionError);
+		if (errors.length > 0) {
+			throw new Error(`Cannot create class of "ConnectionError" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+		}
+
 	}
 }
 export namespace ConnectionError {
@@ -1352,6 +1580,11 @@ export class Disconnect extends Protocol.Root {
 		super();
 		this.reason = args.reason;
 		this.message = args.message;
+		const errors: Array<Error> = Protocol.validateParams(args, Disconnect);
+		if (errors.length > 0) {
+			throw new Error(`Cannot create class of "Disconnect" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+		}
+
 	}
 }
 export namespace Disconnect {
