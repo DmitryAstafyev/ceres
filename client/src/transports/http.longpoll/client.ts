@@ -95,26 +95,26 @@ class Hook {
      * Create hook request. This request never finish.
      * @returns {Promise<Error>}
      */
-    public create(url: string, clientGUID: string, token: Token): Promise<Protocol.ResponseError>{
+    public create(url: string, clientGUID: string, token: Token): Promise<Protocol.ConnectionError | Protocol.Disconnect>{
         return new Promise((resolve, reject) => {
             if (this._request !== null) {
                 return reject(new Error(`Attempt to create hook, even hook is already created.`));
             }
-            const instance = new Protocol.RequestHook({
-                clientId: clientGUID
+            const instance = new Protocol.Message.Hook.Request({
+                clientId: clientGUID,
+                token: token.get()
             });
-            instance.setToken(token.get());
-            this._request = new Request(url, instance.getStr());
+            this._request = new Request(url, instance.stringify());
             const requestId = this._request.getId();
             this._request.send()
                 .then((response: string) => {
-                    const message = Protocol.extract(response);
+                    const message = Protocol.parse(response);
                     this._request = null;
-                    if (message instanceof Error) {
-                        return reject(message);
+                    if (message instanceof Array) {
+                        return reject(new Error(`Cannot parse response due errors:\n ${message.map((error: Error) => { return error.message; }).join('\n')}`));
                     }
-                    if (!(message instanceof Protocol.ResponseError)) {
-                        return reject(message);
+                    if (!(message instanceof Protocol.ConnectionError) && !(message instanceof Protocol.Disconnect)) {
+                        return reject(new Error(`Unexpected response: ${message.constructor.name}: ${Tools.inspect(message)}`));
                     }
                     resolve(message);
                 })
@@ -149,23 +149,30 @@ class Pending {
 
     /**
      * Create pending connection
-     * @returns {Promise<Error>}
+     * @returns {Promise<Protocol.Message.Pending.Response>}
      */
-    public create(url: string, clientGUID: string, token: Token): Promise<string>{
+    public create(url: string, clientGUID: string, token: Token): Promise<Protocol.Message.Pending.Response | Protocol.Disconnect>{
         return new Promise((resolve, reject) => {
             if (this._request !== null) {
                 return reject(new Error(`Attempt to create pending connection, even is already created.`));
             }
-            const instance = new Protocol.RequestPending({
-                clientId: clientGUID
+            const instance = new Protocol.Message.Pending.Request({
+                clientId: clientGUID,
+                token: token.get()
             });
-            instance.setToken(token.get());
-            this._request = new Request(url, instance.getStr());
+            this._request = new Request(url, instance.stringify());
             const requestId = this._request.getId();
             this._request.send()
                 .then((response: string) => {
                     this._request = null;
-                    resolve(response);
+                    const message = Protocol.Message.Pending.Response.parse(response);
+                    if (message instanceof Array) {
+                        return reject(new Error(`Cannot parse response due errors:\n ${message.map((error: Error) => { return error.message; }).join('\n')}`));
+                    }
+                    if (!(message instanceof Protocol.Message.Pending.Response) && !(message instanceof Protocol.Disconnect)) {
+                        return reject(new Error(`Unexpected response: ${message.constructor.name}: ${Tools.inspect(message)}`));
+                    }
+                    resolve(message);
                 })
                 .catch((error: Tools.ExtError<IRequestError>) => {
                     this._request = null;
@@ -199,6 +206,7 @@ class PendingTasks extends Tools.EventEmitter {
     
     static EVENTS = {
         onTask: Symbol(),
+        onDisconnect: Symbol(),
         onError: Symbol()
     };
 
@@ -218,20 +226,16 @@ class PendingTasks extends Tools.EventEmitter {
         const pending = new Pending();
         const guid = pending.getGUID();
         pending.create(this._url, this._clientGUID, this._token)
-            .then((response: string) => {
-                const message = Protocol.extract(response);
-                if (message instanceof Error) {
-                    return this.emit(PendingTasks.EVENTS.onError, message);
-                }
-                if (message instanceof Protocol.ResponseError) {
-                    return this.emit(PendingTasks.EVENTS.onError, new Error(`Pending connection returns error response: ${message.getStr()}.`));
+            .then((response: Protocol.Message.Pending.Response | Protocol.Disconnect) => {
+                if (response instanceof Protocol.Disconnect) {
+                    return this.emit(PendingTasks.EVENTS.onDisconnect, response);
                 }
                 //Remove current
                 this._pending.delete(guid);
                 //Add new pending imedeately, while current in process
                 this._add();
                 //Trigger event
-                this.emit(PendingTasks.EVENTS.onTask, message);
+                this.emit(PendingTasks.EVENTS.onTask, response);
             })
             .catch((error: Error) => {
                 return this.emit(PendingTasks.EVENTS.onError, error);
@@ -262,16 +266,16 @@ class Requests {
 
     private _requests: Map<string, Request> = new Map();
 
-    public send(url: string, body: string): Promise<Protocol.TProtocolClasses>{
+    public send(url: string, body: string): Promise<Protocol.TProtocolTypes>{
         return new Promise((resolve, reject) => {
             const request = new Request(url, body);
             this._requests.set(request.getId(), request);
             request.send()
                 .then((response: string) => {
                     this._requests.delete(request.getId());
-                    const message = Protocol.extract(response);
-                    if (message instanceof Error) {
-                        return reject(message);
+                    const message = Protocol.parse(response);
+                    if (message instanceof Array) {
+                        return reject(new Error(`Cannot parse response due errors:\n ${message.map((error: Error) => { return error.message; }).join('\n')}`));
                     }
                     resolve(message);
                 })

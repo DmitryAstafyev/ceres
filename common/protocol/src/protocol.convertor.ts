@@ -99,6 +99,7 @@ export class Convertor {
                 protocolNamespace += this._getMap() + '\n';
                 protocolNamespace += '}\n';
                 base = greeting + protocolNamespace + base + '\n';
+                base += this._getGlobalExport();
                 base += this._getInitialization();
                 resolve(base);
             }).catch((errors: Array<Error> | Error) => {
@@ -181,7 +182,18 @@ export class Convertor {
                     '/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n' + 
                     `* Injection: initialization\n` + 
                     '* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */\n';
-        output += 'Protocol.init();';
+        output += 'Protocol.init();\n';
+        return output;
+    }
+
+    private _getGlobalExport(): string {
+        let output: string = 
+                    '/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n' + 
+                    `* Injection: export from Protocol namespace\n` + 
+                    '* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */\n';
+        output += 'export type TProtocolTypes = Protocol.TTypes;\n';
+        output += 'export const parse = Protocol.parse;\n';
+        output += 'export const stringify = Protocol.stringify;\n';
         return output;
     }
 
@@ -429,8 +441,8 @@ export class Convertor {
         output += `${exttab}\treturn Protocol.parse(str, ${entity.name});\n`;
         output += `${exttab}}\n`;
         //Define stringify
-        output += `${exttab}public stringify(): string | Array<Error> {\n`;
-        output += `${exttab}\treturn Protocol.stringify(this, ${entity.name});\n`;
+        output += `${exttab}public stringify(): string {\n`;
+        output += `${exttab}\treturn Protocol.stringify(this, ${entity.name}) as string;\n`;
         output += `${exttab}}\n`;
         //Save signature
         if (this._map[signature] !== void 0) {
