@@ -1,4 +1,3 @@
-
 declare var ReferencesMap: {[key: string]: any};
 declare var PrimitiveTypes: {[key: string]: any};
 declare var AdvancedTypes: {[key: string]: any};
@@ -22,7 +21,7 @@ export interface IProperty {
     value: any
 }
 
-export function extract(json: {[key: string]: any}, target?: any): TTypes | Array<Error> {
+export function _parse(json: {[key: string]: any}, target?: any): TTypes | Array<Error> {
     const types: {[key: string]: any} = getTypes();
     if (typeof json !== 'object' || json === null) {
         return [new Error(`Extract function can be applied only to object.`)];
@@ -67,7 +66,7 @@ export function extract(json: {[key: string]: any}, target?: any): TTypes | Arra
                 } else if (typeof desc.value === 'function') {
                     //It's reference to class
                     const parsed = json[prop].map((value: any) => {
-                        const nested = extract(value, desc.value);
+                        const nested = _parse(value, desc.value);
                         if (nested instanceof Array) {
                             errors.push(new Error(`Cannot get instance of class "${desc.value.name}" from property "${prop}" due error: \n${nested.map((e:Error)=>e.message).join(';\n')}`));
                             return null;
@@ -97,7 +96,7 @@ export function extract(json: {[key: string]: any}, target?: any): TTypes | Arra
             case EEntityType.reference:
                 if (typeof desc.value === 'function') {
                     //It's reference to class
-                    const nested = extract(json[prop], desc.value);
+                    const nested = _parse(json[prop], desc.value);
                     if (nested instanceof Array) {
                         errors.push(new Error(`Cannot get instance of class "${desc.value.name}" from property "${prop}" due error: \n${nested.map((e:Error)=>e.message).join(';\n')}`));
                     } else {
@@ -123,7 +122,7 @@ export function extract(json: {[key: string]: any}, target?: any): TTypes | Arra
     }
 };
 
-export function stringify(target:any, classRef: any): string | Array<Error> {
+export function _stringify(target:any, classRef: any): string | Array<Error> {
     if (!(target instanceof classRef)) {
         return [new Error(`Defined wrong reference to class.`)];
     }
@@ -153,7 +152,7 @@ export function stringify(target:any, classRef: any): string | Array<Error> {
                 } else if (typeof desc.value === 'function') {
                     //It's reference to class
                     const parsed = target[prop].map((value: any) => {
-                        const nested = stringify(value, desc.value);
+                        const nested = _stringify(value, desc.value);
                         if (nested instanceof Array) {
                             errors.push(new Error(`Cannot get instance of class "${desc.value.name}" from property "${prop}" due error: \n${nested.map((e:Error)=>e.message).join(';\n')}`));
                             return null;
@@ -186,7 +185,7 @@ export function stringify(target:any, classRef: any): string | Array<Error> {
             case EEntityType.reference:
                 if (typeof desc.value === 'function') {
                     //It's reference to class
-                    const nested = stringify(target[prop], desc.value);
+                    const nested = _stringify(target[prop], desc.value);
                     if (nested instanceof Array) {
                         errors.push(new Error(`Cannot get instance of class "${desc.value.name}" from property "${prop}" due error: \n${nested.map((e:Error)=>e.message).join(';\n')}`));
                         break;
@@ -223,12 +222,24 @@ export function getJSONFromStr(str: string): Object | Error {
     }
 }
 
-export function parse(str: string, target?: any): TTypes | Array<Error> {
+export function stringify(target:any, classRef: any): string | Error {
+    const result = _stringify(target, classRef);
+    if (result instanceof Array) {
+        return new Error(`Cannot stringify due errors:\n ${result.map((error: Error) => { return error.message; }).join('\n')}`)
+    }
+    return result;
+}
+
+export function parse(str: string, target?: any): TTypes | Error {
     const json: any = getJSONFromStr(str);
     if (json instanceof Error) {
-        return [json];
+        return json;
     }
-    return extract(json, target);
+    const result = _parse(json, target);
+    if (result instanceof Array) {
+        return new Error(`Cannot parse due errors:\n ${result.map((error: Error) => { return error.message; }).join('\n')}`)
+    }
+    return result;
 }
 
 export function typeOf(smth: any): string {

@@ -3,7 +3,7 @@ export default class ProtocolsHolder {
 
     private _protocols: Map<string, any>  = new Map();
 
-    public add(protocolImplementation: any){
+    public add(protocolImplementation: any): Promise<any>{
         return new Promise((resolve, reject) => {
             const protocolSignature = this._getProtocolSignature(protocolImplementation);
             if (protocolSignature instanceof Error){
@@ -17,13 +17,13 @@ export default class ProtocolsHolder {
         });
     }
 
-    public getImplementationFromStr(protocolSignature: string, json: string){
+    public parse(protocolSignature: string, json: string): Promise<any>{
         return new Promise((resolve, reject) => {
             if (!this._protocols.has(protocolSignature)) {
                 return reject(new Error(`Protocol ${protocolSignature} is unknown. Be sure, this protocol is registered.`));
             }
             const protocolImplementation = this._protocols.get(protocolSignature);
-            const implementation = protocolImplementation.extract(json);
+            const implementation = protocolImplementation.parse(json);
             if (implementation instanceof Error){
                 return reject(implementation);
             }

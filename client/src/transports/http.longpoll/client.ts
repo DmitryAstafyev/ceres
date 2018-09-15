@@ -110,8 +110,8 @@ class Hook {
                 .then((response: string) => {
                     const message = Protocol.parse(response);
                     this._request = null;
-                    if (message instanceof Array) {
-                        return reject(new Error(`Cannot parse response due errors:\n ${message.map((error: Error) => { return error.message; }).join('\n')}`));
+                    if (message instanceof Error) {
+                        return reject(message);
                     }
                     if (!(message instanceof Protocol.ConnectionError) && !(message instanceof Protocol.Disconnect)) {
                         return reject(new Error(`Unexpected response: ${message.constructor.name}: ${Tools.inspect(message)}`));
@@ -166,8 +166,8 @@ class Pending {
                 .then((response: string) => {
                     this._request = null;
                     const message = Protocol.Message.Pending.Response.parse(response);
-                    if (message instanceof Array) {
-                        return reject(new Error(`Cannot parse response due errors:\n ${message.map((error: Error) => { return error.message; }).join('\n')}`));
+                    if (message instanceof Error) {
+                        return reject(message);
                     }
                     if (!(message instanceof Protocol.Message.Pending.Response) && !(message instanceof Protocol.Disconnect)) {
                         return reject(new Error(`Unexpected response: ${message.constructor.name}: ${Tools.inspect(message)}`));
@@ -274,8 +274,8 @@ class Requests {
                 .then((response: string) => {
                     this._requests.delete(request.getId());
                     const message = Protocol.parse(response);
-                    if (message instanceof Array) {
-                        return reject(new Error(`Cannot parse response due errors:\n ${message.map((error: Error) => { return error.message; }).join('\n')}`));
+                    if (message instanceof Error) {
+                        return reject(message);
                     }
                     resolve(message);
                 })
@@ -336,11 +336,15 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
         this._middleware = middleware;
         //Subscribe to tasks
         this._onTask = this._onTask.bind(this);
+        this._onTaskDisconnect = this._onTaskDisconnect.bind(this);
         this._onTaskError = this._onTaskError.bind(this);
         this._tasks.subscribe(PendingTasks.EVENTS.onTask, this._onTask);
+        this._tasks.subscribe(PendingTasks.EVENTS.onDisconnect, this._onTaskDisconnect);
         this._tasks.subscribe(PendingTasks.EVENTS.onError, this._onTaskError);
         //Connect
-        this._connect();
+        this._connect().catch((error: Error) => {
+            this._logger.warn(`Error of connection on start due error: ${error.message}`);
+        });
     }
 
     /**
@@ -362,46 +366,69 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
      * Made attempt to connect to server
      * @returns {void}
      */
-    private _connect() {
-        if (this._state.get() !== EClientStates.created && this._state.get() !== EClientStates.reconnectioning) {
-            throw new Error(this._logger.error(`Attempt to connect on state "${this._state.get()}".`));
-        }
-        this._state.set(EClientStates.connecting);
-        const request = new Request(this._parameters.getURL(), (new Protocol.RequestHandshake({
-            clientId: this._clientGUID
-        })).getStr());
-        request.send()
-            .then((response: string) => {
-                this._logger.env(`Request guid: ${request.getId()} is finished successfuly: ${Tools.inspect(response)}`);
-                this._onResponseHandshake(response);
-            })
-            .catch((error: Tools.ExtError<IRequestError>) => {
-                this._logger.warn(`Attempt to connect to "${this._parameters.getURL()}" was failed (next attempt to connectin in ${SETTINGS.RECONNECTION_TIMEOUT}ms) due error: `, error);
-                this._hardReconnection();
-            });
+    private _connect(): Promise<void> {
+        return new Promise((resolve, reject) => {
+            if (this._state.get() !== EClientStates.created && this._state.get() !== EClientStates.reconnectioning) {
+                return reject(new Error(this._logger.error(`Attempt to connect on state "${this._state.get()}".`)));
+            }
+            this._state.set(EClientStates.connecting);
+            const request = new Request(this._parameters.getURL(), (new Protocol.Message.Handshake.Request({
+                clientId: this._clientGUID
+            })).stringify());
+            request.send()
+                .then((response: string) => {
+                    this._logger.env(`Request guid: ${request.getId()} is finished successfuly: ${Tools.inspect(response)}`);
+                    this._onResponseHandshake(response).then((message: Protocol.Message.Handshake.Response) => {
+                        //Set token
+                        this._token.set(message.token as string);
+                        //Initialize connection
+                        this._initialize();
+                        //Resolve
+                        resolve();
+                    }).catch((error: Error) => {
+                        this._hardReconnection();
+                        reject(new Error(this._logger.warn(`Attempt to connect to "${this._parameters.getURL()}" was failed (next attempt to connectin in ${SETTINGS.RECONNECTION_TIMEOUT}ms) due error: `, error)));
+                    });
+                })
+                .catch((error: Tools.ExtError<IRequestError>) => {
+                    this._hardReconnection();
+                    reject(new Error(this._logger.warn(`Attempt to connect to "${this._parameters.getURL()}" was failed (next attempt to connectin in ${SETTINGS.RECONNECTION_TIMEOUT}ms) due error: `, error)));
+                });
+        });
     }
 
     /**
      * Made attempt to reconnect to server
      * @returns {void}
      */
-    private _reconnect() {
-        if (this._state.get() !== EClientStates.created && this._state.get() !== EClientStates.reconnectioning) {
-            throw new Error(this._logger.error(`Attempt to reconnect on state "${this._state.get()}".`));
-        }
-        this._state.set(EClientStates.connecting);
-        const request = new Request(this._parameters.getURL(), (new Protocol.RequestReconnection({
-            clientId: this._clientGUID
-        })).setToken(this._token.get()).getStr());
-        request.send()
-            .then((response: string) => {
-                this._logger.env(`Request guid: ${request.getId()} is finished successfuly: ${Tools.inspect(response)}`);
-                this._onResponseReconnection(response);
-            })
-            .catch((error: Tools.ExtError<IRequestError>) => {
-                this._logger.warn(`Attempt to connect to "${this._parameters.getURL()}" was failed (next attempt to connectin in ${SETTINGS.RECONNECTION_TIMEOUT}ms) due error: `, error);
-                this._hardReconnection();
-            });
+    private _reconnect(): Promise<void> {
+        return new Promise((resolve, reject) => {
+            if (this._state.get() !== EClientStates.created && this._state.get() !== EClientStates.reconnectioning) {
+                return reject(new Error(this._logger.error(`Attempt to reconnect on state "${this._state.get()}".`)));
+            }
+            this._state.set(EClientStates.connecting);
+            const request = new Request(this._parameters.getURL(), (new Protocol.Message.Reconnection.Request({
+                clientId: this._clientGUID,
+                token: this._token.get()
+            })).stringify());
+            request.send()
+                .then((response: string) => {
+                    this._logger.env(`Request guid: ${request.getId()} is finished successfuly: ${Tools.inspect(response)}`);
+                    this._onResponseReconnection(response).then((message: Protocol.Message.Reconnection.Response) => {
+                        //Initialize connection
+                        this._initialize();
+                        //Resolve
+                        resolve();
+                    }).catch((error: Error) =>{
+                        this._hardReconnection();
+                        reject(new Error(this._logger.warn(`Attempt to reconnect to "${this._parameters.getURL()}" was failed (next attempt to connectin in ${SETTINGS.RECONNECTION_TIMEOUT}ms) due error: `, error)));
+                    });
+                })
+                .catch((error: Tools.ExtError<IRequestError>) => {
+                    this._hardReconnection();
+                    reject(new Error(this._logger.warn(`Attempt to reconnect to "${this._parameters.getURL()}" was failed (next attempt to connectin in ${SETTINGS.RECONNECTION_TIMEOUT}ms) due error: `, error)));
+                });
+        });
     }
 
     /**
@@ -416,7 +443,9 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
         }
         this._drop().then(() => {
             setTimeout(() => {
-                this._reconnect();
+                this._reconnect().catch((error: Error) => {
+                    this._logger.warn(`Error of soft reconnection on start due error: ${error.message}`);
+                });
             }, SETTINGS.RECONNECTION_TIMEOUT);
         });
     }
@@ -430,7 +459,9 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
         this._drop().then(() => {
             this._token.drop();
             setTimeout(() => {
-                this._connect();
+                this._connect().catch((error: Error) => {
+                    this._logger.warn(`Error of hard reconnectionn on start due error: ${error.message}`);
+                });
             }, SETTINGS.RECONNECTION_TIMEOUT);
         });
     }
@@ -457,16 +488,19 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
      * @param response {string}
      * @returns {void}
      */
-    private _getProtocolMessage(response: string): Protocol.TProtocolClasses | Error {
-        const message = Protocol.extract(response);
-        if (message instanceof Error) {
-            this.emit(EClientEvents.error, {
-                message: this._logger.warn(`Cannot parse response due error: ${message.message}`),
-                reason: undefined,
-                details: undefined
-            });
-        }
-        return message;
+    private _getProtocolMessage(response: string): Promise<Protocol.TProtocolTypes> {
+        return new Promise((resolve, reject) => {
+            const message = Protocol.parse(response);
+            if (message instanceof Error) {
+                this.emit(EClientEvents.error, {
+                    message: this._logger.warn(`Cannot parse response due error: ${message.message}`),
+                    reason: undefined,
+                    details: undefined
+                });
+                return reject(message);
+            }
+            return resolve(message);
+        });
     }
 
     /**
@@ -474,26 +508,32 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
      * @param response {string}
      * @returns {void}
      */
-    _onResponseHandshake(response: string){
-        const message = this._getProtocolMessage(response) as Protocol.ResponseHandshake;
-        if (message instanceof Error || !(message instanceof Protocol.ResponseHandshake)) {
-            return this.emit(EClientEvents.error, {
-                message: this._logger.warn(`On this state (${this._state.get()}) expected authorization confirmation, but gotten: ${Tools.inspect(message)}.`),
-                reason: undefined,
-                details: undefined
-            });   
-        }
-        if (!message.allowed && message.getToken() === '') {
-            return this.emit(EClientEvents.error, {
-                message: this._logger.warn(`Fail to authorize request due reason: ${message.reason} ${message.error !== void 0 ? `(${message.error})`: ''}`),
-                reason: message.reason,
-                details: undefined
+    _onResponseHandshake(response: string): Promise<Protocol.Message.Handshake.Response> {
+        return new Promise((resolve, reject) => {
+            this._getProtocolMessage(response).then((message: Protocol.TProtocolTypes) => {
+                if (!(message instanceof Protocol.Message.Handshake.Response)) {
+                    const error: Error = new Error(this._logger.warn(`On this state (${this._state.get()}) expected authorization confirmation, but gotten: ${Tools.inspect(message)}.`));
+                    this.emit(EClientEvents.error, {
+                        message: error.message,
+                        reason: undefined,
+                        details: undefined
+                    });
+                    return reject(error);
+                }
+                if (typeof message.token !== 'string' || message.token.trim() === '') {
+                    const error: Error = new Error(this._logger.warn(`Fail to authorize request due reason: ${message.reason} ${message.error !== void 0 ? `(${message.error})`: ''}`));
+                    this.emit(EClientEvents.error, {
+                        message: error.message,
+                        reason: message.reason,
+                        details: undefined
+                    });
+                    return reject(error);
+                };
+                resolve(message);
+            }).catch((error: Error) => {
+                reject(error);
             });
-        };
-        //Set token
-        this._token.set(message.getToken());
-        //Initialize connection
-        this._initialize();
+        });
     }
 
     /**
@@ -501,27 +541,41 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
      * @param response {string}
      * @returns {void}
      */
-    _onResponseReconnection(response: string){
-        const message = this._getProtocolMessage(response) as Protocol.ResponseReconnection;
-        if (message instanceof Error) {
-            this._hardReconnection();
-            return this.emit(EClientEvents.error, {
-                message: this._logger.warn(`On this state (${this._state.get()}) expected reconnection confirmation, but request failed due error: ${message.message}.`),
-                reason: undefined,
-                details: undefined
-            });   
-        }
-        if (message instanceof Protocol.ResponseError) {
-            this._hardReconnection();
-            return this.emit(EClientEvents.error, {
-                message: this._logger.warn(`Fail to reconnect request due reason: ${message.reason} ${message.error !== void 0 ? `(${message.error})`: ''}`),
-                reason: message.reason,
-                details: undefined
+    _onResponseReconnection(response: string): Promise<Protocol.Message.Reconnection.Response> {
+        return new Promise((resolve, reject) => {
+            this._getProtocolMessage(response).then((message: Protocol.TProtocolTypes) => {
+                if (message instanceof Protocol.ConnectionError) {
+                    const error: Error = new Error(this._logger.warn(`Fail to reconnect request due reason: ${message.reason} ${message.message !== void 0 ? `(${message.message})`: ''}`));
+                    this.emit(EClientEvents.error, {
+                        message: error.message,
+                        reason: message.reason,
+                        details: undefined
+                    });
+                    return reject(error);
+                }
+                if (!(message instanceof Protocol.Message.Reconnection.Response)) {
+                    const error: Error = new Error(this._logger.warn(`On this state (${this._state.get()}) expected authorization confirmation, but gotten: ${Tools.inspect(message)}.`));
+                    this.emit(EClientEvents.error, {
+                        message: error.message,
+                        reason: undefined,
+                        details: undefined
+                    });
+                    return reject(error);
+                }
+                if (!message.allowed) {
+                    const error: Error = new Error(this._logger.env(`Reconnection isn't allowed.`));
+                    this.emit(EClientEvents.error, {
+                        message: error.message,
+                        reason: undefined,
+                        details: undefined
+                    });
+                    return reject(error);
+                }
+                resolve(message);
+            }).catch((error: Error) => {
+                reject(error);
             });
-        };
-        //Note: If server doesn't returns Protocol.ResponseError, it means - reconnection allowed. Doesn't need addition check response
-        //Initialize connection
-        this._initialize();
+        });
     }
 
     private _initialize(){
@@ -529,16 +583,21 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
         this._state.set(EClientStates.connected);
         //Create hook
         this._hook.create(this._parameters.getURL(), this._clientGUID, this._token)
-            .then((message: Protocol.ResponseError) => {
-                this._logger.warn(`Hook connection is finished with reason: ${message.reason} (error: ${message.error}). Initialize hard reconnection.`);
+            .then((message: Protocol.ConnectionError | Protocol.Disconnect) => {
+                if (message instanceof Protocol.ConnectionError) {
+                    this._logger.warn(`Hook connection is finished because connection error. Reason: ${message.reason} (error: ${message.message}). Initialize hard reconnection.`);
+                }
+                if (message instanceof Protocol.Disconnect) {
+                    this._logger.env(`Hook connection is finished because server disconnected. Reason: ${message.reason} (message: ${message.message}). Initialize hard reconnection.`);
+                }
                 this._hardReconnection();
             })
-            .catch((error: Tools.ExtError<IRequestError> | Protocol.TProtocolClasses) => {
+            .catch((error: Tools.ExtError<IRequestError> | Protocol.TProtocolTypes) => {
                 if (error instanceof Tools.ExtError){
                     this._logger.warn(`Hook connection is finished with  error: ${error.error.message}. Initialize soft reconnection.`);
                     this._softReconnection();
                 } else {
-                    this._logger.warn(`Server returns unexpected response: ${error.getStr()}. Initialize hard reconnection.`);
+                    this._logger.warn(`Server returns unexpected response: ${error.stringify()}. Initialize hard reconnection.`);
                     this._hardReconnection();
                 }
             });
@@ -551,13 +610,16 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Tasks 
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-    private _onTask(message: Protocol.TProtocolClasses){
-        if (message instanceof Protocol.IncomeEvent) {
-            this._emitIncomeEvent(message);
-        } else if (message instanceof Protocol.RequestResultResponse) {
-            this.emit(EClientEvents.requestDone);
-            this._logger.debug(`Request result: ${message.body}.`);
+    private _onTask(message: Protocol.Message.Pending.Response){
+        if (message.event instanceof Protocol.EventDefinition) {
+            //Processing income event
+            return this._emitIncomeEvent(message.event);
         }
+        //Here processing of request results also
+    }
+
+    private _onTaskDisconnect(message: Protocol.Disconnect) {
+
     }
 
     private _onTaskError(error: Error) {
@@ -568,10 +630,10 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Events: private
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-    private _emitIncomeEvent(message: Protocol.IncomeEvent){
-        this._protocols.getImplementationFromStr(message.protocol, message.body)
-            .then((event) => {
-                this._subscriptions.emit(message.protocol, message.signature, event);
+    private _emitIncomeEvent(message: Protocol.EventDefinition){
+        this._protocols.parse(message.protocol, message.body)
+            .then((event: any) => {
+                this._subscriptions.emit(message.protocol, event.getSignature(), event);
             })
             .catch((error: Error) => {
                 this._logger.env(`Error during emit income event.`, error);
@@ -587,30 +649,31 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
      * @param protocol {Protocol} implementation of event's protocol
      * @returns Promise
      */
-    public eventEmit(event: any, protocol: any): Promise<Protocol.EventResponse> {
+    public eventEmit(event: any, protocol: any): Promise<Protocol.Message.Event.Response> {
         return new Promise((resolve, reject) => {
-            const signature = Protocol.extractSignature(protocol);
-            if (signature instanceof Error){
-                return reject(signature);
+            const protocolSignature = this._getEntitySignature(protocol);
+            if (protocolSignature instanceof Error){
+                return reject(protocolSignature);
             }
-            const eventSignature = Protocol.extractSignature(event);
+            const eventSignature = this._getEntitySignature(event);
             if (eventSignature instanceof Error){
                 return reject(eventSignature);
             }
-            if (Tools.getTypeOf(event) === Tools.EPrimitiveTypes.undefined || event === null || Tools.getTypeOf(event.getStr) !== Tools.EPrimitiveTypes.function){
-                return reject(new Error(`Invalid instance of event. Please be sure you are using valid protocol.`));
-            }
-            const instance = new Protocol.EventRequest({
-                protocol: signature,
-                body: event.getStr(),
+            this._requests.send(this._parameters.getURL(), (new Protocol.Message.Event.Request({
                 clientId: this._clientGUID,
-                signature: eventSignature
-            });
-            instance.setToken(this._token.get());
-            this._requests.send(this._parameters.getURL(), instance.getStr())
-                .then((message: Protocol.TProtocolClasses) => {
-                    if (!(message instanceof Protocol.EventResponse)){
-                        return reject(new Error(`Unexpected server response (expected "EventResponse"): ${message.getStr()}`));
+                event: new Protocol.EventDefinition({
+                    protocol: protocolSignature,
+                    body: event.stringify(),
+                    event: eventSignature
+                }),
+                token: this._token.get()
+            })).stringify())
+                .then((message: Protocol.TProtocolTypes) => {
+                    if (message instanceof Protocol.ConnectionError) {
+                        return reject(new Error(this._logger.warn(`Connection error. Reason: ${message.reason} (error: ${message.message}). Initialize hard reconnection.`)));
+                    }
+                    if (!(message instanceof Protocol.Message.Event.Response)){
+                        return reject(new Error(`Unexpected server response (expected "Protocol.Message.Event.Response"): ${message.stringify()}`));
                     }
                     this._logger.env(`For event found ${message.subscribers} subscribers.`);
                     this.emit(EClientEvents.eventSent, message);
@@ -630,15 +693,15 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
      * @param handler {Function} handler
      * @returns Promise
      */
-    public subscribeEvent(event: any, protocol: any, handler: Function): Promise<Protocol.SubscribeResponse> {
+    public subscribeEvent(event: any, protocol: any, handler: Function): Promise<Protocol.Message.Subscribe.Response> {
         //TODO: subscription is already exist. Server doesn't allow subscribe twice. If user need it, he can do it by himself, but server should have only one subscription
         //TODO: restore subscription after reconnection. Server unsubscribe all if client was disconnected
         return new Promise((resolve, reject) => {
-            const protocolSignature = Protocol.extractSignature(protocol);
+            const protocolSignature = this._getEntitySignature(protocol);
             if (protocolSignature instanceof Error){
                 return reject(protocolSignature);
             }
-            const eventSignature = Protocol.extractSignature(event);
+            const eventSignature = this._getEntitySignature(event);
             if (eventSignature instanceof Error){
                 return reject(eventSignature);
             }
@@ -648,27 +711,33 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                     if (subscription instanceof Error){
                         return reject(subscription);
                     }
-                    const instance = new Protocol.SubscribeRequest({
-                        protocol: protocolSignature,
-                        signature: eventSignature,
-                        clientId: this._clientGUID
-                    });
-                    instance.setToken(this._token.get());
-                    this._requests.send(this._parameters.getURL(), instance.getStr())
-                        .then((message: Protocol.TProtocolClasses) => {
-                            if (!(message instanceof Protocol.SubscribeResponse)) {
-                                this._subscriptions.unsubscribe(protocolSignature, eventSignature);
-                                return reject(new Error(`Unexpected server response (expected "EventResponse"): ${message.getStr()}`));
-                            }
-                            this._logger.env(`Subscription to protocol ${message.protocol}, event ${message.signature} has status: ${message.status}.`);
-                            this.emit(EClientEvents.subscriptionDone, message);
-                            resolve(message);
-                        })
-                        .catch((error: Tools.ExtError<IRequestError>) => {
-                            this._logger.env(`Error subscribe event.`, error);
+                    this._requests.send(this._parameters.getURL(), (new Protocol.Message.Subscribe.Request({
+                        subscription: new Protocol.Subscription({
+                            protocol: protocolSignature,
+                            event: eventSignature
+                        }),
+                        clientId: this._clientGUID,
+                        token: this._token.get()
+                    })).stringify()).then((message: Protocol.TProtocolTypes) => {
+                        if (message instanceof Protocol.ConnectionError) {
+                            return reject(new Error(this._logger.warn(`Connection error. Reason: ${message.reason} (error: ${message.message}). Initialize hard reconnection.`)));
+                        }
+                        if (!(message instanceof Protocol.Message.Subscribe.Response)) {
                             this._subscriptions.unsubscribe(protocolSignature, eventSignature);
-                            reject(error);
-                        });
+                            return reject(new Error(`Unexpected server response (expected "EventResponse"): ${message.stringify()}`));
+                        }
+                        if (!message.status){
+                            this._subscriptions.unsubscribe(protocolSignature, eventSignature);
+                            return reject(this._logger.env(`Subscription to protocol ${protocolSignature}, event ${eventSignature} wasn't done.`));
+                        }
+                        this._logger.env(`Subscription from protocol ${protocolSignature}, event ${eventSignature} has status: ${message.status}.`);
+                        this.emit(EClientEvents.subscriptionDone, message);
+                        resolve(message);
+                    }).catch((error: Tools.ExtError<IRequestError>) => {
+                        this._logger.env(`Error subscribe event.`, error);
+                        this._subscriptions.unsubscribe(protocolSignature, eventSignature);
+                        reject(error);
+                    });
                 })
                 .catch((error: Error)=>{
                     this._logger.env(`Error subscribe event.`, error);
@@ -683,35 +752,40 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
      * @param protocol {Protocol} implementation of event's protocol
      * @returns Promise
      */
-    public unsubscribeEvent(event: any, protocol: any): Promise<Protocol.UnsubscribeResponse> {
+    public unsubscribeEvent(event: any, protocol: any): Promise<Protocol.Message.Unsubscribe.Response> {
         return new Promise((resolve, reject) => {
-            const protocolSignature = Protocol.extractSignature(protocol);
+            const protocolSignature = this._getEntitySignature(protocol);
             if (protocolSignature instanceof Error){
                 return reject(protocolSignature);
             }
-            const eventSignature = Protocol.extractSignature(event);
+            const eventSignature = this._getEntitySignature(event);
             if (eventSignature instanceof Error){
                 return reject(eventSignature);
             }
-            const instance = new Protocol.UnsubscribeRequest({
-                protocol: protocolSignature,
-                signature: eventSignature,
-                clientId: this._clientGUID
+            this._requests.send(this._parameters.getURL(), (new Protocol.Message.Unsubscribe.Request({
+                clientId: this._clientGUID,
+                subscription: new Protocol.Subscription({
+                    protocol: protocolSignature,
+                    event: eventSignature
+                }),
+                token: this._token.get()
+            })).stringify()).then((message: Protocol.TProtocolTypes) => {
+                if (message instanceof Protocol.ConnectionError) {
+                    return reject(new Error(this._logger.warn(`Connection error. Reason: ${message.reason} (error: ${message.message}). Initialize hard reconnection.`)));
+                }
+                if (!(message instanceof Protocol.Message.Unsubscribe.Response)) {
+                    return reject(new Error(`Unexpected server response (expected "Protocol.Message.Unsubscribe.Response"): ${message.stringify()}`));
+                }
+                if (!message.status){
+                    return reject(this._logger.env(`Unsubscription from protocol ${protocolSignature}, event ${eventSignature} wasn't done.`));
+                }
+                this._logger.env(`Unsubscription from protocol ${protocolSignature}, event ${eventSignature} has status: ${message.status}.`);
+                this._subscriptions.unsubscribe(protocolSignature, eventSignature);
+                resolve(message);
+            }).catch((error: Tools.ExtError<IRequestError>) => {
+                this._logger.env(`Error unsubscribe event.`, error);
+                reject(error);
             });
-            instance.setToken(this._token.get());
-            this._requests.send(this._parameters.getURL(), instance.getStr())
-                .then((message: Protocol.TProtocolClasses) => {
-                    if (!(message instanceof Protocol.UnsubscribeResponse)) {
-                        return reject(new Error(`Unexpected server response (expected "UnsubscribeResponse"): ${message.getStr()}`));
-                    }
-                    this._logger.env(`Unsubscription from protocol ${message.protocol}, event ${message.signature} has status: ${message.status}.`);
-                    this._subscriptions.unsubscribe(protocolSignature, eventSignature);
-                    resolve(message);
-                })
-                .catch((error: Tools.ExtError<IRequestError>) => {
-                    this._logger.env(`Error unsubscribe event.`, error);
-                    reject(error);
-                });
         });
     }
 
@@ -720,51 +794,61 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
      * @param protocol {Protocol} implementation of event's protocol
      * @returns Promise
      */
-    public unsubscribeAllEvents(protocol: any): Promise<Protocol.UnsubscribeAllResponse> {
+    public unsubscribeAllEvents(protocol: any): Promise<Protocol.Message.UnsubscribeAll.Response> {
         return new Promise((resolve, reject) => {
-            const protocolSignature = Protocol.extractSignature(protocol);
+            const protocolSignature = this._getEntitySignature(protocol);
             if (protocolSignature instanceof Error){
                 return reject(protocolSignature);
             }
-            const instance = new Protocol.UnsubscribeAllRequest({
-                protocol: protocolSignature,
-                clientId: this._clientGUID
+            this._requests.send(this._parameters.getURL(), (new Protocol.Message.UnsubscribeAll.Request({
+                clientId: this._clientGUID,
+                subscription: new Protocol.Subscription({
+                    protocol: protocolSignature
+                }),
+                token: this._token.get()
+            })).stringify()).then((message: Protocol.TProtocolTypes) => {
+                if (message instanceof Protocol.ConnectionError) {
+                    return reject(new Error(this._logger.warn(`Connection error. Reason: ${message.reason} (error: ${message.message}). Initialize hard reconnection.`)));
+                }
+                if (!(message instanceof Protocol.Message.UnsubscribeAll.Response)) {
+                    return reject(new Error(`Unexpected server response (expected "Protocol.Message.UnsubscribeAll.Response"): ${message.stringify()}`));
+                }
+                if (!message.status){
+                    return reject(this._logger.env(`Unsubscription from all events of protocol ${protocolSignature} wasn't done.`));
+                }
+                this._logger.env(`Unsubscription from all events in scope of protocol ${protocolSignature} has status: ${message.status}.`);
+                this._subscriptions.unsubscribe(protocolSignature);
+                resolve(message);
+            }).catch((error: Tools.ExtError<IRequestError>) => {
+                this._logger.env(`Error unsubscribe all.`, error);
+                reject(error);
             });
-            instance.setToken(this._token.get());
-            this._requests.send(this._parameters.getURL(), instance.getStr())
-                .then((message: Protocol.TProtocolClasses) => {
-                    if (!(message instanceof Protocol.UnsubscribeAllResponse)) {
-                        return reject(new Error(`Unexpected server response (expected "UnsubscribeAllResponse"): ${message.getStr()}`));
-                    }
-                    this._logger.env(`Unsubscription from all events in scope of protocol ${message.protocol}  has status: ${message.status}.`);
-                    this._subscriptions.unsubscribe(protocolSignature);
-                    resolve(message);
-                })
-                .catch((error: Tools.ExtError<IRequestError>) => {
-                    this._logger.env(`Error unsubscribe all.`, error);
-                    reject(error);
-                });
         });
     }
 
-
-
-    public request(request: any, protocol?: any) {
+    public request(request: any, protocol: any) {
         return new Promise((resolve, reject) => {
-            const signature = Protocol.extractSignature(protocol);
+            const signature = this._getEntitySignature(protocol);
             if (signature instanceof Error){
                 return reject(signature);
             }
-            if (Tools.getTypeOf(request) === Tools.EPrimitiveTypes.undefined || request === null || Tools.getTypeOf(request.getStr) !== Tools.EPrimitiveTypes.function){
-                return reject(new Error(`Invalid instance of request. Please be sure you are using valid protocol.`));
-            }
-            const instance = new Protocol.RequestRequest({
-                protocol: signature,
-                body: request.getStr(),
-                clientId: this._clientGUID
-            });
             //implementation
         });
+    }
+
+    /** 
+     * Gets entity's signature
+     * @param protocol {Protocol} implementation of protocol
+     * @returns {string | Error}
+     */
+    private _getEntitySignature(entity: any): string | Error {
+        if ((typeof entity !== 'object' || entity === null) && typeof entity !== 'function') {
+            return new Error('No protocol found. As protocol expecting: constructor or instance of protocol.');
+        }
+        if (typeof entity.getSignature !== 'function' || typeof entity.getSignature() !== 'string' || entity.getSignature().trim() === ''){
+            return new Error('No sigature of protocol found');
+        }
+        return entity.getSignature();
     }
 
 }

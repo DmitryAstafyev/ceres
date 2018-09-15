@@ -97,6 +97,7 @@ export class Convertor {
                 protocolNamespace += this._getTypes() + '\n';
                 protocolNamespace += injectStr + '\n';
                 protocolNamespace += this._getMap() + '\n';
+                protocolNamespace += this._getProtocolSignature() + '\n';
                 protocolNamespace += '}\n';
                 base = greeting + protocolNamespace + base + '\n';
                 base += this._getGlobalExport();
@@ -177,6 +178,22 @@ export class Convertor {
         return output;
     }
 
+    private _getProtocolSignature(): string {
+        let signature: string = this._version;
+        Object.keys(this._map).forEach((entitySignature: string) => {
+            signature += entitySignature;
+        });
+        signature = Tools.hash(signature, true);
+        let output: string = 
+                    '\t/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n' + 
+                    `\t* Injection: protocol signature\n` + 
+                    '\t* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */\n';
+        output += '\texport function getSignature() {\n';
+        output += `\t\treturn "${signature}";\n`;
+        output += `\t}\n`;
+        return output;
+    }
+
     private _getInitialization(): string {
         let output: string = 
                     '/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n' + 
@@ -194,6 +211,7 @@ export class Convertor {
         output += 'export type TProtocolTypes = Protocol.TTypes;\n';
         output += 'export const parse = Protocol.parse;\n';
         output += 'export const stringify = Protocol.stringify;\n';
+        output += 'export const getSignature = Protocol.getSignature;\n';
         return output;
     }
 
@@ -437,7 +455,7 @@ export class Convertor {
         output += `${exttab}\treturn this.__signature;\n`;
         output += `${exttab}}\n`;
         //Define extractor
-        output += `${exttab}static parse(str: string): Protocol.TTypes | Array<Error> {\n`;
+        output += `${exttab}static parse(str: string): Protocol.TTypes | Error {\n`;
         output += `${exttab}\treturn Protocol.parse(str, ${entity.name});\n`;
         output += `${exttab}}\n`;
         //Define stringify

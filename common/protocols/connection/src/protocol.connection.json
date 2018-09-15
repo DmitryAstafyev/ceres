@@ -30,7 +30,7 @@
                 "token": "string"
             },
             "Response": {
-                "event": "EventDefinition"
+                "event?": "EventDefinition"
             },
             "Responses": ["Disconnect"]
         },
@@ -87,7 +87,7 @@
         "event?": "string"
     },
     "ConnectionError": {
-        "reason": "array<Reasons>",
+        "reason": "Reasons",
         "message": "string",
         "Reasons": ["FAIL_AUTH", "NO_TOKEN_FOUND", "NO_CLIENT_ID_FOUND", "NO_TOKEN_PROVIDED", "TOKEN_IS_WRONG"]
     },
