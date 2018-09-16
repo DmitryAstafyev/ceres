@@ -40,7 +40,6 @@
                 "token": "string"
             },
             "Response": {
-                "eventGUID?": "string",
                 "subscribers": "integer"
             },
             "Responses" : ["ConnectionError"]
@@ -79,8 +78,7 @@
     "EventDefinition": {
         "protocol": "string",
         "event": "string",
-        "body": "string",
-        "eventGUID?": "guid"
+        "body": "string"
     },
     "Subscription": {
         "protocol": "string",

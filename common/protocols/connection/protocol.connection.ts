@@ -1,5 +1,5 @@
 /*
-* This file generated automaticaly (Sun Sep 16 2018 01:56:13 GMT+0200 (CEST))
+* This file generated automaticaly (Sun Sep 16 2018 02:02:16 GMT+0200 (CEST))
 * Do not remove or change this code.
 * Protocol version: 0.0.1
 */
@@ -1116,7 +1116,6 @@ export namespace Message {
 				return {
 					clientId: { name: "clientId", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
 					guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
-					eventGUID: { name: "eventGUID", value: "string", type: Protocol.EEntityType.primitive, optional: true }, 
 					subscribers: { name: "subscribers", value: "integer", type: Protocol.EEntityType.primitive, optional: false }, 
 				}
 			}
@@ -1134,12 +1133,10 @@ export namespace Message {
 			public stringify(): string {
 				return Protocol.stringify(this, Response) as string;
 			}
-			public eventGUID?: string = "";
 			public subscribers: number = -1;
 
-			constructor(args: { clientId: string, guid?: string, eventGUID?: string, subscribers: number }) {
+			constructor(args: { clientId: string, guid?: string, subscribers: number }) {
 				super(Object.assign(args, {}));
-				args.eventGUID !== void 0 && (this.eventGUID = args.eventGUID);
 				this.subscribers = args.subscribers;
 				const errors: Array<Error> = Protocol.validateParams(args, Response);
 				if (errors.length > 0) {
@@ -1484,7 +1481,6 @@ export class EventDefinition extends Protocol.Root {
 			protocol: { name: "protocol", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
 			event: { name: "event", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
 			body: { name: "body", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
-			eventGUID: { name: "eventGUID", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
 		}
 	}
 	static __signature: string = "282376D8";
@@ -1504,14 +1500,12 @@ export class EventDefinition extends Protocol.Root {
 	public protocol: string = "";
 	public event: string = "";
 	public body: string = "";
-	public eventGUID?: string = guid();
 
-	constructor(args: { protocol: string, event: string, body: string, eventGUID?: string }) {
+	constructor(args: { protocol: string, event: string, body: string }) {
 		super();
 		this.protocol = args.protocol;
 		this.event = args.event;
 		this.body = args.body;
-		args.eventGUID !== void 0 && (this.eventGUID = args.eventGUID);
 		const errors: Array<Error> = Protocol.validateParams(args, EventDefinition);
 		if (errors.length > 0) {
 			throw new Error(`Cannot create class of "EventDefinition" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
