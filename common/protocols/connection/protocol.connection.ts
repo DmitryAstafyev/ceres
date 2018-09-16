@@ -1,5 +1,5 @@
 /*
-* This file generated automaticaly (Sat Sep 15 2018 20:16:44 GMT+0200 (CEST))
+* This file generated automaticaly (Sun Sep 16 2018 01:56:13 GMT+0200 (CEST))
 * Do not remove or change this code.
 * Protocol version: 0.0.1
 */
@@ -275,10 +275,17 @@ namespace Protocol {
 	    return result;
 	}
 	
-	export function parse(str: string, target?: any): TTypes | Error {
-	    const json: any = getJSONFromStr(str);
-	    if (json instanceof Error) {
-	        return json;
+	export function parse(str: string | object, target?: any): TTypes | Error {
+	    let json: any;
+	    if (typeof str === 'string') {
+	        json = getJSONFromStr(str);
+	        if (json instanceof Error) {
+	            return json;
+	        }
+	    } else if (typeof str !== 'object' || str === null) {
+	        return new Error(`Expecting string or object.`);
+	    } else {
+	        json = str;
 	    }
 	    const result = _parse(json, target);
 	    if (result instanceof Array) {
@@ -589,7 +596,7 @@ export class Message extends Protocol.Root {
 	public getSignature(): string {
 		return this.__signature;
 	}
-	static parse(str: string): Protocol.TTypes | Error {
+	static parse(str: string | object): Protocol.TTypes | Error {
 		return Protocol.parse(str, Message);
 	}
 	public stringify(): string {
@@ -625,7 +632,7 @@ export namespace Message {
 		public getSignature(): string {
 			return this.__signature;
 		}
-		static parse(str: string): Protocol.TTypes | Error {
+		static parse(str: string | object): Protocol.TTypes | Error {
 			return Protocol.parse(str, Handshake);
 		}
 		public stringify(): string {
@@ -660,7 +667,7 @@ export namespace Message {
 			public getSignature(): string {
 				return this.__signature;
 			}
-			static parse(str: string): Protocol.TTypes | Error {
+			static parse(str: string | object): Protocol.TTypes | Error {
 				return Protocol.parse(str, Response);
 			}
 			public stringify(): string {
@@ -704,7 +711,7 @@ export namespace Message {
 			public getSignature(): string {
 				return this.__signature;
 			}
-			static parse(str: string): Protocol.TTypes | Error {
+			static parse(str: string | object): Protocol.TTypes | Error {
 				return Protocol.parse(str, Request);
 			}
 			public stringify(): string {
@@ -737,7 +744,7 @@ export namespace Message {
 		public getSignature(): string {
 			return this.__signature;
 		}
-		static parse(str: string): Protocol.TTypes | Error {
+		static parse(str: string | object): Protocol.TTypes | Error {
 			return Protocol.parse(str, Reconnection);
 		}
 		public stringify(): string {
@@ -770,7 +777,7 @@ export namespace Message {
 			public getSignature(): string {
 				return this.__signature;
 			}
-			static parse(str: string): Protocol.TTypes | Error {
+			static parse(str: string | object): Protocol.TTypes | Error {
 				return Protocol.parse(str, Request);
 			}
 			public stringify(): string {
@@ -804,7 +811,7 @@ export namespace Message {
 			public getSignature(): string {
 				return this.__signature;
 			}
-			static parse(str: string): Protocol.TTypes | Error {
+			static parse(str: string | object): Protocol.TTypes | Error {
 				return Protocol.parse(str, Response);
 			}
 			public stringify(): string {
@@ -842,7 +849,7 @@ export namespace Message {
 		public getSignature(): string {
 			return this.__signature;
 		}
-		static parse(str: string): Protocol.TTypes | Error {
+		static parse(str: string | object): Protocol.TTypes | Error {
 			return Protocol.parse(str, Hook);
 		}
 		public stringify(): string {
@@ -875,7 +882,7 @@ export namespace Message {
 			public getSignature(): string {
 				return this.__signature;
 			}
-			static parse(str: string): Protocol.TTypes | Error {
+			static parse(str: string | object): Protocol.TTypes | Error {
 				return Protocol.parse(str, Request);
 			}
 			public stringify(): string {
@@ -912,7 +919,7 @@ export namespace Message {
 			public getSignature(): string {
 				return this.__signature;
 			}
-			static parse(str: string): Protocol.TTypes | Error {
+			static parse(str: string | object): Protocol.TTypes | Error {
 				return Protocol.parse(str, Response);
 			}
 			public stringify(): string {
@@ -945,7 +952,7 @@ export namespace Message {
 		public getSignature(): string {
 			return this.__signature;
 		}
-		static parse(str: string): Protocol.TTypes | Error {
+		static parse(str: string | object): Protocol.TTypes | Error {
 			return Protocol.parse(str, Pending);
 		}
 		public stringify(): string {
@@ -978,7 +985,7 @@ export namespace Message {
 			public getSignature(): string {
 				return this.__signature;
 			}
-			static parse(str: string): Protocol.TTypes | Error {
+			static parse(str: string | object): Protocol.TTypes | Error {
 				return Protocol.parse(str, Request);
 			}
 			public stringify(): string {
@@ -1012,7 +1019,7 @@ export namespace Message {
 			public getSignature(): string {
 				return this.__signature;
 			}
-			static parse(str: string): Protocol.TTypes | Error {
+			static parse(str: string | object): Protocol.TTypes | Error {
 				return Protocol.parse(str, Response);
 			}
 			public stringify(): string {
@@ -1050,7 +1057,7 @@ export namespace Message {
 		public getSignature(): string {
 			return this.__signature;
 		}
-		static parse(str: string): Protocol.TTypes | Error {
+		static parse(str: string | object): Protocol.TTypes | Error {
 			return Protocol.parse(str, Event);
 		}
 		public stringify(): string {
@@ -1084,7 +1091,7 @@ export namespace Message {
 			public getSignature(): string {
 				return this.__signature;
 			}
-			static parse(str: string): Protocol.TTypes | Error {
+			static parse(str: string | object): Protocol.TTypes | Error {
 				return Protocol.parse(str, Request);
 			}
 			public stringify(): string {
@@ -1121,7 +1128,7 @@ export namespace Message {
 			public getSignature(): string {
 				return this.__signature;
 			}
-			static parse(str: string): Protocol.TTypes | Error {
+			static parse(str: string | object): Protocol.TTypes | Error {
 				return Protocol.parse(str, Response);
 			}
 			public stringify(): string {
@@ -1161,7 +1168,7 @@ export namespace Message {
 		public getSignature(): string {
 			return this.__signature;
 		}
-		static parse(str: string): Protocol.TTypes | Error {
+		static parse(str: string | object): Protocol.TTypes | Error {
 			return Protocol.parse(str, Subscribe);
 		}
 		public stringify(): string {
@@ -1195,7 +1202,7 @@ export namespace Message {
 			public getSignature(): string {
 				return this.__signature;
 			}
-			static parse(str: string): Protocol.TTypes | Error {
+			static parse(str: string | object): Protocol.TTypes | Error {
 				return Protocol.parse(str, Request);
 			}
 			public stringify(): string {
@@ -1231,7 +1238,7 @@ export namespace Message {
 			public getSignature(): string {
 				return this.__signature;
 			}
-			static parse(str: string): Protocol.TTypes | Error {
+			static parse(str: string | object): Protocol.TTypes | Error {
 				return Protocol.parse(str, Response);
 			}
 			public stringify(): string {
@@ -1269,7 +1276,7 @@ export namespace Message {
 		public getSignature(): string {
 			return this.__signature;
 		}
-		static parse(str: string): Protocol.TTypes | Error {
+		static parse(str: string | object): Protocol.TTypes | Error {
 			return Protocol.parse(str, Unsubscribe);
 		}
 		public stringify(): string {
@@ -1303,7 +1310,7 @@ export namespace Message {
 			public getSignature(): string {
 				return this.__signature;
 			}
-			static parse(str: string): Protocol.TTypes | Error {
+			static parse(str: string | object): Protocol.TTypes | Error {
 				return Protocol.parse(str, Request);
 			}
 			public stringify(): string {
@@ -1339,7 +1346,7 @@ export namespace Message {
 			public getSignature(): string {
 				return this.__signature;
 			}
-			static parse(str: string): Protocol.TTypes | Error {
+			static parse(str: string | object): Protocol.TTypes | Error {
 				return Protocol.parse(str, Response);
 			}
 			public stringify(): string {
@@ -1377,7 +1384,7 @@ export namespace Message {
 		public getSignature(): string {
 			return this.__signature;
 		}
-		static parse(str: string): Protocol.TTypes | Error {
+		static parse(str: string | object): Protocol.TTypes | Error {
 			return Protocol.parse(str, UnsubscribeAll);
 		}
 		public stringify(): string {
@@ -1411,7 +1418,7 @@ export namespace Message {
 			public getSignature(): string {
 				return this.__signature;
 			}
-			static parse(str: string): Protocol.TTypes | Error {
+			static parse(str: string | object): Protocol.TTypes | Error {
 				return Protocol.parse(str, Request);
 			}
 			public stringify(): string {
@@ -1447,7 +1454,7 @@ export namespace Message {
 			public getSignature(): string {
 				return this.__signature;
 			}
-			static parse(str: string): Protocol.TTypes | Error {
+			static parse(str: string | object): Protocol.TTypes | Error {
 				return Protocol.parse(str, Response);
 			}
 			public stringify(): string {
@@ -1488,7 +1495,7 @@ export class EventDefinition extends Protocol.Root {
 	public getSignature(): string {
 		return this.__signature;
 	}
-	static parse(str: string): Protocol.TTypes | Error {
+	static parse(str: string | object): Protocol.TTypes | Error {
 		return Protocol.parse(str, EventDefinition);
 	}
 	public stringify(): string {
@@ -1527,7 +1534,7 @@ export class Subscription extends Protocol.Root {
 	public getSignature(): string {
 		return this.__signature;
 	}
-	static parse(str: string): Protocol.TTypes | Error {
+	static parse(str: string | object): Protocol.TTypes | Error {
 		return Protocol.parse(str, Subscription);
 	}
 	public stringify(): string {
@@ -1562,7 +1569,7 @@ export class ConnectionError extends Protocol.Root {
 	public getSignature(): string {
 		return this.__signature;
 	}
-	static parse(str: string): Protocol.TTypes | Error {
+	static parse(str: string | object): Protocol.TTypes | Error {
 		return Protocol.parse(str, ConnectionError);
 	}
 	public stringify(): string {
@@ -1588,14 +1595,16 @@ export namespace ConnectionError {
 		NO_TOKEN_FOUND = 'NO_TOKEN_FOUND',
 		NO_CLIENT_ID_FOUND = 'NO_CLIENT_ID_FOUND',
 		NO_TOKEN_PROVIDED = 'NO_TOKEN_PROVIDED',
-		TOKEN_IS_WRONG = 'TOKEN_IS_WRONG'
+		TOKEN_IS_WRONG = 'TOKEN_IS_WRONG',
+		UNEXPECTED_REQUEST = 'UNEXPECTED_REQUEST',
+		NO_DATA_PROVIDED = 'NO_DATA_PROVIDED'
 	}
 }
 export class Disconnect extends Protocol.Root {
 	static getDescription(): {[key: string]: Protocol.IProperty } {
 		return {
 			reason: { name: "reason", value: Disconnect.Reasons, type: Protocol.EEntityType.reference, optional: false }, 
-			message: { name: "message", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+			message: { name: "message", value: "string", type: Protocol.EEntityType.primitive, optional: true }, 
 		}
 	}
 	static __signature: string = "71280621";
@@ -1606,19 +1615,19 @@ export class Disconnect extends Protocol.Root {
 	public getSignature(): string {
 		return this.__signature;
 	}
-	static parse(str: string): Protocol.TTypes | Error {
+	static parse(str: string | object): Protocol.TTypes | Error {
 		return Protocol.parse(str, Disconnect);
 	}
 	public stringify(): string {
 		return Protocol.stringify(this, Disconnect) as string;
 	}
 	public reason: Disconnect.Reasons;
-	public message: string = "";
+	public message?: string = "";
 
-	constructor(args: { reason: Disconnect.Reasons, message: string }) {
+	constructor(args: { reason: Disconnect.Reasons, message?: string }) {
 		super();
 		this.reason = args.reason;
-		this.message = args.message;
+		args.message !== void 0 && (this.message = args.message);
 		const errors: Array<Error> = Protocol.validateParams(args, Disconnect);
 		if (errors.length > 0) {
 			throw new Error(`Cannot create class of "Disconnect" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);

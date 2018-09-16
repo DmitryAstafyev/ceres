@@ -230,10 +230,17 @@ export function stringify(target:any, classRef: any): string | Error {
     return result;
 }
 
-export function parse(str: string, target?: any): TTypes | Error {
-    const json: any = getJSONFromStr(str);
-    if (json instanceof Error) {
-        return json;
+export function parse(str: string | object, target?: any): TTypes | Error {
+    let json: any;
+    if (typeof str === 'string') {
+        json = getJSONFromStr(str);
+        if (json instanceof Error) {
+            return json;
+        }
+    } else if (typeof str !== 'object' || str === null) {
+        return new Error(`Expecting string or object.`);
+    } else {
+        json = str;
     }
     const result = _parse(json, target);
     if (result instanceof Array) {

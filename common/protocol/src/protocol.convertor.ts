@@ -455,7 +455,7 @@ export class Convertor {
         output += `${exttab}\treturn this.__signature;\n`;
         output += `${exttab}}\n`;
         //Define extractor
-        output += `${exttab}static parse(str: string): Protocol.TTypes | Error {\n`;
+        output += `${exttab}static parse(str: string | object): Protocol.TTypes | Error {\n`;
         output += `${exttab}\treturn Protocol.parse(str, ${entity.name});\n`;
         output += `${exttab}}\n`;
         //Define stringify

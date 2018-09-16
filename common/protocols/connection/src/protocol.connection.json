@@ -89,11 +89,11 @@
     "ConnectionError": {
         "reason": "Reasons",
         "message": "string",
-        "Reasons": ["FAIL_AUTH", "NO_TOKEN_FOUND", "NO_CLIENT_ID_FOUND", "NO_TOKEN_PROVIDED", "TOKEN_IS_WRONG"]
+        "Reasons": ["FAIL_AUTH", "NO_TOKEN_FOUND", "NO_CLIENT_ID_FOUND", "NO_TOKEN_PROVIDED", "TOKEN_IS_WRONG", "UNEXPECTED_REQUEST", "NO_DATA_PROVIDED"]
     },
     "Disconnect": {
         "reason": "Reasons",
-        "message": "string",
+        "message?": "string",
         "Reasons": ["SHUTDOWN"]
     },
     "version": "0.0.1"
