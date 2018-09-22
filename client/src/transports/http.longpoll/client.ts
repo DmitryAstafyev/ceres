@@ -1,7 +1,7 @@
 import * as Tools from '../../platform/tools/index';
 import * as DescConnection from './connection/index';
 import * as DescMiddleware from '../../infrastructure/middleware/index';
-import { Request, IRequestError } from './request';
+import { Request } from './request';
 import * as Protocol from '../../protocols/connection/protocol.connection';
 import { ITransportInterface } from '../../platform/interfaces/interface.transport';
 
@@ -12,7 +12,7 @@ const SETTINGS = {
 export enum EClientStates {
     created = 'created',
     connecting = 'connecting',
-    reconnectioning = 'reconnectioning',
+    reconnecting = 'reconnecting',
     connected = 'connected'
 }
 
@@ -20,14 +20,11 @@ export enum EClientEvents {
     connected = 'connected',
     disconnected = 'disconnected',
     error = 'error',
-    heartbeat = 'heartbeat',
     eventSent = 'eventSent',
     eventCome = 'eventCome',
     subscriptionDone = 'subscriptionDone',
     unsubscriptionDone = 'unsubscriptionDone',
     unsubscriptionAllDone = 'unsubscriptionAllDone',
-    requestSent = 'requestSent',
-    requestDone = 'requestDone',    
     message = 'message'
 }
 
@@ -118,9 +115,9 @@ class Hook {
                     }
                     resolve(message);
                 })
-                .catch((error: Tools.ExtError<IRequestError>) => {
+                .catch((error: Error) => {
                     this._request = null;
-                    reject(new Error(`Hook request guid "${requestId}" finished within error: ${error.error.message}`));
+                    reject(new Error(`Hook request guid "${requestId}" finished within error: ${error.message}`));
                 });
         });
     }
@@ -174,9 +171,9 @@ class Pending {
                     }
                     resolve(message);
                 })
-                .catch((error: Tools.ExtError<IRequestError>) => {
+                .catch((error: Error) => {
                     this._request = null;
-                    reject(new Error(`Hook request guid "${requestId}" finished within error: ${error.error.message}`));
+                    reject(new Error(`Hook request guid "${requestId}" finished within error: ${error.message}`));
                 });
         });
     }
@@ -279,7 +276,7 @@ class Requests {
                     }
                     resolve(message);
                 })
-                .catch((error: Tools.ExtError<IRequestError>) => {
+                .catch((error: Error) => {
                     this._requests.delete(request.getId());
                     reject(error);
                 });
@@ -368,7 +365,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
      */
     private _connect(): Promise<void> {
         return new Promise((resolve, reject) => {
-            if (this._state.get() !== EClientStates.created && this._state.get() !== EClientStates.reconnectioning) {
+            if (this._state.get() !== EClientStates.created && this._state.get() !== EClientStates.reconnecting) {
                 return reject(new Error(this._logger.error(`Attempt to connect on state "${this._state.get()}".`)));
             }
             this._state.set(EClientStates.connecting);
@@ -386,13 +383,11 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                         //Resolve
                         resolve();
                     }).catch((error: Error) => {
-                        this._hardReconnection();
-                        reject(new Error(this._logger.warn(`Attempt to connect to "${this._parameters.getURL()}" was failed (next attempt to connectin in ${SETTINGS.RECONNECTION_TIMEOUT}ms) due error: `, error)));
+                        reject(this._errorOnConnection(`Fail to proccess connection response`, error));
                     });
                 })
-                .catch((error: Tools.ExtError<IRequestError>) => {
-                    this._hardReconnection();
-                    reject(new Error(this._logger.warn(`Attempt to connect to "${this._parameters.getURL()}" was failed (next attempt to connectin in ${SETTINGS.RECONNECTION_TIMEOUT}ms) due error: `, error)));
+                .catch((error: Error) => {
+                    reject(this._errorOnConnection(`Fail to connect`, error));
                 });
         });
     }
@@ -403,7 +398,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
      */
     private _reconnect(): Promise<void> {
         return new Promise((resolve, reject) => {
-            if (this._state.get() !== EClientStates.created && this._state.get() !== EClientStates.reconnectioning) {
+            if (this._state.get() !== EClientStates.created && this._state.get() !== EClientStates.reconnecting) {
                 return reject(new Error(this._logger.error(`Attempt to reconnect on state "${this._state.get()}".`)));
             }
             this._state.set(EClientStates.connecting);
@@ -420,15 +415,24 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                         //Resolve
                         resolve();
                     }).catch((error: Error) =>{
-                        this._hardReconnection();
-                        reject(new Error(this._logger.warn(`Attempt to reconnect to "${this._parameters.getURL()}" was failed (next attempt to connectin in ${SETTINGS.RECONNECTION_TIMEOUT}ms) due error: `, error)));
+                        reject(this._errorOnConnection(`Fail to proccess reconnection response`, error));
                     });
                 })
-                .catch((error: Tools.ExtError<IRequestError>) => {
-                    this._hardReconnection();
-                    reject(new Error(this._logger.warn(`Attempt to reconnect to "${this._parameters.getURL()}" was failed (next attempt to connectin in ${SETTINGS.RECONNECTION_TIMEOUT}ms) due error: `, error)));
+                .catch((error: Error) => {
+                    reject(this._errorOnConnection(`Fail to reconnect`, error));
                 });
         });
+    }
+
+    private _errorOnConnection(message: string, error: Error){
+        this.emit(EClientEvents.error, {
+            message: this._logger.warn(`Attempt to reconnect to "${this._parameters.getURL()}" was failed (next attempt to connectin in ${SETTINGS.RECONNECTION_TIMEOUT}ms) due error: ${message}`),
+            error: error,
+            reason: undefined,
+            details: undefined
+        });
+        this._hardReconnection();
+        return error;
     }
 
     /**
@@ -436,7 +440,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
      * @returns {void}
      */
     private _softReconnection(){
-        this._state.set(EClientStates.reconnectioning);
+        this._state.set(EClientStates.reconnecting);
         if (this._token.get() === '') {
             this._logger.warn(`Cannot do soft reconnection, because token isn't set. Will do hard reconnection.`);
             return this._hardReconnection();
@@ -455,7 +459,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
      * @returns {void}
      */
     private _hardReconnection(){
-        this._state.set(EClientStates.reconnectioning);
+        this._state.set(EClientStates.reconnecting);
         this._drop().then(() => {
             this._token.drop();
             setTimeout(() => {
@@ -592,9 +596,9 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                 }
                 this._hardReconnection();
             })
-            .catch((error: Tools.ExtError<IRequestError> | Protocol.TProtocolTypes) => {
-                if (error instanceof Tools.ExtError){
-                    this._logger.warn(`Hook connection is finished with  error: ${error.error.message}. Initialize soft reconnection.`);
+            .catch((error: Error | Protocol.TProtocolTypes) => {
+                if (error instanceof Error){
+                    this._logger.warn(`Hook connection is finished with  error: ${error.message}. Initialize soft reconnection.`);
                     this._softReconnection();
                 } else {
                     this._logger.warn(`Server returns unexpected response: ${error.stringify()}. Initialize hard reconnection.`);
@@ -651,6 +655,9 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
      */
     public eventEmit(event: any, protocol: any): Promise<Protocol.Message.Event.Response> {
         return new Promise((resolve, reject) => {
+            if (this._state.get() !== EClientStates.connected) {
+                return reject(new Error(`Cannot do operation: client isn't connected.`));
+            }
             const protocolSignature = this._getEntitySignature(protocol);
             if (protocolSignature instanceof Error){
                 return reject(protocolSignature);
@@ -679,7 +686,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                     this.emit(EClientEvents.eventSent, message);
                     resolve(message);
                 })
-                .catch((error: Tools.ExtError<IRequestError>) => {
+                .catch((error: Error) => {
                     this._logger.env(`Error emit event.`, error);
                     reject(error);
                 });
@@ -697,6 +704,9 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
         //TODO: subscription is already exist. Server doesn't allow subscribe twice. If user need it, he can do it by himself, but server should have only one subscription
         //TODO: restore subscription after reconnection. Server unsubscribe all if client was disconnected
         return new Promise((resolve, reject) => {
+            if (this._state.get() !== EClientStates.connected) {
+                return reject(new Error(`Cannot do operation: client isn't connected.`));
+            }
             const protocolSignature = this._getEntitySignature(protocol);
             if (protocolSignature instanceof Error){
                 return reject(protocolSignature);
@@ -733,7 +743,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                         this._logger.env(`Subscription from protocol ${protocolSignature}, event ${eventSignature} has status: ${message.status}.`);
                         this.emit(EClientEvents.subscriptionDone, message);
                         resolve(message);
-                    }).catch((error: Tools.ExtError<IRequestError>) => {
+                    }).catch((error: Error) => {
                         this._logger.env(`Error subscribe event.`, error);
                         this._subscriptions.unsubscribe(protocolSignature, eventSignature);
                         reject(error);
@@ -754,6 +764,9 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
      */
     public unsubscribeEvent(event: any, protocol: any): Promise<Protocol.Message.Unsubscribe.Response> {
         return new Promise((resolve, reject) => {
+            if (this._state.get() !== EClientStates.connected) {
+                return reject(new Error(`Cannot do operation: client isn't connected.`));
+            }
             const protocolSignature = this._getEntitySignature(protocol);
             if (protocolSignature instanceof Error){
                 return reject(protocolSignature);
@@ -781,8 +794,9 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                 }
                 this._logger.env(`Unsubscription from protocol ${protocolSignature}, event ${eventSignature} has status: ${message.status}.`);
                 this._subscriptions.unsubscribe(protocolSignature, eventSignature);
+                this.emit(EClientEvents.unsubscriptionDone, message);
                 resolve(message);
-            }).catch((error: Tools.ExtError<IRequestError>) => {
+            }).catch((error: Error) => {
                 this._logger.env(`Error unsubscribe event.`, error);
                 reject(error);
             });
@@ -796,6 +810,9 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
      */
     public unsubscribeAllEvents(protocol: any): Promise<Protocol.Message.UnsubscribeAll.Response> {
         return new Promise((resolve, reject) => {
+            if (this._state.get() !== EClientStates.connected) {
+                return reject(new Error(`Cannot do operation: client isn't connected.`));
+            }
             const protocolSignature = this._getEntitySignature(protocol);
             if (protocolSignature instanceof Error){
                 return reject(protocolSignature);
@@ -818,8 +835,9 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                 }
                 this._logger.env(`Unsubscription from all events in scope of protocol ${protocolSignature} has status: ${message.status}.`);
                 this._subscriptions.unsubscribe(protocolSignature);
+                this.emit(EClientEvents.unsubscriptionAllDone, message);
                 resolve(message);
-            }).catch((error: Tools.ExtError<IRequestError>) => {
+            }).catch((error: Error) => {
                 this._logger.env(`Error unsubscribe all.`, error);
                 reject(error);
             });

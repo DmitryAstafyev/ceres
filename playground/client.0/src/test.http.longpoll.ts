@@ -67,14 +67,12 @@ export default class Test {
         this._client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.connected, this._onConnected);
         this._client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.disconnected, this._onDisconnected);
         this._client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.error, this._onError);
-        this._client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.heartbeat, this._onHeartBeat);
     }
 
     private _unsubsribeTransportEvents(){
         this._client.unsubscribe(Transports.HTTPLongpollClient.Client.EVENTS.connected, this._onConnected);
         this._client.unsubscribe(Transports.HTTPLongpollClient.Client.EVENTS.disconnected, this._onDisconnected);
         this._client.unsubscribe(Transports.HTTPLongpollClient.Client.EVENTS.error, this._onError);
-        this._client.unsubscribe(Transports.HTTPLongpollClient.Client.EVENTS.heartbeat, this._onHeartBeat);
     }
     
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -103,8 +101,8 @@ export default class Test {
     //////////////////////////////////////////////////////////////////////////////////////////////
     private _sendGreetingMessage(){
         this._greetingMessageTimer = setTimeout(() => {
-            const greeting = new Protocol.EventPing({
-                name: 'Test Client'
+            const greeting = new Protocol.Events.Ping({
+                timestamp: new Date()
             });
             
             this._client.eventEmit(greeting, Protocol)

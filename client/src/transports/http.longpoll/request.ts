@@ -5,8 +5,6 @@ const SETTINGS = {
 	DEFAULT_TIMEOUT: 30000 //30sec
 };
 
-export { IRequestError } from '../common/xmlhttprequest';
-
 export class Request {
 
 	private _request    : ImpXMLHTTPRequest;

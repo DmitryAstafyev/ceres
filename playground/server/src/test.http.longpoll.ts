@@ -6,10 +6,9 @@ export default function test(){
     const logger = new Tools.Logger('HTTPLongpollServerTest');
     logger.info(`Create parameters for test.`)
     const parameters = new Transports.HTTPLongpoll.ConnectionParameters({
-        port: 3005,
-        type: Enums.ERequestTypes.post
+        port: 3005
     });
     logger.info(`Creating server with:`, parameters);
     const HTTPLongpoll = new Transports.HTTPLongpoll.Server(parameters);
-    logger.info(`Server is created on: "localhost:${parameters.port}" due method "${parameters.type}".`);
+    logger.info(`Server is created on: "localhost:${parameters.port}".`);
 }

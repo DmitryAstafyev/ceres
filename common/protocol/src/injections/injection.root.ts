@@ -21,10 +21,17 @@ export interface IProperty {
     value: any
 }
 
-export function _parse(json: {[key: string]: any}, target?: any): TTypes | Array<Error> {
+export function _parse(json: any, target?: any): TTypes | Array<Error> {
     const types: {[key: string]: any} = getTypes();
     if (typeof json !== 'object' || json === null) {
-        return [new Error(`Extract function can be applied only to object.`)];
+        if (typeof json === 'string') {
+            json = getJSONFromStr(json);
+            if (json instanceof Error) {
+                return [new Error(`Extract function can be applied only to object. Error: ${json.message}.`)];
+            }
+        } else {
+            return [new Error(`Extract function can be applied only to object.`)];
+        }
     }
     if (typeof json.__signature !== 'string' || json.__signature.trim() === '') {
         return [new Error(`Cannot find signature of entity.`)];
@@ -40,14 +47,13 @@ export function _parse(json: {[key: string]: any}, target?: any): TTypes | Array
     }
     //Get description of entity
     const description: {[key: string]: IProperty} = classRef.getDescription();
-    //Validate target
-    if (Object.keys(description).length !== Object.keys(json).length - 1) {
-        return [new Error(`Count of properties dismatch. Expected for "${classRef.name}" ${Object.keys(description).length} properties, but target object has: ${Object.keys(json).length - 1}.`)];
-    }
     //Parsing properties
     let errors: Array<Error> = [];
     Object.keys(description).forEach((prop: string) => {
         const desc = description[prop];
+        if (desc.optional && json[prop] === void 0) {
+            return;
+        }
         switch(desc.type) {
             case EEntityType.repeated:
                 if (!(json[prop] instanceof Array)){
@@ -134,6 +140,9 @@ export function _stringify(target:any, classRef: any): string | Array<Error> {
     };
     Object.keys(description).forEach((prop: string) => {
         const desc = description[prop];
+        if (desc.optional && target[prop] === void 0) {
+            return;
+        }
         switch(desc.type) {
             case EEntityType.repeated:
                 if (!(target[prop] instanceof Array)){

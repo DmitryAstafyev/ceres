@@ -78,7 +78,10 @@ export const PrimitiveTypes:  { [key: string]: IPrimitiveType<any> } = {
             return new Date(value);
         },
         serialize   : (value: Date) => { return value.getTime(); },
-        validate    : (value: number) => { 
+        validate    : (value: number | Date) => {
+            if (value instanceof Date) {
+                return true;
+            } 
             if (typeof value !== 'number'){
                 return false;
             }

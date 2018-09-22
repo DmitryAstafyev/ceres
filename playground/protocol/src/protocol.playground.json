@@ -1,21 +1,8 @@
 {
-    "Message": {
-        "default": {
-            "event"     : { "in"    : "Events",     "optional": true },
-            "request"   : { "in"    : "Requests",   "optional": true },
-            "guid"      : { "type"  : "guid",       "optional": true }
-        },
-    
-        "cases":{
-            "EventPing":[{ "event": "GREETING"}, {
-                "name": { "type"  : "string", "required": true }
-            }]
-        },
-    
-        "definitions": {
-            "Events"        : ["GREETING"],
-            "Responses"     : [],
-            "Requests"      : []
+    "Events": {
+        "guid?": "guid",
+        "Ping": {
+            "timestamp":"datetime"
         }
     },
     "version": "0.0.1"

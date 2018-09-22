@@ -1,5 +1,4 @@
 import * as HTTP from 'http';
-import * as querystring from 'querystring';
 
 import * as Tools from '../../platform/tools/index';
 import * as DescConnection from './connection/index';
@@ -198,7 +197,7 @@ export class Server {
                 //Parse request
                 let post;
                 try {
-                    post = querystring.parse(request);
+                    post = JSON.parse(request);
                     if (Tools.getTypeOf(post) !== Tools.EPrimitiveTypes.object){
                         return connection.close(this._logger.warn(`As post data expecting only {object}.`)).catch((error: Error) => {
                             this._logger.warn(`Fail to close connection due error: ${error.message}`);

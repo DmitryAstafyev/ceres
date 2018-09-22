@@ -14,11 +14,6 @@ export interface IEventDone {
     response: string | object
 };
 
-export interface IRequestError {
-    status: number,
-    xmlHttpRequest: XMLHttpRequest
-}
-
 export default class ImpXMLHTTPRequest {
 
     static METHODS = ERequestTypes;
@@ -79,19 +74,13 @@ export default class ImpXMLHTTPRequest {
 
     private _ontimeout(event : Event){
         this._rejectRequest(
-            new Tools.ExtError<XMLHttpRequest>(
-                this._logger.env(`Request to url "${this._url}" is timeouted.`, event), 
-                this._httpRequest
-            )
+            new Error(this._logger.env(`Request to url "${this._url}" is timeouted.`, event))
         );    
     }
 
     private _onerror(event : Event){
         this._rejectRequest(
-            new Tools.ExtError<XMLHttpRequest>(
-                this._logger.env(`Request to url "${this._url}" finished with error: `, event), 
-                this._httpRequest
-            )
+            new Error(this._logger.env(`Request to url "${this._url}" finished with error: `, event))
         ); 
     }
 
@@ -108,7 +97,7 @@ export default class ImpXMLHTTPRequest {
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Promise handlers
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-    private _rejectRequest(error: Tools.ExtError<XMLHttpRequest>) {
+    private _rejectRequest(error: Error) {
         if (this._aborted) {
             return this._logger.warn(`Request to url "${this._url}" was aborted. Cannot reject it.`);
         }
