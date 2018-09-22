@@ -60,7 +60,6 @@ export default class Test {
         this._onConnected = this._onConnected.bind(this);
         this._onDisconnected = this._onDisconnected.bind(this);
         this._onError = this._onError.bind(this);
-        this._onHeartBeat = this._onHeartBeat.bind(this);
     }
 
     private _subsribeTransportEvents(){
@@ -90,10 +89,6 @@ export default class Test {
 
     private _onError(error: any){
         this._output.add(`Error: ${error.message}; reason: ${error.reason}`, { color: 'rgb(255,0,0)'});
-    }
-
-    private _onHeartBeat(){
-        this._output.add(`Heartbeat...`, { color: 'rgb(150,150,150)'});
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////

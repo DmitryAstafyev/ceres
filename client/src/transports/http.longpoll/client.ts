@@ -173,7 +173,7 @@ class Pending {
                 })
                 .catch((error: Error) => {
                     this._request = null;
-                    reject(new Error(`Hook request guid "${requestId}" finished within error: ${error.message}`));
+                    reject(new Error(`Pending request guid "${requestId}" finished within error: ${error.message}`));
                 });
         });
     }
@@ -597,6 +597,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                 this._hardReconnection();
             })
             .catch((error: Error | Protocol.TProtocolTypes) => {
+                this.emit(EClientEvents.disconnected, error);
                 if (error instanceof Error){
                     this._logger.warn(`Hook connection is finished with  error: ${error.message}. Initialize soft reconnection.`);
                     this._softReconnection();
@@ -640,7 +641,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                 this._subscriptions.emit(message.protocol, event.getSignature(), event);
             })
             .catch((error: Error) => {
-                this._logger.env(`Error during emit income event.`, error);
+                this._logger.env(`Error during emit income event: ${error.message}.`);
             });
     }
 
@@ -687,7 +688,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                     resolve(message);
                 })
                 .catch((error: Error) => {
-                    this._logger.env(`Error emit event.`, error);
+                    this._logger.env(`Error emit event: ${error.message}.`);
                     reject(error);
                 });
         });
@@ -744,13 +745,13 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                         this.emit(EClientEvents.subscriptionDone, message);
                         resolve(message);
                     }).catch((error: Error) => {
-                        this._logger.env(`Error subscribe event.`, error);
+                        this._logger.env(`Error subscribe event: ${error.message}`);
                         this._subscriptions.unsubscribe(protocolSignature, eventSignature);
                         reject(error);
                     });
                 })
                 .catch((error: Error)=>{
-                    this._logger.env(`Error subscribe event.`, error);
+                    this._logger.env(`Error subscribe event: ${error.message}`);
                     reject(error);
                 });
         });
@@ -797,7 +798,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                 this.emit(EClientEvents.unsubscriptionDone, message);
                 resolve(message);
             }).catch((error: Error) => {
-                this._logger.env(`Error unsubscribe event.`, error);
+                this._logger.env(`Error unsubscribe event: ${error.message}`);
                 reject(error);
             });
         });
@@ -838,7 +839,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                 this.emit(EClientEvents.unsubscriptionAllDone, message);
                 resolve(message);
             }).catch((error: Error) => {
-                this._logger.env(`Error unsubscribe all.`, error);
+                this._logger.env(`Error unsubscribe all: ${error.message}.`);
                 reject(error);
             });
         });

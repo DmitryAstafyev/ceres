@@ -72,15 +72,34 @@ export default class ImpXMLHTTPRequest {
 	 * XMLHttpRequest handlers
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+    private _getRequestStateData(event: Event): { [key: string]: string | number | undefined } {
+        const state = {
+            status: undefined,
+            readyState: undefined
+        };
+        if (typeof event !== 'object' || event === null) {
+            return state;
+        }
+        if (typeof event.target !== 'object' || event.target === null) {
+            return state;
+        }
+        Object.keys(state).forEach((key: string) => {
+            (state as any)[key] = (event.target as any)[key];
+        });
+        return state;
+    }
+
     private _ontimeout(event : Event){
+        this._logger.verbose(`Request to url "${this._url}" is timeouted: `, event);
         this._rejectRequest(
-            new Error(this._logger.env(`Request to url "${this._url}" is timeouted.`, event))
+            new Error(this._logger.env(`Request to url "${this._url}" is timeouted:`, this._getRequestStateData(event)))
         );    
     }
 
     private _onerror(event : Event){
+        this._logger.verbose(`Request to url "${this._url}" finished with error: `, event);
         this._rejectRequest(
-            new Error(this._logger.env(`Request to url "${this._url}" finished with error: `, event))
+            new Error(this._logger.env(`Request to url "${this._url}" finished with error:`, this._getRequestStateData(event)))
         ); 
     }
 
@@ -99,20 +118,20 @@ export default class ImpXMLHTTPRequest {
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
     private _rejectRequest(error: Error) {
         if (this._aborted) {
-            return this._logger.warn(`Request to url "${this._url}" was aborted. Cannot reject it.`);
+            return this._logger.env(`Request to url "${this._url}" was aborted. Cannot reject it.`);
         }
         if (this._rejected || this._resolved) {
-            return this._logger.warn(`Request to url "${this._url}" is already ${this._rejected ? 'rejected' : 'resolved'}. Cannot reject it.`);
+            return this._logger.env(`Request to url "${this._url}" is already ${this._rejected ? 'rejected' : 'resolved'}. Cannot reject it.`);
         }
         this._reject(error);
     }
 
     private _resolveRequest(responseText: string, headers: THeaders) {
         if (this._aborted) {
-            return this._logger.warn(`Request to url "${this._url}" was aborted. Cannot resolve it.`);
+            return this._logger.env(`Request to url "${this._url}" was aborted. Cannot resolve it.`);
         }
         if (this._rejected || this._resolved) {
-            return this._logger.warn(`Request to url "${this._url}" is already ${this._rejected ? 'rejected' : 'resolved'}. Cannot resolve it.`);
+            return this._logger.env(`Request to url "${this._url}" is already ${this._rejected ? 'rejected' : 'resolved'}. Cannot resolve it.`);
         }
         this._resolve(responseText, headers);
     }
