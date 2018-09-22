@@ -50,38 +50,45 @@ export class Tokens {
 
 }
 
-class Pendings {
+class Connections {
 
-    private _pendings: Map<string, Array<Connection>> = new Map();
+    private _connections: Map<string, Array<Connection>> = new Map();
 
     public add(clientId: string, connection: Connection){
-        let connections = this._pendings.get(clientId);
+        let connections = this._connections.get(clientId);
         if (!(connections instanceof Array)) {
             connections = [];
         }
         connections.push(connection);
-        this._pendings.set(clientId, connections);
+        this._connections.set(clientId, connections);
     }
 
     public get(clientId: string): Connection | null {
-        let connections = this._pendings.get(clientId);
+        let connections = this._connections.get(clientId);
         if (!(connections instanceof Array)) {
             return null;
         }
         const connection = connections[0];
         connections.splice(0, 1);
         if (connections.length === 0) {
-            this._pendings.delete(clientId);
+            this._connections.delete(clientId);
         } else {
-            this._pendings.set(clientId, connections);
+            this._connections.set(clientId, connections);
         }
         return connection;
     }
 
+    public has(clientId: string): boolean {
+        let connections = this._connections.get(clientId);
+        if (!(connections instanceof Array)) {
+            return false;
+        }
+        return true;
+    }
     public closeAll(): Promise<void> {
         return new Promise((resolve, reject) => {
             const tasks: Array<Promise<void>> = [];
-            this._pendings.forEach((connections: Array<Connection>, clientId: string) => {
+            this._connections.forEach((connections: Array<Connection>, clientId: string) => {
                 tasks.push(...connections.map((connection: Connection) => {
                     return connection.close((new Protocol.Disconnect({
                         reason: Protocol.Disconnect.Reasons.SHUTDOWN,
@@ -91,26 +98,26 @@ class Pendings {
             });
             Promise.all(tasks)
                 .then(() => {
-                    this._pendings.clear();
+                    this._connections.clear();
                     resolve();
                 })
                 .catch((error: Error) => {
-                    this._pendings.clear();
+                    this._connections.clear();
                     reject(error);
                 });
         });
     }
 
     public delete(clientId: string){
-        this._pendings.delete(clientId);
+        this._connections.delete(clientId);
     }
 
-    public getInfo(){
-        let info = '';
-        this._pendings.forEach((connections: Array<Connection>, clientId: string) => {
-            info += `clientId: "${clientId}" has ${connections.length} connections; `;
+    public getInfo(): string {
+        let info: Array<string> = [];
+        this._connections.forEach((connections: Array<Connection>, clientId: string) => {
+            info.push(`\t\tclientId: "${clientId}" has ${connections.length} connections;`);
         });
-        return info;
+        return info.join(';\n');
     }
 
 }
@@ -123,6 +130,7 @@ type TClientRequests =  Protocol.Message.Handshake.Request |
                         Protocol.Message.Subscribe.Request |
                         Protocol.Message.Unsubscribe.Request |
                         Protocol.Message.UnsubscribeAll.Request;
+
 const ClientRequestsTypes = [Protocol.Message.Handshake.Request, 
                             Protocol.Message.Hook.Request,
                             Protocol.Message.Pending.Request,
@@ -135,7 +143,8 @@ const ClientRequestsTypes = [Protocol.Message.Handshake.Request,
 export class Server {
  
     private _logger         : Tools.Logger              = new Tools.Logger('Http.Server');
-    private _pending        : Pendings                  = new Pendings();
+    private _pending        : Connections               = new Connections();
+    private _hooks          : Connections               = new Connections();
     private _tokens         : Tokens;
     private _subscriptions  : Tools.SubscriptionsHolder = new Tools.SubscriptionsHolder();
     private _tasks          : Tools.Queue               = new Tools.Queue();
@@ -169,7 +178,7 @@ export class Server {
 
         this._http = HTTP.createServer(this._onRequest.bind(this)).listen(this._parameters.getPort());
 
-        this._onAbortedPendingConnection = this._onAbortedPendingConnection.bind(this);
+        this._onClientDisconnected = this._onClientDisconnected.bind(this);
 
         this._logState();
     }
@@ -332,10 +341,17 @@ export class Server {
                 this._logger.warn(`Fail to close connection ${clientId} due error: ${error.message}`);
             });
         }
+        //Hook connection
+        if (message instanceof Protocol.Message.Hook.Request) {
+            connection.setClientGUID(clientId);
+            connection.on(Connection.EVENTS.onAborted, this._onClientDisconnected);
+            this._hooks.add(clientId, connection);
+            return this._logger.env(`Hook connection for ${clientId} is accepted.`);
+        }
         //Pending connnection
         if (message instanceof Protocol.Message.Pending.Request) {
             connection.setClientGUID(clientId);
-            connection.on(Connection.EVENTS.onAborted, this._onAbortedPendingConnection);
+            connection.on(Connection.EVENTS.onAborted, this._onClientDisconnected);
             this._pending.add(clientId, connection);
             return this._logger.env(`Pending connection for ${clientId} is accepted.`);
         }
@@ -428,17 +444,25 @@ export class Server {
         }
     }
 
-    private _onAbortedPendingConnection(connection: Connection){
-        //Pending connection is aborted => client is disconnected
-        const clientId = connection.getClientGUID();
-        if (clientId === null) {
-            this._logger.error(`Pending connection is aborted, but connection doesn't have clientId`);
-            return;
+    private _onClientDisconnected(connection: Connection) {
+        const clientId: string | null = connection.getClientGUID();
+        if (typeof clientId !== 'string') {
+            return this._logger.error(`Fait to disconnnect client, because clientId is incorrect: ${Tools.inspect(clientId)}`);
         }
-        //Remove from storage
-        this._pending.delete(clientId);
+        const _hooks: boolean = this._hooks.has(clientId);
+        const _pending: boolean = this._pending.has(clientId);
+        const _tasks: boolean = this._tasks.count(clientId) > 0;
+        //Remove from storage of hooks
+        _hooks && this._hooks.delete(clientId);
+        //Remove from storage of pending
+        _pending && this._pending.delete(clientId);
         //Remove related tasks
-        this._tasks.drop(clientId);
+        _tasks && this._tasks.drop(clientId);
+        //Unsubscribe
+        this._subscriptions.removeClient(clientId);
+        if (_hooks || _pending) {
+            this._logger.env(`Client ${clientId} is disconnected`);
+        }
     }
 
     private _emitClientEvent(protocol: string, event: string, body: string, clientId: string, token: string) {
@@ -467,7 +491,7 @@ export class Server {
     }
 
     private _logState(){
-        this._logger.debug(`    [server state]: connections = ${this._pending.getInfo()}; subcribers = ${this._subscriptions.getInfo()}; tasks in queue: ${this._tasks.getTasksCount()}.`);
+        this._logger.debug(`\t[server state]: \n\tconnections:\n${this._pending.getInfo()}\n\tsubcribers\n ${this._subscriptions.getInfo()}\n\ttasks in queue: ${this._tasks.getTasksCount()}.`);
         setTimeout(() => {
             this._logState();
         }, 1000);

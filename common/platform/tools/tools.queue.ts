@@ -82,6 +82,19 @@ export default class Queue {
     }
 
     /**
+     * Count of tasks bound with alias
+     * @param alias {string | symbol} task's group identificator
+     * @returns boolean
+     */
+    public count(alias: string | symbol): number {
+        let count: number = 0;
+        this._tasks.forEach((task: ITask) => {
+            task.alias === alias && (count += 1);
+        });
+        return count;
+    }
+
+    /**
      * Execute all tasks in queue 
      * @returns undefined
      */

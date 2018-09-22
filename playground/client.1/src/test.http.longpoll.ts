@@ -40,8 +40,7 @@ export default class Test {
     private _output: Output = new Output();
     private _parameters: Transports.HTTPLongpollClient.ConnectionParameters = new Transports.HTTPLongpollClient.ConnectionParameters({
         host: 'http://localhost',
-        port: 3005,
-        type: Enums.ERequestTypes.post
+        port: 3005
     });
     private _client: Transports.HTTPLongpollClient.Client;
     private _greetingMessageTimer: number = -1;
@@ -61,21 +60,18 @@ export default class Test {
         this._onConnected = this._onConnected.bind(this);
         this._onDisconnected = this._onDisconnected.bind(this);
         this._onError = this._onError.bind(this);
-        this._onHeartBeat = this._onHeartBeat.bind(this);
     }
 
     private _subsribeTransportEvents(){
         this._client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.connected, this._onConnected);
         this._client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.disconnected, this._onDisconnected);
         this._client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.error, this._onError);
-        this._client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.heartbeat, this._onHeartBeat);
     }
 
     private _unsubsribeTransportEvents(){
         this._client.unsubscribe(Transports.HTTPLongpollClient.Client.EVENTS.connected, this._onConnected);
         this._client.unsubscribe(Transports.HTTPLongpollClient.Client.EVENTS.disconnected, this._onDisconnected);
         this._client.unsubscribe(Transports.HTTPLongpollClient.Client.EVENTS.error, this._onError);
-        this._client.unsubscribe(Transports.HTTPLongpollClient.Client.EVENTS.heartbeat, this._onHeartBeat);
     }
     
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -95,10 +91,6 @@ export default class Test {
         this._output.add(`Error: ${error.message}; reason: ${error.reason}`, { color: 'rgb(255,0,0)'});
     }
 
-    private _onHeartBeat(){
-        this._output.add(`Heartbeat...`, { color: 'rgb(150,150,150)'});
-    }
-
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Tests protocol: subscriptions
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -108,29 +100,29 @@ export default class Test {
     }
 
     private _subscribeTestProtocol(){
-        this._client.subscribeEvent(Protocol.EventPing, Protocol, this._onTestProtocolGreeting)
+        this._client.subscribeEvent(Protocol.Events.Ping, Protocol, this._onTestProtocolGreeting)
             .then((res) => {
-                this._output.add(`Subscription to ${Tools.inspect(Protocol.EventPing)} was done. Subscription response: ${Tools.inspect(res)}`, { color: 'rgb(200,200,200)'});
+                this._output.add(`Subscription to ${Protocol.Events.Ping.name} was done. Subscription response: ${Tools.inspect(res)}`, { color: 'rgb(200,200,200)'});
             })
             .catch((e) => {
-                this._output.add(`Error to subscribe to ${Tools.inspect(Protocol.EventPing)}: ${Tools.inspect(e)}`, { color: 'rgb(255,0,0)'});
+                this._output.add(`Error to subscribe to ${Protocol.Events.Ping.name}: ${Tools.inspect(e)}`, { color: 'rgb(255,0,0)'});
             });
     }
 
     private _unsubscribeTestProtocol(){
-        this._client.unsubscribeEvent(Protocol.EventPing, Protocol)
+        this._client.unsubscribeEvent(Protocol.Events.Ping, Protocol)
             .then((res) => {
-                this._output.add(`Unsubscription from ${Tools.inspect(Protocol.EventPing)} was done. Unsubscription response: ${Tools.inspect(res)}`, { color: 'rgb(50,50,250)'});
+                this._output.add(`Unsubscription from ${Protocol.Events.Ping.name} was done. Unsubscription response: ${Tools.inspect(res)}`, { color: 'rgb(50,50,250)'});
             })
             .catch((e) => {
-                this._output.add(`Error to unsubscribe to ${Tools.inspect(Protocol.EventPing)}: ${Tools.inspect(e)}`, { color: 'rgb(255,0,0)'});
+                this._output.add(`Error to unsubscribe to ${Protocol.Events.Ping.name}: ${Tools.inspect(e)}`, { color: 'rgb(255,0,0)'});
             });
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Tests protocol: handlers
     //////////////////////////////////////////////////////////////////////////////////////////////
-    private _onTestProtocolGreeting(event: Protocol.EventPing){
+    private _onTestProtocolGreeting(event: Protocol.Events.Ping){
         this._output.add(`HTTP.Longpoll transport test: get event: ${Tools.inspect(event)}`, { color: 'rgb(170, 170, 236)'});
     }
 

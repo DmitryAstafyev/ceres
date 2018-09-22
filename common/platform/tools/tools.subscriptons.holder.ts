@@ -78,13 +78,13 @@ export default class SubscriptionsHolder{
         });
     }
 
-    getInfo(){
+    getInfo(): string {
         let info: Array<string> = [];
         this._subscriptions.forEach((storage: Map<event, Array<clientId>>, protocol: string) => {
             storage.forEach((IDs: Array<clientId>, event: string) => {
-                info.push(`[${protocol}:${event}]: ${IDs.length}`)
+                info.push(`\t\t[${protocol}:${event}]: ${IDs.length}`)
             });
         });
-        return info.join('; ');
+        return info.join(';\n');
     }
 }
