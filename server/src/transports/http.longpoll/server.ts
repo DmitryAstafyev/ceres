@@ -115,7 +115,7 @@ class Connections {
     public getInfo(): string {
         let info: Array<string> = [];
         this._connections.forEach((connections: Array<Connection>, clientId: string) => {
-            info.push(`\t\tclientId: "${clientId}" has ${connections.length} connections;`);
+            info.push(`\t\tclientId: "${clientId}" has ${connections.length} connections`);
         });
         return info.join(';\n');
     }
@@ -491,7 +491,7 @@ export class Server {
     }
 
     private _logState(){
-        this._logger.debug(`\t[server state]: \n\tconnections:\n${this._pending.getInfo()}\n\tsubcribers\n ${this._subscriptions.getInfo()}\n\ttasks in queue: ${this._tasks.getTasksCount()}.`);
+        this._logger.debug(`\t[server state]: \n\pending:\n${this._pending.getInfo()}\n\hooks:\n${this._hooks.getInfo()}\n\tsubcribers\n ${this._subscriptions.getInfo()}\n\ttasks in queue: ${this._tasks.getTasksCount()}.`);
         setTimeout(() => {
             this._logState();
         }, 1000);
