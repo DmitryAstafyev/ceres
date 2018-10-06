@@ -6,7 +6,7 @@ const DEFAUT_ALLOWED_CONSOLE = {
     WARNING: true,
     VERBOS: false,
     ERROR: true,
-    ENV: false,
+    ENV: true,
     DEVELOP: true
 };
 

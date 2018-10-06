@@ -380,7 +380,7 @@ export class Server {
             let status: boolean = false; 
             if (typeof message.subscription.event === 'string' && message.subscription.event.trim() !== ''&&
                 typeof message.subscription.protocol === 'string' && message.subscription.protocol.trim() !== '') {
-                status = this._subscriptions.subscribe(
+                status = this._subscriptions.unsubscribe(
                     message.subscription.protocol,
                     message.subscription.event,
                     clientId
@@ -494,6 +494,6 @@ export class Server {
         this._logger.debug(`\t[server state]: \n\pending:\n${this._pending.getInfo()}\n\hooks:\n${this._hooks.getInfo()}\n\tsubcribers\n ${this._subscriptions.getInfo()}\n\ttasks in queue: ${this._tasks.getTasksCount()}.`);
         setTimeout(() => {
             this._logState();
-        }, 1000);
+        }, 3000);
     }
 }
