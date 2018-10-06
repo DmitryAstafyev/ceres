@@ -178,6 +178,9 @@ export class Server {
 
         this._http = HTTP.createServer(this._onRequest.bind(this)).listen(this._parameters.getPort());
 
+        //Turn off timeout for income connections
+        this._http.timeout = 0;
+
         this._onClientDisconnected = this._onClientDisconnected.bind(this);
 
         this._logState();

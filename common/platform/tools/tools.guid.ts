@@ -23,7 +23,7 @@ export default function GUID(base = '') {
                         .toUpperCase() + '-');
         }
     }
-    result += ((new Date()).getTime() * (Math.random() * 100))
+    result += (Math.floor((new Date()).getTime() * (Math.random() * 100)))
                 .toString(16)
                 .substr(0, 12)
                 .toUpperCase();
