@@ -4,6 +4,7 @@ import * as DescMiddleware from '../../infrastructure/middleware/index';
 import { Request } from './request';
 import * as Protocol from '../../protocols/connection/protocol.connection';
 import { ITransportInterface } from '../../platform/interfaces/interface.transport';
+import { SubdomainsController } from '../common/subdomains';
 
 const SETTINGS = {
     RECONNECTION_TIMEOUT: 3000 //ms
@@ -143,12 +144,14 @@ class Pending {
 
     private _request: Request | null = null;
     private _guid: string = Tools.guid();
+    private _url: string = '';
 
     /**
      * Create pending connection
      * @returns {Promise<Protocol.Message.Pending.Response>}
      */
     public create(url: string, clientGUID: string, token: Token): Promise<Protocol.Message.Pending.Response | Protocol.Disconnect>{
+        this._url = url;
         return new Promise((resolve, reject) => {
             if (this._request !== null) {
                 return reject(new Error(`Attempt to create pending connection, even is already created.`));
@@ -197,6 +200,14 @@ class Pending {
         return this._guid;
     }
 
+    /**
+     * Returns URL of request
+     * @returns {string}
+     */
+    public getURL(): string{
+        return this._url;
+    }
+
 }
 
 class PendingTasks extends Tools.EventEmitter {
@@ -208,7 +219,8 @@ class PendingTasks extends Tools.EventEmitter {
     };
 
     private _pending: Map<string, Pending> = new Map();
-    private _url: string | undefined;
+    private _urlGet: Function | undefined;
+    private _urlFree: Function | undefined;
     private _clientGUID: string | undefined;
     private _token: Token | undefined;
 
@@ -217,13 +229,15 @@ class PendingTasks extends Tools.EventEmitter {
     }
 
     private _add(){
-        if (this._url === undefined || this._clientGUID === undefined || this._token === undefined) {
+        if (this._urlGet === undefined || this._urlFree === undefined || this._clientGUID === undefined || this._token === undefined) {
             return;
         }
         const pending = new Pending();
         const guid = pending.getGUID();
-        pending.create(this._url, this._clientGUID, this._token)
+        const url = this._urlGet();
+        pending.create(url, this._clientGUID, this._token)
             .then((response: Protocol.Message.Pending.Response | Protocol.Disconnect) => {
+                (this._urlFree as Function)(url);
                 if (response instanceof Protocol.Disconnect) {
                     return this.emit(PendingTasks.EVENTS.onDisconnect, response);
                 }
@@ -235,16 +249,18 @@ class PendingTasks extends Tools.EventEmitter {
                 this.emit(PendingTasks.EVENTS.onTask, response);
             })
             .catch((error: Error) => {
+                (this._urlFree as Function)(url);
                 return this.emit(PendingTasks.EVENTS.onError, error);
             });
         this._pending.set(guid, pending);
     }
 
-    public start(url: string, clientGUID: string, token: Token): Error | void {
+    public start(urlGet: () => string, urlFree: (url: string) => void, clientGUID: string, token: Token): Error | void {
         if (this._pending.size > 0) {
             return new Error(`Pending connections are already exist. Count: ${this._pending.size}`);
         }
-        this._url = url;
+        this._urlGet = urlGet;
+        this._urlFree = urlFree;
         this._clientGUID = clientGUID;
         this._token = token;
         this._add();
@@ -252,6 +268,7 @@ class PendingTasks extends Tools.EventEmitter {
 
     public stop(){
         this._pending.forEach((pending: Pending) => {
+            (this._urlFree as Function)(pending.getURL());
             pending.drop();
         });
         this._pending.clear();
@@ -304,11 +321,11 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
     private _tasks          : PendingTasks          = new PendingTasks();
     private _requests       : Requests              = new Requests();
     private _subscriptions  : Tools.HandlersHolder  = new Tools.HandlersHolder();
-
-    private _clientGUID : string                = Tools.guid();
-    private _protocols  : Tools.ProtocolsHolder = new Tools.ProtocolsHolder();
-    private _parameters : DescConnection.ConnectionParameters;
-    private _middleware : DescMiddleware.Middleware;
+    private _clientGUID     : string                = Tools.guid();
+    private _protocols      : Tools.ProtocolsHolder = new Tools.ProtocolsHolder();
+    private _parameters     : DescConnection.ConnectionParameters;
+    private _middleware     : DescMiddleware.Middleware;
+    private _subdomains     : SubdomainsController | null;
 
     constructor(
         parameters: DescConnection.ConnectionParameters,
@@ -317,20 +334,37 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
         super();
         if (!(parameters instanceof DescConnection.ConnectionParameters)) {
             if (parameters !== undefined){
-                this._logger.warn(`Get wrong parameters of connection. Expected <ConnectionParameters>. Gotten: `, parameters);
+                throw new Error(this._logger.warn(`Get wrong parameters of connection. Expected <ConnectionParameters>. Gotten: `, parameters));
             }
             parameters = new DescConnection.ConnectionParameters({});
         }
-
-        if (!(middleware instanceof DescMiddleware.Middleware)) {
-            if (middleware !== undefined){
-                this._logger.warn(`Get wrong parameters of connection. Expected <Middleware>. Gotten: `, middleware);
-            }
+        if (middleware !== undefined){
+            if (!(middleware instanceof DescMiddleware.Middleware)) {
+                throw new Error(this._logger.warn(`Get wrong parameters of connection. Expected <Middleware>. Gotten: `, middleware));
+            }   
+        } else {
             middleware = new DescMiddleware.Middleware({});
         }
 
         this._parameters = parameters;
         this._middleware = middleware;
+        //Check subdomain settings
+        const mask = SubdomainsController.getMask(this._parameters.getURL());
+        if (mask instanceof Error){
+            throw new Error(this._logger.warn(mask.message));
+        }
+        if (mask !== null) {
+            this._subdomains = new SubdomainsController(
+                this._parameters.getURL(), 
+                mask, 
+                this._parameters.broadcast
+            );
+        } else {
+            this._subdomains = null;
+        }
+        //Bind shared methods
+        this._getURL = this._getURL.bind(this);
+        this._setUrlFree = this._setUrlFree.bind(this);
         //Subscribe to tasks
         this._onTask = this._onTask.bind(this);
         this._onTaskDisconnect = this._onTaskDisconnect.bind(this);
@@ -356,6 +390,24 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
     }
 
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 * URL manipulation
+	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+    private _getURL(): string {
+        if (this._subdomains === null) {
+            return this._parameters.getURL();
+        }
+        const url = this._subdomains.get();
+        this._subdomains.setBusy(url);
+        return url;
+    }
+
+    private _setUrlFree(url: string){
+        if (this._subdomains === null) {
+            return;
+        }
+        return this._subdomains.setFree(url);
+    }
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Connection / reconnection 
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -369,11 +421,13 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                 return reject(new Error(this._logger.error(`Attempt to connect on state "${this._state.get()}".`)));
             }
             this._state.set(EClientStates.connecting);
-            const request = new Request(this._parameters.getURL(), (new Protocol.Message.Handshake.Request({
+            const url = this._getURL();
+            const request = new Request(url, (new Protocol.Message.Handshake.Request({
                 clientId: this._clientGUID
             })).stringify());
             request.send()
                 .then((response: string) => {
+                    this._setUrlFree(url);
                     this._logger.env(`Request guid: ${request.getId()} is finished successfuly: ${Tools.inspect(response)}`);
                     this._onResponseHandshake(response).then((message: Protocol.Message.Handshake.Response) => {
                         //Set token
@@ -383,10 +437,12 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                         //Resolve
                         resolve();
                     }).catch((error: Error) => {
+                        this._setUrlFree(url);
                         reject(this._errorOnConnection(`Fail to proccess connection response`, error));
                     });
                 })
                 .catch((error: Error) => {
+                    this._setUrlFree(url);
                     reject(this._errorOnConnection(`Fail to connect`, error));
                 });
         });
@@ -402,12 +458,14 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                 return reject(new Error(this._logger.error(`Attempt to reconnect on state "${this._state.get()}".`)));
             }
             this._state.set(EClientStates.connecting);
-            const request = new Request(this._parameters.getURL(), (new Protocol.Message.Reconnection.Request({
+            const url = this._getURL();
+            const request = new Request(url, (new Protocol.Message.Reconnection.Request({
                 clientId: this._clientGUID,
                 token: this._token.get()
             })).stringify());
             request.send()
                 .then((response: string) => {
+                    this._setUrlFree(url);
                     this._logger.env(`Request guid: ${request.getId()} is finished successfuly: ${Tools.inspect(response)}`);
                     this._onResponseReconnection(response).then((message: Protocol.Message.Reconnection.Response) => {
                         //Initialize connection
@@ -419,6 +477,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                     });
                 })
                 .catch((error: Error) => {
+                    this._setUrlFree(url);
                     reject(this._errorOnConnection(`Fail to reconnect`, error));
                 });
         });
@@ -586,8 +645,10 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
         //Set state
         this._state.set(EClientStates.connected);
         //Create hook
-        this._hook.create(this._parameters.getURL(), this._clientGUID, this._token)
+        const url = this._getURL();
+        this._hook.create(url, this._clientGUID, this._token)
             .then((message: Protocol.ConnectionError | Protocol.Disconnect) => {
+                this._setUrlFree(url);
                 if (message instanceof Protocol.ConnectionError) {
                     this._logger.warn(`Hook connection is finished because connection error. Reason: ${message.reason} (error: ${message.message}). Initialize hard reconnection.`);
                 }
@@ -597,6 +658,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                 this._hardReconnection();
             })
             .catch((error: Error | Protocol.TProtocolTypes) => {
+                this._setUrlFree(url);
                 this.emit(EClientEvents.disconnected, error);
                 if (error instanceof Error){
                     this._logger.warn(`Hook connection is finished with  error: ${error.message}. Initialize soft reconnection.`);
@@ -607,7 +669,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                 }
             });
         //Create pending
-        this._tasks.start(this._parameters.getURL(), this._clientGUID, this._token);
+        this._tasks.start(this._getURL, this._setUrlFree, this._clientGUID, this._token);
         //Trigger connection event
         this.emit(EClientEvents.connected);
     }
@@ -667,7 +729,8 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
             if (eventSignature instanceof Error){
                 return reject(eventSignature);
             }
-            this._requests.send(this._parameters.getURL(), (new Protocol.Message.Event.Request({
+            const url = this._getURL();
+            this._requests.send(url, (new Protocol.Message.Event.Request({
                 clientId: this._clientGUID,
                 event: new Protocol.EventDefinition({
                     protocol: protocolSignature,
@@ -677,6 +740,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                 token: this._token.get()
             })).stringify())
                 .then((message: Protocol.TProtocolTypes) => {
+                    this._setUrlFree(url);
                     if (message instanceof Protocol.ConnectionError) {
                         return reject(new Error(this._logger.warn(`Connection error. Reason: ${message.reason} (error: ${message.message}). Initialize hard reconnection.`)));
                     }
@@ -688,6 +752,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                     resolve(message);
                 })
                 .catch((error: Error) => {
+                    this._setUrlFree(url);
                     this._logger.env(`Error emit event: ${error.message}.`);
                     reject(error);
                 });
@@ -722,7 +787,8 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                     if (subscription instanceof Error){
                         return reject(subscription);
                     }
-                    this._requests.send(this._parameters.getURL(), (new Protocol.Message.Subscribe.Request({
+                    const url = this._getURL();
+                    this._requests.send(url, (new Protocol.Message.Subscribe.Request({
                         subscription: new Protocol.Subscription({
                             protocol: protocolSignature,
                             event: eventSignature
@@ -730,6 +796,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                         clientId: this._clientGUID,
                         token: this._token.get()
                     })).stringify()).then((message: Protocol.TProtocolTypes) => {
+                        this._setUrlFree(url);
                         if (message instanceof Protocol.ConnectionError) {
                             return reject(new Error(this._logger.warn(`Connection error. Reason: ${message.reason} (error: ${message.message}). Initialize hard reconnection.`)));
                         }
@@ -745,6 +812,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                         this.emit(EClientEvents.subscriptionDone, message);
                         resolve(message);
                     }).catch((error: Error) => {
+                        this._setUrlFree(url);
                         this._logger.env(`Error subscribe event: ${error.message}`);
                         this._subscriptions.unsubscribe(protocolSignature, eventSignature);
                         reject(error);
@@ -776,7 +844,8 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
             if (eventSignature instanceof Error){
                 return reject(eventSignature);
             }
-            this._requests.send(this._parameters.getURL(), (new Protocol.Message.Unsubscribe.Request({
+            const url = this._getURL();
+            this._requests.send(url, (new Protocol.Message.Unsubscribe.Request({
                 clientId: this._clientGUID,
                 subscription: new Protocol.Subscription({
                     protocol: protocolSignature,
@@ -784,6 +853,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                 }),
                 token: this._token.get()
             })).stringify()).then((message: Protocol.TProtocolTypes) => {
+                this._setUrlFree(url);
                 if (message instanceof Protocol.ConnectionError) {
                     return reject(new Error(this._logger.warn(`Connection error. Reason: ${message.reason} (error: ${message.message}). Initialize hard reconnection.`)));
                 }
@@ -798,6 +868,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                 this.emit(EClientEvents.unsubscriptionDone, message);
                 resolve(message);
             }).catch((error: Error) => {
+                this._setUrlFree(url);
                 this._logger.env(`Error unsubscribe event: ${error.message}`);
                 reject(error);
             });
@@ -818,13 +889,15 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
             if (protocolSignature instanceof Error){
                 return reject(protocolSignature);
             }
-            this._requests.send(this._parameters.getURL(), (new Protocol.Message.UnsubscribeAll.Request({
+            const url = this._getURL();
+            this._requests.send(url, (new Protocol.Message.UnsubscribeAll.Request({
                 clientId: this._clientGUID,
                 subscription: new Protocol.Subscription({
                     protocol: protocolSignature
                 }),
                 token: this._token.get()
             })).stringify()).then((message: Protocol.TProtocolTypes) => {
+                this._setUrlFree(url);
                 if (message instanceof Protocol.ConnectionError) {
                     return reject(new Error(this._logger.warn(`Connection error. Reason: ${message.reason} (error: ${message.message}). Initialize hard reconnection.`)));
                 }
@@ -839,6 +912,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                 this.emit(EClientEvents.unsubscriptionAllDone, message);
                 resolve(message);
             }).catch((error: Error) => {
+                this._setUrlFree(url);
                 this._logger.env(`Error unsubscribe all: ${error.message}.`);
                 reject(error);
             });

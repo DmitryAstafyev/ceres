@@ -39,7 +39,7 @@ export default class Test {
 
     private _output: Output = new Output();
     private _parameters: Transports.HTTPLongpollClient.ConnectionParameters = new Transports.HTTPLongpollClient.ConnectionParameters({
-        host: 'http://localhost',
+        host: 'http://{sub[1..200]}.localhost',
         port: 3005
     });
     private _client: Transports.HTTPLongpollClient.Client;
