@@ -52,7 +52,12 @@ export class SubdomainsController {
     }
 
     public get(): string {
-        let url: string = '';
+        //First get random
+        let url: string = this._getRandom();
+        if (this._state[url] === void 0 && this._own[url] === void 0) {
+            return url;
+        }
+        //If random busy - get any first free
         for (let i = this._subdomains.length - 1; i >= 0; i -= 1){
             if (this._state[this._subdomains[i]] === void 0 && this._own[this._subdomains[i]] === void 0) {
                 url = this._subdomains[i];
@@ -72,6 +77,10 @@ export class SubdomainsController {
 
     private _synchState(){
         this._channel.postMessage({ getBusy: true });
+    }
+
+    private _getRandom(): string{
+        return this._subdomains[Math.floor(Math.random() * (this._subdomains.length - 1))];
     }
 
     private _onBoardcastMessage(event: MessageEvent){
