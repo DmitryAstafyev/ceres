@@ -309,6 +309,8 @@ class Requests {
 
 }
 
+type TClientAlias = { [key: string]: string };
+
 export class Client extends Tools.EventEmitter implements ITransportInterface {
     
     static STATES = EClientStates;
@@ -326,6 +328,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
     private _parameters     : DescConnection.ConnectionParameters;
     private _middleware     : DescMiddleware.Middleware;
     private _subdomains     : SubdomainsController | null;
+    private _aliases        : TClientAlias = {};
 
     constructor(
         parameters: DescConnection.ConnectionParameters,
@@ -914,6 +917,60 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
             }).catch((error: Error) => {
                 this._setUrlFree(url);
                 this._logger.env(`Error unsubscribe all: ${error.message}.`);
+                reject(error);
+            });
+        });
+    }
+
+    /** 
+     * Bind client with aliases
+     * @param aliases {TClientAlias} object with aliases definition
+     * @returns Promise
+     */
+    public ref(aliases: TClientAlias): Promise<Protocol.Message.Registration.Response> {
+        return new Promise((resolve, reject) => {
+            if (this._state.get() !== EClientStates.connected) {
+                return reject(new Error(`Cannot do operation: client isn't connected.`));
+            }
+            if (typeof aliases !== 'object' || aliases === null) {
+                return reject(new Error(`As aliases can be used only object { [key: string]: string }.`));
+            }
+            let _aliases: Array<Protocol.KeyValue> = [];
+            let valid: boolean = true;
+            Object.keys(aliases).forEach((key: string) => {
+                if (typeof aliases[key] !== 'string') {
+                    valid = false;
+                }
+                if (!valid) {
+                    return;
+                }
+                _aliases.push(new Protocol.KeyValue({ key: key, value: aliases[key]}));
+            });
+            if (!valid) {
+                return reject(new Error(`As aliases can be used only object { [key: string]: string }. Some of values of target isn't a {string}.`));
+            }
+            const url = this._getURL();
+            this._requests.send(url, (new Protocol.Message.Registration.Request({
+                clientId: this._clientGUID,
+                aliases: _aliases,
+                token: this._token.get()
+            })).stringify()).then((message: Protocol.TProtocolTypes) => {
+                this._setUrlFree(url);
+                if (message instanceof Protocol.ConnectionError) {
+                    return reject(new Error(this._logger.warn(`Connection error. Reason: ${message.reason} (error: ${message.message}). Initialize hard reconnection.`)));
+                }
+                if (!(message instanceof Protocol.Message.Registration.Response)) {
+                    return reject(new Error(`Unexpected server response (expected "Protocol.Message.Registration.Response"): ${message.stringify()}`));
+                }
+                if (!message.status){
+                    return reject(this._logger.env(`Registration of client wasn't done.`));
+                }
+                this._logger.env(`Registration of client has status: ${message.status}.`);
+                this._aliases = Object.assign({}, aliases);
+                resolve(message);
+            }).catch((error: Error) => {
+                this._setUrlFree(url);
+                this._logger.env(`Error registration of client: ${error.message}.`);
                 reject(error);
             });
         });

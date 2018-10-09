@@ -80,6 +80,7 @@ export default class Test {
     private _onConnected(){
         this._output.add(`HTTP.Longpoll transport test: Connected`);
         this._subscribeTestProtocol();
+        this._refClient();
     }
 
     private _onDisconnected(){
@@ -116,6 +117,26 @@ export default class Test {
             })
             .catch((e) => {
                 this._output.add(`Error to unsubscribe to ${Protocol.Events.Ping.name}: ${Tools.inspect(e)}`, { color: 'rgb(255,0,0)'});
+            });
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Tests protocol: ref to aliases
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    private _refClient() {
+        const hash: string = (typeof location.hash === 'string' ? location.hash : '').replace('#', '');
+        const nameMatch = hash.match(/name=\w*/gi);
+        const groupMatch = hash.match(/group=\w*/gi);
+        const aliases: { [key: string]: string} = {
+            name: nameMatch !== null ? (nameMatch.length === 1 ? nameMatch[0].replace('name=', '') : 'name') : 'name',
+            group: groupMatch !== null ? (groupMatch.length === 1 ? groupMatch[0].replace('group=', '') : 'group') : 'group'
+        };
+        this._client.ref(aliases)
+            .then((res) => {
+                this._output.add(`Ref client to "${aliases.name} / ${aliases.group}" was done. Response: ${Tools.inspect(res)}`, { color: 'rgb(50,50,250)'});
+            })
+            .catch((e) => {
+                this._output.add(`Error to ref client due error: ${Tools.inspect(e)}`, { color: 'rgb(255,0,0)'});
             });
     }
 

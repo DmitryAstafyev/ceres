@@ -73,6 +73,16 @@
                 "status": "boolean"
             },
             "Responses" : ["ConnectionError"]
+        },
+        "Registration": {
+            "Request": {
+                "aliases": "array<KeyValue>",
+                "token": "string"
+            },
+            "Response": {
+                "status": "boolean"
+            },
+            "Responses" : ["ConnectionError"]
         } 
     },
     "EventDefinition": {
@@ -93,6 +103,10 @@
         "reason": "Reasons",
         "message?": "string",
         "Reasons": ["SHUTDOWN"]
+    },
+    "KeyValue": {
+        "key": "string",
+        "value": "string"
     },
     "version": "0.0.1"
 }

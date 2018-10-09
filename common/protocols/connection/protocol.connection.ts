@@ -1,5 +1,5 @@
 /*
-* This file generated automaticaly (Sat Sep 22 2018 14:35:27 GMT+0200 (CEST))
+* This file generated automaticaly (Tue Oct 09 2018 23:09:30 GMT+0200 (CEST))
 * Do not remove or change this code.
 * Protocol version: 0.0.1
 */
@@ -12,6 +12,7 @@ namespace Protocol {
 		Message.UnsubscribeAll.Request |
 		Message.Pending.Request |
 		Message.Unsubscribe.Response |
+		Message.Registration.Response |
 		Disconnect |
 		Message |
 		Message.Handshake |
@@ -35,11 +36,149 @@ namespace Protocol {
 		Message.Unsubscribe.Request |
 		Message.UnsubscribeAll |
 		Message.UnsubscribeAll.Response |
+		Message.Registration |
+		Message.Registration.Request |
 		EventDefinition |
 		Subscription |
-		ConnectionError;
+		ConnectionError |
+		KeyValue;
 
 	export const AdvancedTypes: {[key: string]: any} = {};
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	* Injection: injection.types.primitive.ts
+	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	
+	export interface IPrimitiveType<T> {
+	    tsType          : string,
+	    init            : string,
+	    parse           : (value: string | number | T) => T,
+	    serialize       : (value: T) => string | number | boolean | T,
+	    validate        : (value: string | number | T) => boolean,
+	    implementation? : () => {}
+	}
+	
+	export const PrimitiveTypes:  { [key: string]: IPrimitiveType<any> } = {
+	
+	    string      : {
+	        tsType      : 'string',
+	        init        : '""',
+	        parse       : (value: string) => value,
+	        serialize   : (value: string) => value,
+	        validate    : (value: string) => {
+	            if (typeof value !== 'string') {
+	                return false;
+	            }
+	            return true;
+	        }
+	    } as IPrimitiveType<string>,
+	
+	    integer     : {
+	        tsType      : 'number',
+	        init        : '-1',
+	        parse       : (value: number) => { return value; },
+	        serialize   : (value: number) => { return value; },
+	        validate    : (value: number) => { 
+	            if (typeof value !== 'number'){
+	                return false;
+	            }
+	            if (isNaN(value)) {
+	                return false;
+	            }
+	            if (!Number.isInteger(value)){
+	                return false;
+	            }
+	            return true;
+	        }
+	    } as IPrimitiveType<number>,
+	
+	    float     : {
+	        tsType      : 'number',
+	        init        : '-1',
+	        parse       : (value: number) => { return value; },
+	        serialize   : (value: number) => { return value; },
+	        validate    : (value: number) => { 
+	            if (typeof value !== 'number'){
+	                return false;
+	            }
+	            if (isNaN(value)) {
+	                return false;
+	            }
+	            return true;
+	        }
+	    } as IPrimitiveType<number>,
+	
+	    boolean     : {
+	        tsType      : 'boolean',
+	        init        : 'false',
+	        parse       : (value: boolean) => value,
+	        serialize   : (value: boolean) => value,
+	        validate    : (value: boolean) => { 
+	            if (typeof value !== 'boolean'){
+	                return false;
+	            }
+	            return true;
+	        }
+	    } as IPrimitiveType<boolean>,
+	
+	    datetime    : {
+	        tsType      : 'Date',
+	        init        : 'new Date()',
+	        parse       : (value: number) => { 
+	            return new Date(value);
+	        },
+	        serialize   : (value: Date) => { return value.getTime(); },
+	        validate    : (value: number | Date) => {
+	            if (value instanceof Date) {
+	                return true;
+	            } 
+	            if (typeof value !== 'number'){
+	                return false;
+	            }
+	            if (isNaN(value)) {
+	                return false;
+	            }
+	            if (!Number.isInteger(value)){
+	                return false;
+	            }
+	            const date = new Date(value);
+	            if (!(date instanceof Date)){
+	                return false;
+	            }
+	            if (~date.toString().toLowerCase().indexOf('invalid date')){
+	                return false;
+	            }
+	            return !isNaN(date.getTime());
+	        }
+	    } as IPrimitiveType<Date>,
+	
+	    guid     : {
+	        tsType          : 'string',
+	        init            : 'guid()',
+	        parse           : (value: string) => value,
+	        serialize       : (value: string) => value,
+	        validate        : (value: string) => { 
+	            return typeof value === 'string' ? (value.trim() !== '' ? true : false) : false;
+	        },
+	        implementation  : function guid(){
+	            const lengths = [4, 4, 4, 8];
+	            let guid = '';
+	            for (let i = lengths.length - 1; i >= 0; i -= 1){
+	                guid += (Math.round(Math.random() * Math.random() * Math.pow(10, lengths[i] * 2))
+	                            .toString(16)
+	                            .substr(0, lengths[i])
+	                            .toUpperCase() + '-');
+	            }
+	            guid += ((new Date()).getTime() * (Math.random() * 100))
+	                        .toString(16)
+	                        .substr(0, 12)
+	                        .toUpperCase();
+	            return guid;
+	        }
+	    } as IPrimitiveType<string>
+	
+	};
+	
+	
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	* Injection: injection.root.ts
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -355,9 +494,11 @@ namespace Protocol {
 	                    });
 	                } else if (typeof desc.value === 'function') {
 	                    //It's reference to class
-	                    if (!(params[prop] instanceof desc.value)) {
-	                        errors.push(new Error(`Expecting property "${prop}" will be instance of "${desc.value.name}".`));
-	                    }
+	                    params[prop].forEach((instance: any, index: number) => {
+	                        if (!(instance instanceof desc.value)) {
+	                            errors.push(new Error(`Expecting property "${prop}", index "${index}" should be instance of "${desc.value.name}".`));
+	                        }
+	                    });
 	                } else if (typeof desc.value === 'object') {
 	                    //It's reference to enum
 	                    params[prop].forEach((value: any) => {
@@ -394,141 +535,6 @@ namespace Protocol {
 	export class Root {
 	    
 	}
-	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	* Injection: injection.types.primitive.ts
-	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-	
-	export interface IPrimitiveType<T> {
-	    tsType          : string,
-	    init            : string,
-	    parse           : (value: string | number | T) => T,
-	    serialize       : (value: T) => string | number | boolean | T,
-	    validate        : (value: string | number | T) => boolean,
-	    implementation? : () => {}
-	}
-	
-	export const PrimitiveTypes:  { [key: string]: IPrimitiveType<any> } = {
-	
-	    string      : {
-	        tsType      : 'string',
-	        init        : '""',
-	        parse       : (value: string) => value,
-	        serialize   : (value: string) => value,
-	        validate    : (value: string) => {
-	            if (typeof value !== 'string') {
-	                return false;
-	            }
-	            return true;
-	        }
-	    } as IPrimitiveType<string>,
-	
-	    integer     : {
-	        tsType      : 'number',
-	        init        : '-1',
-	        parse       : (value: number) => { return value; },
-	        serialize   : (value: number) => { return value; },
-	        validate    : (value: number) => { 
-	            if (typeof value !== 'number'){
-	                return false;
-	            }
-	            if (isNaN(value)) {
-	                return false;
-	            }
-	            if (!Number.isInteger(value)){
-	                return false;
-	            }
-	            return true;
-	        }
-	    } as IPrimitiveType<number>,
-	
-	    float     : {
-	        tsType      : 'number',
-	        init        : '-1',
-	        parse       : (value: number) => { return value; },
-	        serialize   : (value: number) => { return value; },
-	        validate    : (value: number) => { 
-	            if (typeof value !== 'number'){
-	                return false;
-	            }
-	            if (isNaN(value)) {
-	                return false;
-	            }
-	            return true;
-	        }
-	    } as IPrimitiveType<number>,
-	
-	    boolean     : {
-	        tsType      : 'boolean',
-	        init        : 'false',
-	        parse       : (value: boolean) => value,
-	        serialize   : (value: boolean) => value,
-	        validate    : (value: boolean) => { 
-	            if (typeof value !== 'boolean'){
-	                return false;
-	            }
-	            return true;
-	        }
-	    } as IPrimitiveType<boolean>,
-	
-	    datetime    : {
-	        tsType      : 'Date',
-	        init        : 'new Date()',
-	        parse       : (value: number) => { 
-	            return new Date(value);
-	        },
-	        serialize   : (value: Date) => { return value.getTime(); },
-	        validate    : (value: number | Date) => {
-	            if (value instanceof Date) {
-	                return true;
-	            } 
-	            if (typeof value !== 'number'){
-	                return false;
-	            }
-	            if (isNaN(value)) {
-	                return false;
-	            }
-	            if (!Number.isInteger(value)){
-	                return false;
-	            }
-	            const date = new Date(value);
-	            if (!(date instanceof Date)){
-	                return false;
-	            }
-	            if (~date.toString().toLowerCase().indexOf('invalid date')){
-	                return false;
-	            }
-	            return !isNaN(date.getTime());
-	        }
-	    } as IPrimitiveType<Date>,
-	
-	    guid     : {
-	        tsType          : 'string',
-	        init            : 'guid()',
-	        parse           : (value: string) => value,
-	        serialize       : (value: string) => value,
-	        validate        : (value: string) => { 
-	            return typeof value === 'string' ? (value.trim() !== '' ? true : false) : false;
-	        },
-	        implementation  : function guid(){
-	            const lengths = [4, 4, 4, 8];
-	            let guid = '';
-	            for (let i = lengths.length - 1; i >= 0; i -= 1){
-	                guid += (Math.round(Math.random() * Math.random() * Math.pow(10, lengths[i] * 2))
-	                            .toString(16)
-	                            .substr(0, lengths[i])
-	                            .toUpperCase() + '-');
-	            }
-	            guid += ((new Date()).getTime() * (Math.random() * 100))
-	                        .toString(16)
-	                        .substr(0, 12)
-	                        .toUpperCase();
-	            return guid;
-	        }
-	    } as IPrimitiveType<string>
-	
-	};
-	
-	
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	* Injection: map of references
@@ -538,6 +544,7 @@ namespace Protocol {
 		ReferencesMap["36550583"] = Message.UnsubscribeAll.Request;
 		ReferencesMap["59648854"] = Message.Pending.Request;
 		ReferencesMap["60658336"] = Message.Unsubscribe.Response;
+		ReferencesMap["66972276"] = Message.Registration.Response;
 		ReferencesMap["71280621"] = Disconnect;
 		ReferencesMap["70D1C8A2"] = Message;
 		ReferencesMap["5B342A75"] = Message.Handshake;
@@ -561,16 +568,19 @@ namespace Protocol {
 		ReferencesMap["B782B1A"] = Message.Unsubscribe.Request;
 		ReferencesMap["1A9B1BFC"] = Message.UnsubscribeAll;
 		ReferencesMap["6EDC0A13"] = Message.UnsubscribeAll.Response;
+		ReferencesMap["C78C95B"] = Message.Registration;
+		ReferencesMap["34F5A3DA"] = Message.Registration.Request;
 		ReferencesMap["282376D8"] = EventDefinition;
 		ReferencesMap["2DEBB962"] = Subscription;
 		ReferencesMap["583DFB65"] = ConnectionError;
+		ReferencesMap["1DB68EE9"] = KeyValue;
 	}
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	* Injection: protocol signature
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 	export function getSignature() {
-		return "2AECA58E";
+		return "7DB7A9F3";
 	}
 
 }
@@ -1486,6 +1496,114 @@ export namespace Message {
 		}
 		type TResponses = Response | ConnectionError;
 	}
+	export class Registration extends Message {
+		static getDescription(): {[key: string]: Protocol.IProperty } {
+			return {
+				clientId: { name: "clientId", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+				guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
+			}
+		}
+		static __signature: string = "C78C95B";
+		static getSignature(): string {
+			return Registration.__signature;
+		}
+		public __signature: string = Registration.__signature;
+		public getSignature(): string {
+			return this.__signature;
+		}
+		static parse(str: string | object): Protocol.TTypes | Error {
+			return Protocol.parse(str, Registration);
+		}
+		public stringify(): string {
+			return Protocol.stringify(this, Registration) as string;
+		}
+
+		constructor(args: { clientId: string, guid?: string }) {
+			super(Object.assign(args, {}));
+			const errors: Array<Error> = Protocol.validateParams(args, Registration);
+			if (errors.length > 0) {
+				throw new Error(`Cannot create class of "Registration" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+			}
+
+		}
+	}
+	export namespace Registration {
+		export class Request extends Registration {
+			static getDescription(): {[key: string]: Protocol.IProperty } {
+				return {
+					clientId: { name: "clientId", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+					guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
+					aliases: { name: "aliases", value: KeyValue, type: Protocol.EEntityType.repeated, optional: false }, 
+					token: { name: "token", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+				}
+			}
+			static __signature: string = "34F5A3DA";
+			static getSignature(): string {
+				return Request.__signature;
+			}
+			public __signature: string = Request.__signature;
+			public getSignature(): string {
+				return this.__signature;
+			}
+			static parse(str: string | object): Protocol.TTypes | Error {
+				return Protocol.parse(str, Request);
+			}
+			public stringify(): string {
+				return Protocol.stringify(this, Request) as string;
+			}
+			public aliases: Array<KeyValue> = [];
+			public token: string = "";
+
+			constructor(args: { clientId: string, guid?: string, aliases: Array<KeyValue>, token: string }) {
+				super(Object.assign(args, {}));
+				this.aliases = args.aliases;
+				this.token = args.token;
+				const errors: Array<Error> = Protocol.validateParams(args, Request);
+				if (errors.length > 0) {
+					throw new Error(`Cannot create class of "Request" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+				}
+
+			}
+		}
+		export class Response extends Registration {
+			static getDescription(): {[key: string]: Protocol.IProperty } {
+				return {
+					clientId: { name: "clientId", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+					guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
+					status: { name: "status", value: "boolean", type: Protocol.EEntityType.primitive, optional: false }, 
+				}
+			}
+			static __signature: string = "66972276";
+			static getSignature(): string {
+				return Response.__signature;
+			}
+			public __signature: string = Response.__signature;
+			public getSignature(): string {
+				return this.__signature;
+			}
+			static parse(str: string | object): Protocol.TTypes | Error {
+				return Protocol.parse(str, Response);
+			}
+			public stringify(): string {
+				return Protocol.stringify(this, Response) as string;
+			}
+			public status: boolean = false;
+
+			constructor(args: { clientId: string, guid?: string, status: boolean }) {
+				super(Object.assign(args, {}));
+				this.status = args.status;
+				const errors: Array<Error> = Protocol.validateParams(args, Response);
+				if (errors.length > 0) {
+					throw new Error(`Cannot create class of "Response" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+				}
+
+			}
+		}
+		export enum Responses {
+			ConnectionError = 'ConnectionError'
+		}
+		type TResponses = Response | ConnectionError;
+	}
 }
 export class EventDefinition extends Protocol.Root {
 	static getDescription(): {[key: string]: Protocol.IProperty } {
@@ -1644,6 +1762,41 @@ export class Disconnect extends Protocol.Root {
 export namespace Disconnect {
 	export enum Reasons {
 		SHUTDOWN = 'SHUTDOWN'
+	}
+}
+export class KeyValue extends Protocol.Root {
+	static getDescription(): {[key: string]: Protocol.IProperty } {
+		return {
+			key: { name: "key", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+			value: { name: "value", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+		}
+	}
+	static __signature: string = "1DB68EE9";
+	static getSignature(): string {
+		return KeyValue.__signature;
+	}
+	public __signature: string = KeyValue.__signature;
+	public getSignature(): string {
+		return this.__signature;
+	}
+	static parse(str: string | object): Protocol.TTypes | Error {
+		return Protocol.parse(str, KeyValue);
+	}
+	public stringify(): string {
+		return Protocol.stringify(this, KeyValue) as string;
+	}
+	public key: string = "";
+	public value: string = "";
+
+	constructor(args: { key: string, value: string }) {
+		super();
+		this.key = args.key;
+		this.value = args.value;
+		const errors: Array<Error> = Protocol.validateParams(args, KeyValue);
+		if (errors.length > 0) {
+			throw new Error(`Cannot create class of "KeyValue" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+		}
+
 	}
 }
 

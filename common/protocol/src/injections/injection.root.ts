@@ -310,9 +310,11 @@ export function validateParams(params: any, classRef: any): Array<Error> {
                     });
                 } else if (typeof desc.value === 'function') {
                     //It's reference to class
-                    if (!(params[prop] instanceof desc.value)) {
-                        errors.push(new Error(`Expecting property "${prop}" will be instance of "${desc.value.name}".`));
-                    }
+                    params[prop].forEach((instance: any, index: number) => {
+                        if (!(instance instanceof desc.value)) {
+                            errors.push(new Error(`Expecting property "${prop}", index "${index}" should be instance of "${desc.value.name}".`));
+                        }
+                    });
                 } else if (typeof desc.value === 'object') {
                     //It's reference to enum
                     params[prop].forEach((value: any) => {

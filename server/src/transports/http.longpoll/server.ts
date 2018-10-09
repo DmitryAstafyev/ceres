@@ -122,6 +122,49 @@ class Connections {
 
 }
 
+type TAlias = { [key:string]: string };
+
+class Aliases {
+
+    private _clients: Map<string, TAlias> = new Map();
+
+    private _isInclude(base: TAlias, target: TAlias): boolean {
+        let result = true;
+        Object.keys(target).forEach((key: string) => {
+            if (!result) {
+                return;
+            }
+            if (base[key] !== target[key]) {
+                result = false;
+            }
+        });
+        return result;
+    }
+
+    public ref(clientId: string, alias: TAlias): void {
+        this._clients.set(clientId, alias);
+    }
+
+    public unref(clientId: string): boolean {
+        if (!this._clients.has(clientId)) {
+            return false;
+        }
+        this._clients.delete(clientId);
+        return true;
+    }
+
+    public get(alias: TAlias): Array<string> {
+        const clients: Array<string> = [];
+        this._clients.forEach((aliases: TAlias, clientId: string) => {
+            if (this._isInclude(aliases, alias)) {
+                clients.push(clientId);
+            }
+        });
+        return clients;
+    }
+
+}
+
 type TClientRequests =  Protocol.Message.Handshake.Request |
                         Protocol.Message.Hook.Request |
                         Protocol.Message.Pending.Request |
@@ -129,7 +172,8 @@ type TClientRequests =  Protocol.Message.Handshake.Request |
                         Protocol.Message.Event.Request |
                         Protocol.Message.Subscribe.Request |
                         Protocol.Message.Unsubscribe.Request |
-                        Protocol.Message.UnsubscribeAll.Request;
+                        Protocol.Message.UnsubscribeAll.Request |
+                        Protocol.Message.Registration.Request;
 
 const ClientRequestsTypes = [Protocol.Message.Handshake.Request, 
                             Protocol.Message.Hook.Request,
@@ -138,7 +182,8 @@ const ClientRequestsTypes = [Protocol.Message.Handshake.Request,
                             Protocol.Message.Event.Request,
                             Protocol.Message.Subscribe.Request,
                             Protocol.Message.Unsubscribe.Request,
-                            Protocol.Message.UnsubscribeAll.Request];
+                            Protocol.Message.UnsubscribeAll.Request,
+                            Protocol.Message.Registration.Request];
 
 export class Server {
  
@@ -148,6 +193,7 @@ export class Server {
     private _tokens         : Tokens;
     private _subscriptions  : Tools.SubscriptionsHolder = new Tools.SubscriptionsHolder();
     private _tasks          : Tools.Queue               = new Tools.Queue();
+    private _aliases        : Aliases                   = new Aliases();
     private _parameters     : DescConnection.ConnectionParameters;
     private _middleware     : DescMiddleware.Middleware<Connection>;
     private _http           : HTTP.Server;
@@ -445,6 +491,43 @@ export class Server {
                 this._logger.warn(`Fail emit event from client ${clientId} for event protocol ${message.event.protocol}, event ${message.event.event} due error: ${error.message}.`);
             });
         }
+        //Registration
+        if (message instanceof Protocol.Message.Registration.Request){
+            let status: boolean = false; 
+            if (message.aliases instanceof Array) {
+                if (message.aliases.length === 0) {
+                    this._aliases.unref(clientId);
+                    status = true;
+                } else {
+                    let aliases: TAlias = {};
+                    let valid: boolean = true;
+                    message.aliases.forEach((alias: Protocol.KeyValue) => {
+                        if (!valid) {
+                            return;
+                        }
+                        if (aliases[alias.key] !== void 0) {
+                            valid = false;
+                        } else {
+                            aliases[alias.key] = alias.value;
+                        }
+                    });
+                    if (valid) {
+                        this._aliases.ref(clientId, aliases);
+                        status = true;
+                    }
+                }
+            }
+            return connection.close((new Protocol.Message.Registration.Response({
+                clientId: clientId,
+                status: status
+            })).stringify()).then(() => {
+                this._logger.env(`Registration of aliases for client ${clientId} as "${message.aliases.map((alias: Protocol.KeyValue) => {
+                    return `${alias.key}: ${alias.value}`;
+                }).join(', ')}" is done.`);
+            }).catch((error: Error) => {
+                this._logger.warn(`Fail to close connection ${clientId} due error: ${error.message}`);
+            });
+        }
     }
 
     private _onClientDisconnected(connection: Connection) {
@@ -463,6 +546,8 @@ export class Server {
         _tasks && this._tasks.drop(clientId);
         //Unsubscribe
         this._subscriptions.removeClient(clientId);
+        //Remove ref
+        this._aliases.unref(clientId);
         if (_hooks || _pending) {
             this._logger.env(`Client ${clientId} is disconnected`);
         }
