@@ -1,84 +1,80 @@
 import Logger from './tools.logger';
-
-type TEmitterHandlers = Array<Function>;
-type TEmitterSignature = Symbol | string;
+type THandler = (...args: any[]) => any;
+type TEmitterHandlers = THandler[];
+type TEmitterSignature = symbol | string;
 
 const logger = new Logger('Emitter');
 
 export default class Emitter {
 
-    private __handlers: Map<TEmitterSignature, TEmitterHandlers> = new Map();
+    private _handlers: Map<TEmitterSignature, TEmitterHandlers> = new Map();
 
-    constructor(){
-
-    }
-
-    private __getSymbolSignature(signature: Symbol | string | Function): TEmitterSignature {
-        if (typeof signature === 'symbol'){
-            return signature;
-        } else if (typeof signature === 'string'){
-            return signature;
-        } else if (typeof signature === 'function'){
-            return signature.name;
-        } else {
-            throw new Error(logger.error(`Emitter support type of signature: symbol or string only.`));
-        }
-    }   
-
-    subscribe(signature: Symbol | string | Function, handler: Function): boolean {
+    public subscribe(signature: any, handler: THandler): boolean {
         signature = this.__getSymbolSignature(signature);
-        if (typeof handler !== 'function'){
+        if (typeof handler !== 'function') {
             throw new Error(logger.error(`Handler of event should be a function.`));
         }
-        let handlers = this.__handlers.get(signature);
+        let handlers = this._handlers.get(signature);
         if (!(handlers instanceof Array)) {
             handlers = [];
         }
         handlers.push(handler);
-        this.__handlers.set(signature, handlers);
+        this._handlers.set(signature, handlers);
         return true;
     }
 
-    unsubscribe(signature: Symbol | string | Function, handler: Function): boolean {
+    public unsubscribe(signature: any, handler: THandler): boolean {
         signature = this.__getSymbolSignature(signature);
-        let handlers = this.__handlers.get(signature);
+        const handlers = this._handlers.get(signature);
         if (!(handlers instanceof Array)) {
             return false;
         }
-        this.__handlers.set(signature, handlers.filter((_handler) => {
+        this._handlers.set(signature, handlers.filter((_handler) => {
             return _handler !== handler;
         }));
         return true;
     }
 
-    unsubscribeAll(signature?: Symbol | string | Function) {
+    public unsubscribeAll(signature?: any) {
         if (signature === undefined) {
-            this.__handlers.clear();
+            this._handlers.clear();
             return;
         }
         signature = this.__getSymbolSignature(signature);
-        this.__handlers.delete(signature);
+        this._handlers.delete(signature);
     }
 
-    emit(signature: Symbol | string | Function, ...args: Array<any>) {
+    public emit(signature: any, ...args: any[]) {
         signature = this.__getSymbolSignature(signature);
-        let handlers = this.__handlers.get(signature);
+        const handlers = this._handlers.get(signature);
         if (!(handlers instanceof Array)) {
             return false;
         }
-        handlers.forEach((handler: Function) => {
+        handlers.forEach((handler: THandler) => {
             handler(...args);
         });
     }
 
-    listeners(signature: Symbol | string | Function) {
+    public listeners(signature: any) {
         signature = this.__getSymbolSignature(signature);
-        let handlers = this.__handlers.get(signature);
-        return handlers instanceof Array ? this.__handlers.get(signature) : [];
+        const handlers = this._handlers.get(signature);
+        return handlers instanceof Array ? this._handlers.get(signature) : [];
     }
 
-    clear(){
-        this.__handlers.clear();
+    public clear() {
+        this._handlers.clear();
+    }
+
+    private __getSymbolSignature(signature: any): TEmitterSignature {
+        if (typeof signature === 'symbol') {
+            return signature;
+        } else if (typeof signature === 'string') {
+            return signature;
+        } else if (typeof signature === 'function') {
+            return signature.name;
+        } else {
+            throw new Error(logger.error(`Emitter support type of signature: symbol or string only.`));
+        }
     }
 
 }

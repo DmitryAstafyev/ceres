@@ -1,175 +1,14 @@
 import * as HTTP from 'http';
 
-import * as Tools from '../../platform/tools/index';
-import * as DescConnection from './connection/index';
 import * as DescMiddleware from '../../infrastructure/middleware/implementation';
-
-import { Connection } from './connection';
-
+import * as Tools from '../../platform/tools/index';
 import * as Protocol from '../../protocols/connection/protocol.connection';
+import * as DescConnection from './connection/index';
 
-type Token = { token: string, timestamp: number };
-
-export class Tokens {
-
-    private _tokenLife  : number;
-    private _tokens     : Map<string, Token> = new Map();
-
-    constructor(tokenLife: number){
-        this._tokenLife = tokenLife;
-    }
-
-    public set(clientId: string): string {
-        const token = Tools.guid();
-        this._tokens.set(clientId, {
-            token: token,
-            timestamp: (new Date()).getTime()
-        });
-        return token;
-    }
-
-    public get(clientId: string): string | null {
-        const token: Token | undefined = this._tokens.get(clientId);
-        if (token === undefined){
-            return null;
-        }
-        return token.token;
-    }
-
-    public isActual(clientId: string): boolean {
-        const token: Token | undefined = this._tokens.get(clientId);
-        if (token === undefined){
-            return false;
-        }
-        if (((new Date()).getTime() - token.timestamp) > this._tokenLife) {
-            this._tokens.delete(clientId);
-            return false;
-        }
-        return true;
-    }
-
-}
-
-class Connections {
-
-    private _connections: Map<string, Array<Connection>> = new Map();
-
-    public add(clientId: string, connection: Connection){
-        let connections = this._connections.get(clientId);
-        if (!(connections instanceof Array)) {
-            connections = [];
-        }
-        connections.push(connection);
-        this._connections.set(clientId, connections);
-    }
-
-    public get(clientId: string): Connection | null {
-        let connections = this._connections.get(clientId);
-        if (!(connections instanceof Array)) {
-            return null;
-        }
-        const connection = connections[0];
-        connections.splice(0, 1);
-        if (connections.length === 0) {
-            this._connections.delete(clientId);
-        } else {
-            this._connections.set(clientId, connections);
-        }
-        return connection;
-    }
-
-    public has(clientId: string): boolean {
-        let connections = this._connections.get(clientId);
-        if (!(connections instanceof Array)) {
-            return false;
-        }
-        return true;
-    }
-    public closeAll(): Promise<void> {
-        return new Promise((resolve, reject) => {
-            const tasks: Array<Promise<void>> = [];
-            this._connections.forEach((connections: Array<Connection>, clientId: string) => {
-                tasks.push(...connections.map((connection: Connection) => {
-                    return connection.close((new Protocol.Disconnect({
-                        reason: Protocol.Disconnect.Reasons.SHUTDOWN,
-                        message: 'Closing all pending requests.'
-                    })).stringify());
-                }));
-            });
-            Promise.all(tasks)
-                .then(() => {
-                    this._connections.clear();
-                    resolve();
-                })
-                .catch((error: Error) => {
-                    this._connections.clear();
-                    reject(error);
-                });
-        });
-    }
-
-    public delete(clientId: string){
-        this._connections.delete(clientId);
-    }
-
-    public getInfo(): string {
-        let info: Array<string> = [];
-        this._connections.forEach((connections: Array<Connection>, clientId: string) => {
-            info.push(`\t\tclientId: "${clientId}" has ${connections.length} connections`);
-        });
-        return info.join(';\n');
-    }
-
-}
-
-type TAlias = { [key:string]: string };
-
-class Aliases {
-
-    private _clients: Map<string, TAlias> = new Map();
-
-    private _isInclude(base: TAlias, target: TAlias): boolean {
-        let result = true;
-        Object.keys(target).forEach((key: string) => {
-            if (!result) {
-                return;
-            }
-            if (base[key] !== target[key]) {
-                result = false;
-            }
-        });
-        return result;
-    }
-
-    public ref(clientId: string, alias: TAlias): void {
-        this._clients.set(clientId, alias);
-    }
-
-    public unref(clientId: string): boolean {
-        if (!this._clients.has(clientId)) {
-            return false;
-        }
-        this._clients.delete(clientId);
-        return true;
-    }
-
-    public get(aliases: TAlias | Array<Protocol.KeyValue>): Array<string> {
-        const _aliases: TAlias = {};
-        if (aliases instanceof Array) {
-            aliases.forEach((pair: Protocol.KeyValue) => {
-                _aliases[pair.key] = pair.value;
-            });
-        }
-        const clients: Array<string> = [];
-        this._clients.forEach((aliases: TAlias, clientId: string) => {
-            if (this._isInclude(aliases, _aliases)) {
-                clients.push(clientId);
-            }
-        });
-        return clients;
-    }
-
-}
+import { Aliases, TAlias } from './server.aliases';
+import { Connection } from './server.connection';
+import { Connections } from './server.connections';
+import { Token, Tokens } from './server.tokens';
 
 type TClientRequests =  Protocol.Message.Handshake.Request |
                         Protocol.Message.Hook.Request |
@@ -181,7 +20,7 @@ type TClientRequests =  Protocol.Message.Handshake.Request |
                         Protocol.Message.UnsubscribeAll.Request |
                         Protocol.Message.Registration.Request;
 
-const ClientRequestsTypes = [Protocol.Message.Handshake.Request, 
+const ClientRequestsTypes = [Protocol.Message.Handshake.Request,
                             Protocol.Message.Hook.Request,
                             Protocol.Message.Pending.Request,
                             Protocol.Message.Reconnection.Request,
@@ -192,32 +31,32 @@ const ClientRequestsTypes = [Protocol.Message.Handshake.Request,
                             Protocol.Message.Registration.Request];
 
 export class Server {
- 
-    private _logger         : Tools.Logger              = new Tools.Logger('Http.Server');
-    private _pending        : Connections               = new Connections();
-    private _hooks          : Connections               = new Connections();
-    private _tokens         : Tokens;
-    private _subscriptions  : Tools.SubscriptionsHolder = new Tools.SubscriptionsHolder();
-    private _tasks          : Tools.Queue               = new Tools.Queue();
-    private _aliases        : Aliases                   = new Aliases();
-    private _parameters     : DescConnection.ConnectionParameters;
-    private _middleware     : DescMiddleware.Middleware<Connection>;
-    private _http           : HTTP.Server;
+
+    private _logger:        Tools.Logger              = new Tools.Logger('Http.Server');
+    private _pending:       Connections               = new Connections();
+    private _hooks:         Connections               = new Connections();
+    private _tokens:        Tokens;
+    private _subscriptions: Tools.SubscriptionsHolder = new Tools.SubscriptionsHolder();
+    private _tasks:         Tools.Queue               = new Tools.Queue();
+    private _aliases:       Aliases                   = new Aliases();
+    private _parameters:    DescConnection.ConnectionParameters;
+    private _middleware:    DescMiddleware.Middleware<Connection>;
+    private _http:          HTTP.Server;
 
     constructor(
         parameters: DescConnection.ConnectionParameters,
-        middleware?: DescMiddleware.Middleware<Connection>
-    ){
- 
+        middleware?: DescMiddleware.Middleware<Connection>,
+    ) {
+
         if (!(parameters instanceof DescConnection.ConnectionParameters)) {
-            if (parameters !== undefined){
+            if (parameters !== undefined) {
                 this._logger.warn(`Get wrong parameters of connection. Expected <ConnectionParameters>. Gotten: `, parameters);
             }
             parameters = new DescConnection.ConnectionParameters({});
         }
 
         if (!(middleware instanceof DescMiddleware.Middleware)) {
-            if (middleware !== undefined){
+            if (middleware !== undefined) {
                 this._logger.warn(`Get wrong parameters of connection. Expected <Middleware>. Gotten: `, middleware);
             }
             middleware = new DescMiddleware.Middleware({});
@@ -230,7 +69,7 @@ export class Server {
 
         this._http = HTTP.createServer(this._onRequest.bind(this)).listen(this._parameters.getPort());
 
-        //Turn off timeout for income connections
+        // Turn off timeout for income connections
         this._http.timeout = 0;
 
         this._onClientDisconnected = this._onClientDisconnected.bind(this);
@@ -250,121 +89,121 @@ export class Server {
                         .then(() => {
                             this._http.close(resolve);
                         });
-                })
+                });
         });
     }
 
-    private _onRequest(request: HTTP.IncomingMessage, response: HTTP.ServerResponse) {
-        const connection = new Connection(request, response, this._parameters.getMaxSize(), this._parameters.getCORS());
+    private _onRequest(httpRequest: HTTP.IncomingMessage, httpResponse: HTTP.ServerResponse) {
+        const connection = new Connection(httpRequest, httpResponse, this._parameters.getMaxSize(), this._parameters.getCORS());
         connection.getRequest()
             .then((request: string) => {
-                //Parse request
+                // Parse request
                 let post;
                 try {
                     post = JSON.parse(request);
-                    if (Tools.getTypeOf(post) !== Tools.EPrimitiveTypes.object){
-                        return connection.close(this._logger.warn(`As post data expecting only {object}.`)).catch((error: Error) => {
-                            this._logger.warn(`Fail to close connection due error: ${error.message}`);
+                    if (Tools.getTypeOf(post) !== Tools.EPrimitiveTypes.object) {
+                        return connection.close(this._logger.warn(`As post data expecting only {object}.`)).catch((closeError: Error) => {
+                            this._logger.warn(`Fail to close connection due error: ${closeError.message}`);
                         });
                     }
                 } catch (error) {
-                    return connection.close(this._logger.warn(`Fail to parse post data due error: ${error.message}`)).catch((error: Error) => {
-                        this._logger.warn(`Fail to close connection due error: ${error.message}`);
+                    return connection.close(this._logger.warn(`Fail to parse post data due error: ${error.message}`)).catch((closeError: Error) => {
+                        this._logger.warn(`Fail to close connection due error: ${closeError.message}`);
                     });
                 }
-                //Exctract message
+                // Exctract message
                 const message = Protocol.parse(post);
                 if (message instanceof Error) {
-                    return connection.close(this._logger.warn(`Fail to get message from post data due error: ${message.message}`)).catch((error: Error) => {
-                        this._logger.warn(`Fail to close connection due error: ${error.message}`);
+                    return connection.close(this._logger.warn(`Fail to get message from post data due error: ${message.message}`)).catch((closeError: Error) => {
+                        this._logger.warn(`Fail to close connection due error: ${closeError.message}`);
                     });
                 }
-                //Check for errors
+                // Check for errors
                 const error = this._getMessageErrors(message as TClientRequests);
                 if (error) {
                     this._logger.warn(error.error.message);
-                    return connection.close(error.response).catch((error: Error) => {
-                        this._logger.warn(`Fail to close connection due error: ${error.message}`);
+                    return connection.close(error.response).catch((closeError: Error) => {
+                        this._logger.warn(`Fail to close connection due error: ${closeError.message}`);
                     });
                 }
-                //Process message
+                // Process message
                 this._onMessage(message as TClientRequests, connection);
             })
             .catch((error: Error) => {
-                this._logger.warn(`Fail to get body of post data due error: ${error.message}`)
+                this._logger.warn(`Fail to get body of post data due error: ${error.message}`);
             });
     }
 
     private _getMessageErrors(message: TClientRequests): { error: Error, response: string } | null {
-        //Check type of message
+        // Check type of message
         let isCorrectType: boolean = false;
         ClientRequestsTypes.forEach((TTypeRef) => {
-            if (isCorrectType){
+            if (isCorrectType) {
                 return;
             }
             if (message instanceof TTypeRef) {
                 isCorrectType = true;
             }
         });
-        if (!isCorrectType){
-            //Unexpected request
+        if (!isCorrectType) {
+            // Unexpected request
             return {
                 error: new Error(`Unexpected request from client.`),
                 response: (new Protocol.ConnectionError({
+                    message: `Request is rejected, because it has unexpected type: ${message.stringify()}`,
                     reason: Protocol.ConnectionError.Reasons.UNEXPECTED_REQUEST,
-                    message: `Request is rejected, because it has unexpected type: ${message.stringify()}`
-                })).stringify()
+                })).stringify(),
             };
         }
-        //Check clientId
+        // Check clientId
         const clientId = message.clientId;
-        if (Tools.getTypeOf(clientId) !== Tools.EPrimitiveTypes.string || clientId.trim() === ''){
-            //Client ID isn't defined at all
+        if (Tools.getTypeOf(clientId) !== Tools.EPrimitiveTypes.string || clientId.trim() === '') {
+            // Client ID isn't defined at all
             return {
                 error: new Error(`Client ID isn't defined.`),
                 response: (new Protocol.ConnectionError({
+                    message: `Client Id isn't found in request: ${message.stringify()}`,
                     reason: Protocol.ConnectionError.Reasons.NO_CLIENT_ID_FOUND,
-                    message: `Client Id isn't found in request: ${message.stringify()}`
-                })).stringify()
+                })).stringify(),
             };
         }
-        //Check token
+        // Check token
         if (message instanceof Protocol.Message.Handshake.Request) {
             return null;
         }
         const token: string = message.token;
         if (token.trim() === '') {
-            //Token isn't provided at all
+            // Token isn't provided at all
             return {
                 error: new Error(`No token defined in message`),
                 response: (new Protocol.ConnectionError({
+                    message: `Token isn't found in request: ${message.stringify()}`,
                     reason: Protocol.ConnectionError.Reasons.NO_TOKEN_PROVIDED,
-                    message: `Token isn't found in request: ${message.stringify()}`
-                })).stringify()
+                })).stringify(),
             };
         }
         if (token !== this._tokens.get(clientId)) {
             return {
                 error: new Error(`Wrong token provided`),
                 response: (new Protocol.ConnectionError({
+                    message: `Incorrect token is in request: ${message.stringify()}`,
                     reason: Protocol.ConnectionError.Reasons.TOKEN_IS_WRONG,
-                    message: `Incorrect token is in request: ${message.stringify()}`
-                })).stringify()
+                })).stringify(),
             };
         }
         return null;
     }
 
-    private _onMessage(message: TClientRequests, connection: Connection){
+    private _onMessage(message: TClientRequests, connection: Connection) {
         const clientId = message.clientId;
-        //Authorization
-        if (message instanceof Protocol.Message.Handshake.Request){
+        // Authorization
+        if (message instanceof Protocol.Message.Handshake.Request) {
             return this._middleware.auth(clientId, connection)
                 .then(() => {
-                    //Connection is accepted
+                    // Connection is accepted
                     connection.close((new Protocol.Message.Handshake.Response({
                         clientId: clientId,
-                        token: this._tokens.set(clientId)
+                        token: this._tokens.set(clientId),
                     })).stringify()).then(() => {
                         this._logger.env(`Authorization of connection for ${clientId} is done.`);
                     }).catch((error: Error) => {
@@ -372,109 +211,109 @@ export class Server {
                     });
                 })
                 .catch((error: Error) => {
-                    //Connection is rejected
+                    // Connection is rejected
                     connection.close((new Protocol.Message.Handshake.Response({
                         clientId: clientId,
+                        error: error.message,
                         reason: Protocol.Message.Handshake.Response.Reasons.FAIL_AUTH,
-                        error: error.message
                     })).stringify()).then(() => {
                         this._logger.env(`Authorization of connection for ${clientId} is failed die error: ${error.message}`);
-                    }).catch((error: Error) => {
-                        this._logger.warn(`Fail to close connection ${clientId} due error: ${error.message}`);
+                    }).catch((closeError: Error) => {
+                        this._logger.warn(`Fail to close connection ${clientId} due error: ${closeError.message}`);
                     });
                 });
         }
         const token = message.token;
-        //Reconnection
+        // Reconnection
         if (message instanceof Protocol.Message.Reconnection.Request) {
             return connection.close((new Protocol.Message.Reconnection.Response({
+                allowed: true,
                 clientId: clientId,
-                allowed: true
             })).stringify()).then(() => {
                 this._logger.env(`Reconnection for client ${clientId} is allowed.`);
             }).catch((error: Error) => {
                 this._logger.warn(`Fail to close connection ${clientId} due error: ${error.message}`);
             });
         }
-        //Hook connection
+        // Hook connection
         if (message instanceof Protocol.Message.Hook.Request) {
             connection.setClientGUID(clientId);
             connection.on(Connection.EVENTS.onAborted, this._onClientDisconnected);
             this._hooks.add(clientId, connection);
             return this._logger.env(`Hook connection for ${clientId} is accepted.`);
         }
-        //Pending connnection
+        // Pending connnection
         if (message instanceof Protocol.Message.Pending.Request) {
             connection.setClientGUID(clientId);
             connection.on(Connection.EVENTS.onAborted, this._onClientDisconnected);
             this._pending.add(clientId, connection);
             return this._logger.env(`Pending connection for ${clientId} is accepted.`);
         }
-        //Subscribe to event
+        // Subscribe to event
         if (message instanceof Protocol.Message.Subscribe.Request) {
-            let status: boolean = false; 
+            let status: boolean = false;
             if (typeof message.subscription.event === 'string' && message.subscription.event.trim() !== '' &&
                 typeof message.subscription.protocol === 'string' && message.subscription.protocol.trim() !== '') {
                 status = this._subscriptions.subscribe(
                     message.subscription.protocol,
                     message.subscription.event,
-                    clientId
+                    clientId,
                 );
             }
             return connection.close((new Protocol.Message.Subscribe.Response({
                 clientId: clientId,
-                status: status
+                status: status,
             })).stringify()).then(() => {
                 this._logger.env(`Subscription for client ${clientId} to protocol ${message.subscription.protocol}, event ${message.subscription.event} is done.`);
             }).catch((error: Error) => {
                 this._logger.warn(`Fail to close connection ${clientId} due error: ${error.message}`);
             });
         }
-        //Unsubscribe event
+        // Unsubscribe event
         if (message instanceof Protocol.Message.Unsubscribe.Request) {
-            let status: boolean = false; 
-            if (typeof message.subscription.event === 'string' && message.subscription.event.trim() !== ''&&
+            let status: boolean = false;
+            if (typeof message.subscription.event === 'string' && message.subscription.event.trim() !== '' &&
                 typeof message.subscription.protocol === 'string' && message.subscription.protocol.trim() !== '') {
                 status = this._subscriptions.unsubscribe(
                     message.subscription.protocol,
                     message.subscription.event,
-                    clientId
+                    clientId,
                 );
             }
             return connection.close((new Protocol.Message.Unsubscribe.Response({
                 clientId: clientId,
-                status: status
+                status: status,
             })).stringify()).then(() => {
                 this._logger.env(`Unsubscription for client ${clientId} to protocol ${message.subscription.protocol}, event ${message.subscription.event} is done.`);
             }).catch((error: Error) => {
                 this._logger.warn(`Fail to close connection ${clientId} due error: ${error.message}`);
             });
         }
-        //Unsubscribe all event
+        // Unsubscribe all event
         if (message instanceof Protocol.Message.UnsubscribeAll.Request) {
-            let status: boolean = false; 
+            let status: boolean = false;
             if (typeof message.subscription.protocol === 'string' && message.subscription.protocol.trim() !== '') {
                 status = this._subscriptions.unsubscribe(
                     clientId,
-                    message.subscription.protocol
+                    message.subscription.protocol,
                 );
             }
             return connection.close((new Protocol.Message.UnsubscribeAll.Response({
                 clientId: clientId,
-                status: status
+                status: status,
             })).stringify()).then(() => {
                 this._logger.env(`Unsubscription for client ${clientId} to protocol ${message.subscription.protocol}, all events is done.`);
             }).catch((error: Error) => {
                 this._logger.warn(`Fail to close connection ${clientId} due error: ${error.message}`);
             });
         }
-        //Trigger event
+        // Trigger event
         if (message instanceof Protocol.Message.Event.Request) {
             if (typeof message.event.protocol !== 'string' || message.event.protocol.trim() === '' ||
                 typeof message.event.event !== 'string' || message.event.event.trim() === '') {
                 return connection.close((new Protocol.ConnectionError({
+                    message: `Expecting defined fields: protocol {string}; event {string}`,
                     reason: Protocol.ConnectionError.Reasons.NO_DATA_PROVIDED,
-                    message: `Expecting defined fields: protocol {string}; event {string}`
                 })).stringify()).then(() => {
                     this._logger.env(`Fail to emit event from client ${clientId}.`);
                 }).catch((error: Error) => {
@@ -482,37 +321,37 @@ export class Server {
                 });
             }
             let subscribers = this._subscriptions.get(message.event.protocol, message.event.event);
-            //Check aliases
+            // Check aliases
             if (message.aliases instanceof Array) {
                 const targetClients = this._aliases.get(message.aliases);
-                subscribers = subscribers.filter((clientId: string) => {
-                    return targetClients.indexOf(clientId) !== -1;
+                subscribers = subscribers.filter((subscriberId: string) => {
+                    return targetClients.indexOf(subscriberId) !== -1;
                 });
             }
-            //Add tasks
-            subscribers.forEach((clientId: string) => {
-                this._tasks.add(this._emitClientEvent.bind(this, message.event.protocol, message.event.event, message.event.body, clientId, token), clientId);
+            // Add tasks
+            subscribers.forEach((subscriberId: string) => {
+                this._tasks.add(this._emitClientEvent.bind(this, message.event.protocol, message.event.event, message.event.body, subscriberId, token), subscriberId);
             });
-            //Execute tasks
+            // Execute tasks
             this._tasks.procced();
             return connection.close((new Protocol.Message.Event.Response({
                 clientId: clientId,
-                subscribers: subscribers.length
+                subscribers: subscribers.length,
             })).stringify()).then(() => {
                 this._logger.env(`Emit event from client ${clientId} for event protocol ${message.event.protocol}, event ${message.event.event} is done for ${subscribers.length} subscribers.`);
             }).catch((error: Error) => {
                 this._logger.warn(`Fail emit event from client ${clientId} for event protocol ${message.event.protocol}, event ${message.event.event} due error: ${error.message}.`);
             });
         }
-        //Registration
-        if (message instanceof Protocol.Message.Registration.Request){
-            let status: boolean = false; 
+        // Registration
+        if (message instanceof Protocol.Message.Registration.Request) {
+            let status: boolean = false;
             if (message.aliases instanceof Array) {
                 if (message.aliases.length === 0) {
                     this._aliases.unref(clientId);
                     status = true;
                 } else {
-                    let aliases: TAlias = {};
+                    const aliases: TAlias = {};
                     let valid: boolean = true;
                     message.aliases.forEach((alias: Protocol.KeyValue) => {
                         if (!valid) {
@@ -532,7 +371,7 @@ export class Server {
             }
             return connection.close((new Protocol.Message.Registration.Response({
                 clientId: clientId,
-                status: status
+                status: status,
             })).stringify()).then(() => {
                 this._logger.env(`Registration of aliases for client ${clientId} as "${message.aliases.map((alias: Protocol.KeyValue) => {
                     return `${alias.key}: ${alias.value}`;
@@ -551,15 +390,15 @@ export class Server {
         const _hooks: boolean = this._hooks.has(clientId);
         const _pending: boolean = this._pending.has(clientId);
         const _tasks: boolean = this._tasks.count(clientId) > 0;
-        //Remove from storage of hooks
+        // Remove from storage of hooks
         _hooks && this._hooks.delete(clientId);
-        //Remove from storage of pending
+        // Remove from storage of pending
         _pending && this._pending.delete(clientId);
-        //Remove related tasks
+        // Remove related tasks
         _tasks && this._tasks.drop(clientId);
-        //Unsubscribe
+        // Unsubscribe
         this._subscriptions.removeClient(clientId);
-        //Remove ref
+        // Remove ref
         this._aliases.unref(clientId);
         if (_hooks || _pending) {
             this._logger.env(`Client ${clientId} is disconnected`);
@@ -571,17 +410,17 @@ export class Server {
             const connection = this._pending.get(clientId);
             if (connection === null) {
                 return reject(new Error(
-                    this._logger.env(`Client (${clientId}) is subscribed on "${protocol}/${event}", but active connection wasn't found. Task will stay in a queue.`)
+                    this._logger.env(`Client (${clientId}) is subscribed on "${protocol}/${event}", but active connection wasn't found. Task will stay in a queue.`),
                 ));
             }
             this._logger.env(`Client (${clientId}) is subscribed on "${protocol}/${event}". Event will be sent.`);
             connection.close((new Protocol.Message.Pending.Response({
+                clientId: clientId,
                 event: new Protocol.EventDefinition({
-                    protocol: protocol,
+                    body: body,
                     event: event,
-                    body: body
+                    protocol: protocol,
                 }),
-                clientId: clientId
             })).stringify()).then(() => {
                 this._logger.env(`Emit event for client ${clientId}: protocol ${protocol}, event ${event} is done.`);
                 resolve();
@@ -591,7 +430,7 @@ export class Server {
         });
     }
 
-    private _logState(){
+    private _logState() {
         this._logger.debug(`\t[server state]: \n\pending:\n${this._pending.getInfo()}\n\hooks:\n${this._hooks.getInfo()}\n\tsubcribers\n ${this._subscriptions.getInfo()}\n\ttasks in queue: ${this._tasks.getTasksCount()}.`);
         setTimeout(() => {
             this._logState();

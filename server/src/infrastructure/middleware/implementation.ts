@@ -1,19 +1,19 @@
 import * as Tools from '../../platform/tools/index';
 
 export interface IMiddleware<TConnection> {
-    auth?    : (clientId: string, request: TConnection) => Promise<void>,
-    before?  : (clientId: string, request: TConnection) => Promise<void>,
-    after?   : (clientId: string)                       => Promise<void>
+    auth?:      (clientId: string, request: TConnection) => Promise<void>;
+    before?:    (clientId: string, request: TConnection) => Promise<void>;
+    after?:     (clientId: string)                       => Promise<void>;
 }
 
 export class Middleware<TConnection> implements IMiddleware<TConnection> {
 
-    constructor(middleware: IMiddleware<TConnection>){
+    constructor(middleware: IMiddleware<TConnection>) {
 
         middleware = Tools.objectValidate(middleware, {
+            after   : this.after,
             auth    : this.auth,
             before  : this.before,
-            after   : this.after
         }) as IMiddleware<TConnection>;
 
         typeof middleware.auth      === 'function' && (this.auth    = middleware.auth);
@@ -38,7 +38,7 @@ export class Middleware<TConnection> implements IMiddleware<TConnection> {
         });
     }
 
-    public after(clientId: string): Promise<void>{
+    public after(clientId: string): Promise<void> {
         return new Promise((resolve, reject) => {
             return resolve();
         });

@@ -4,6 +4,7 @@ const DEFAULT_TIMEOUT = 10000;
 const DEFAULT_EXECUTE_LIMIT = 3;
 
 export type TExecuter = () => Promise<void>;
+type TResolver = (...args: any[]) => any;
 
 export interface ITask {
     id: symbol;
@@ -18,7 +19,7 @@ export default class Queue {
     private _timeout: number;
     private _working: boolean = false;
     private _repeatFlag: boolean = false;
-    private _destroyResolver: Function | null = null;
+    private _destroyResolver: TResolver | null = null;
     private _repeatTimer: any = null;
     private _executeLimit: number;
 
@@ -27,26 +28,8 @@ export default class Queue {
         this._executeLimit = executeLimit;
     }
 
-    private _repeat(){
-        this._repeatTimer = setTimeout(this.procced, this._timeout);
-    }
-
-    private _stop() {
-        if (this._repeatTimer === null) {
-            return;
-        }
-        clearTimeout(this._repeatTimer);
-    }
-
-    private _clear(){
-        this._stop();
-        this._tasks.clear();
-        this._working = false;
-        this._repeatFlag = false;
-    }
-    
     /**
-     * Add task into queue 
+     * Add task into queue
      * @param executer {TExecuter: () => boolean} task's function
      * @param alias {string | symbol} name of task's group. Is used to drop all tasks for group.
      * @returns symbol
@@ -59,10 +42,10 @@ export default class Queue {
             return new Error(`Cannot add task, because as alias expected string | symbol, but was gotten: ${Types.getTypeOf(alias)}.`);
         }
         const task: ITask = {
+            alias: alias,
+            executed: 0,
             id: Symbol(),
             task: executer,
-            alias: alias,
-            executed: 0
         };
         this._tasks.set(task.id, task);
         return task.id;
@@ -73,7 +56,7 @@ export default class Queue {
      * @param alias {string | symbol} task's group identificator
      * @returns undefined
      */
-    public drop(alias: string | symbol){
+    public drop(alias: string | symbol) {
         this._stop();
         this._tasks.forEach((task: ITask, taskId: symbol) => {
             task.alias === alias && this._tasks.delete(taskId);
@@ -95,22 +78,22 @@ export default class Queue {
     }
 
     /**
-     * Execute all tasks in queue 
+     * Execute all tasks in queue
      * @returns undefined
      */
-    public procced(){
-        if (this._destroyResolver !== null){
+    public procced() {
+        if (this._destroyResolver !== null) {
             return;
         }
         if (this._working) {
             this._repeatFlag = true;
         } else {
             const tasks: Array<Promise<void>> = [];
-            //Stop repeatinng by timer
+            // Stop repeatinng by timer
             this._stop();
-            //Mark as working
+            // Mark as working
             this._working = true;
-            //Execute tasks
+            // Execute tasks
             this._tasks.forEach((task: ITask, taskId: symbol) => {
                 tasks.push(task.task()
                     .then(() => {
@@ -142,10 +125,10 @@ export default class Queue {
     }
 
     /**
-     * Destroy all tasks and clear queue without executing 
+     * Destroy all tasks and clear queue without executing
      * @returns Promise<void>
      */
-    public destory(){
+    public destory() {
         return new Promise((resolve) => {
             if (!this._working) {
                 this._clear();
@@ -156,11 +139,29 @@ export default class Queue {
     }
 
     /**
-     * Returns count of tasks in queue 
+     * Returns count of tasks in queue
      * @returns number
      */
-    public getTasksCount(){
+    public getTasksCount() {
         return this._tasks.size;
+    }
+
+    private _repeat() {
+        this._repeatTimer = setTimeout(this.procced, this._timeout);
+    }
+
+    private _stop() {
+        if (this._repeatTimer === null) {
+            return;
+        }
+        clearTimeout(this._repeatTimer);
+    }
+
+    private _clear() {
+        this._stop();
+        this._tasks.clear();
+        this._working = false;
+        this._repeatFlag = false;
     }
 
 }

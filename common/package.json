@@ -3,7 +3,8 @@
   "version": "0.0.1",
   "description": "",
   "scripts": {
-    "test:unit": "./node_modules/.bin/jasmine-ts"
+    "test:unit": "./node_modules/.bin/jasmine-ts",
+    "tslint": "./node_modules/.bin/tslint -c tslint.json --project ."
   },
   "author": "Dmitry Astafyev",
   "license": "MIT",
@@ -14,6 +15,7 @@
     "jasmine-core": "^3.1.0",
     "jasmine-ts": "^0.2.1",
     "source-map-loader": "^0.2.3",
+    "tslint": "^5.11.0",
     "typescript": "^2.5.3"
   },
   "dependencies": {}

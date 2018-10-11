@@ -2,12 +2,12 @@ import Emitter from './tools.emitter';
 
 export default class TimerEmitter extends Emitter {
 
-	static EVENTS = {
-		onTimeout: Symbol()
+    public static EVENTS = {
+        onTimeout: Symbol(),
 	};
 
-	private _timer		: number | null = null;
-	private _timeout	: number;
+	private _timer: 	any | null = null;
+	private _timeout: 	number;
 
 	constructor(timeout: number) {
 		super();
@@ -17,11 +17,11 @@ export default class TimerEmitter extends Emitter {
 		if (timeout === 0) {
 			throw new Error(`Expecting as timeout {number} > 0.`);
 		}
-        this._timeout = timeout;
-        this.start();
+		this._timeout = timeout;
+		this.start();
 	}
 
-	public drop(){
+	public drop() {
 		if (this._timer === null) {
 			return false;
 		}
@@ -30,24 +30,25 @@ export default class TimerEmitter extends Emitter {
 			this._timer = null;
 		}
     }
-    
-    public reset(){
+
+    public reset() {
         this.drop();
         this.start();
     }
 
-    public start(){
+    public start() {
         if (this._timer === null) {
             return false;
         }
         this._timer = setTimeout(this._onTimeout.bind(this), this._timeout);
     }
 
-	private _onTimeout(){
+	private _onTimeout() {
 		if (this._timer === null) {
 			return false;
 		}
 		this._timer = null;
 		this.emit(TimerEmitter.EVENTS.onTimeout);
 	}
+
 }

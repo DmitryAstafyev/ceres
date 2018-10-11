@@ -2,6 +2,8 @@
  * Returns hash of string
  * @returns {string} hash
  */
+
+/* tslint:disable */
 export default function hash(input: string, abs: boolean = false) {
     let hash = 0, i, chr;
     if (input.length === 0) return input;
@@ -13,3 +15,4 @@ export default function hash(input: string, abs: boolean = false) {
     return (abs ? Math.abs(hash) : hash).toString(16).toUpperCase();
     //source of code of this method: http://werxltd.com/wp/2010/05/13/javascript-implementation-of-javas-string-hashcode-method/
 }
+/* tslint:enable */

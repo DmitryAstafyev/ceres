@@ -86,6 +86,7 @@ export class Convertor {
                     injection.content.split(/[\n\r]/gi).map((row: string) => { return `\t${row}`;}).join('\n') + 
                     '\n';
                 });
+                let lints: string = '/* tslint:disable */\n';
                 let greeting: string = '';
                 greeting += `/*\n`;
                 greeting += `* This file generated automaticaly (${(new Date()).toString()})\n`;
@@ -99,7 +100,7 @@ export class Convertor {
                 protocolNamespace += this._getMap() + '\n';
                 protocolNamespace += this._getProtocolSignature() + '\n';
                 protocolNamespace += '}\n';
-                base = greeting + protocolNamespace + base + '\n';
+                base = lints + greeting + protocolNamespace + base + '\n';
                 base += this._getGlobalExport();
                 base += this._getInitialization();
                 resolve(base);

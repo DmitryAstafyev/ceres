@@ -1,19 +1,20 @@
 import * as HTTP from 'http';
+
 import { EventEmitter } from 'events';
 
 type THeaders = { [key: string]: string };
 
 export class Connection extends EventEmitter {
 
-    static EVENTS = {
-		onAborted: Symbol()
+    public static EVENTS = {
+        onAborted: Symbol(),
     };
-    
-    private _request    : HTTP.IncomingMessage;
-    private _response   : HTTP.ServerResponse;
-    private _maxSize    : number;
-    private _CORS       : boolean;
-    private _clientGUID : string | null = null;
+
+    private _request: HTTP.IncomingMessage;
+    private _response: HTTP.ServerResponse;
+    private _maxSize: number;
+    private _CORS: boolean;
+    private _clientGUID: string | null = null;
 
     constructor(request: HTTP.IncomingMessage, response: HTTP.ServerResponse, maxSize: number, CORS: boolean) {
         super();
@@ -24,20 +25,6 @@ export class Connection extends EventEmitter {
 
         this._onAborted = this._onAborted.bind(this);
         this._request.on('aborted', this._onAborted);
-    }
-
-    private _onAborted(){
-        this.emit(Connection.EVENTS.onAborted, this);
-    }
-
-    private _setHeaders(){
-        const headers: THeaders = {
-            "Content-Type": "text/plain" 
-        };
-        if (this._CORS) {
-            headers['Access-Control-Allow-Origin'] = '*';
-        }
-        this._response.writeHead(200, headers);
     }
 
     public setClientGUID(clientGUID: string): null | Error {
@@ -52,7 +39,7 @@ export class Connection extends EventEmitter {
         return this._clientGUID;
     }
 
-    public getRequest(): Promise<string> { 
+    public getRequest(): Promise<string> {
         return new Promise((resolve, reject) => {
             let str = '';
             let error: Error | null = null;
@@ -65,7 +52,7 @@ export class Connection extends EventEmitter {
                     error = new Error(`Length of request to big. Maximum length of request is: ${this._maxSize} bytes`);
                     this._request.destroy(error);
                     reject(error);
-                }                
+                }
             });
             this._request.on('end', () => {
                 if (error !== null) {
@@ -77,7 +64,7 @@ export class Connection extends EventEmitter {
     }
 
     public close(response: string): Promise<void> {
-		return new Promise((resolve, reject) => {
+        return new Promise((resolve, reject) => {
             this._setHeaders();
             this._response.write(response, (error: Error) => {
                 if (error) {
@@ -87,9 +74,21 @@ export class Connection extends EventEmitter {
                     resolve();
                 });
             });
-		});
-	}
+        });
+    }
 
+    private _onAborted() {
+        this.emit(Connection.EVENTS.onAborted, this);
+    }
 
+    private _setHeaders() {
+        const headers: THeaders = {
+            "Content-Type": "text/plain" ,
+        };
+        if (this._CORS) {
+            headers['Access-Control-Allow-Origin'] = '*';
+        }
+        this._response.writeHead(200, headers);
+    }
 
 }

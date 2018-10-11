@@ -1,23 +1,15 @@
 import * as Types from './tools.primitivetypes';
+
 import EventEmitter from './tools.emitter';
 import inspect from './tools.inspect';
-import GUID from './tools.guid';
+
+type THandler = (...args: any[]) => any;
 
 export default class EventHandlers {
 
     private _handlers: Map<string, EventEmitter>  = new Map();
 
-    private _validate(protocol: string, event: string) {
-        if (Types.getTypeOf(protocol) !== Types.ETypes.string) {
-            return new Error(`Expect type of protocol will be {string}. Bug has gotten: ${inspect(protocol)}`);
-        }
-        if (Types.getTypeOf(event) !== Types.ETypes.string) {
-            return new Error(`Expect type of event will be {string}. Bug has gotten: ${inspect(event)}`);
-        }
-        return null;
-    }
-
-    subscribe(protocol: string, event: string, handler: Function): boolean | Error {
+    public subscribe(protocol: string, event: string, handler: THandler): boolean | Error {
         const error = this._validate(protocol, event);
         if (error !== null) {
             return error;
@@ -28,17 +20,17 @@ export default class EventHandlers {
         if (!this._handlers.has(protocol)) {
             this._handlers.set(protocol, new EventEmitter());
         }
-        let emitter = this._handlers.get(protocol);
+        const emitter = this._handlers.get(protocol);
         (emitter as EventEmitter).subscribe(event, handler);
         return true;
     }
 
-    unsubscribe(protocol: string, event?: string, handler?: Function): boolean | Error {
+    public unsubscribe(protocol: string, event?: string, handler?: THandler): boolean | Error {
         const emitter = this._handlers.get(protocol);
-        if (emitter === undefined){
+        if (emitter === undefined) {
             return false;
         }
-        if (event === undefined){
+        if (event === undefined) {
             emitter.unsubscribeAll();
             this._handlers.delete(protocol);
             return true;
@@ -52,19 +44,29 @@ export default class EventHandlers {
         return true;
     }
 
-    emit(protocol: string, event: string, ...args: Array<any>): boolean {
+    public emit(protocol: string, event: string, ...args: any[]): boolean {
         const emitter = this._handlers.get(protocol);
-        if (emitter === undefined){
+        if (emitter === undefined) {
             return false;
         }
         emitter.emit(event, ...args);
         return true;
     }
 
-    clear(){
+    public clear() {
         this._handlers.forEach((emitter: EventEmitter) => {
             emitter.clear();
         });
         this._handlers.clear();
+    }
+
+    private _validate(protocol: string, event: string) {
+        if (Types.getTypeOf(protocol) !== Types.ETypes.string) {
+            return new Error(`Expect type of protocol will be {string}. Bug has gotten: ${inspect(protocol)}`);
+        }
+        if (Types.getTypeOf(event) !== Types.ETypes.string) {
+            return new Error(`Expect type of event will be {string}. Bug has gotten: ${inspect(event)}`);
+        }
+        return null;
     }
 }

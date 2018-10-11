@@ -1,27 +1,28 @@
 import { IConnectionParameters } from './interfaces';
+
 import * as Tools from '../../../platform/tools/index';
 
 const DEFAULTS = {
+    CORS: true,
+    maxSize: 1024 * 100, // 100 kB
     port: 3000,
-    maxSize: 1024 * 100, //100 kB
-    tokenLife: 1000 * 60 * 60 * 1, //1 h
-    CORS: true
+    tokenLife: 1000 * 60 * 60 * 1, // 1 h
 };
 
 export class ConnectionParameters implements IConnectionParameters {
 
-    public port         : number | undefined;
-    public maxSize      : number | undefined;
-    public tokenLife    : number | undefined;
-    public CORS         : boolean | undefined;
+    public port:        number | undefined;
+    public maxSize:     number | undefined;
+    public tokenLife:   number | undefined;
+    public CORS:        boolean | undefined;
 
-    constructor( connection : IConnectionParameters ) {
+    constructor( connection: IConnectionParameters ) {
 
         connection = Tools.objectValidate(connection, {
-            port: DEFAULTS.port,
+            CORS: DEFAULTS.CORS,
             maxSize: DEFAULTS.maxSize,
+            port: DEFAULTS.port,
             tokenLife: DEFAULTS.tokenLife,
-            CORS: DEFAULTS.CORS
         }) as IConnectionParameters;
 
         this.port = connection.port;
@@ -30,19 +31,19 @@ export class ConnectionParameters implements IConnectionParameters {
         this.CORS = connection.CORS;
     }
 
-    public getPort(): number{
+    public getPort(): number {
         return this.port as number;
     }
 
-    public getMaxSize(): number{
+    public getMaxSize(): number {
         return this.maxSize as number;
     }
 
-    public getTokenLife(): number{
+    public getTokenLife(): number {
         return this.tokenLife as number;
     }
 
-    public getCORS(): boolean{
+    public getCORS(): boolean {
         return this.CORS as boolean;
     }
 
