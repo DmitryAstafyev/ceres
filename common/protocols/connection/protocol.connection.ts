@@ -1,5 +1,5 @@
 /*
-* This file generated automaticaly (Tue Oct 09 2018 23:09:30 GMT+0200 (CEST))
+* This file generated automaticaly (Thu Oct 11 2018 02:02:13 GMT+0200 (CEST))
 * Do not remove or change this code.
 * Protocol version: 0.0.1
 */
@@ -1103,6 +1103,7 @@ export namespace Message {
 					guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
 					event: { name: "event", value: EventDefinition, type: Protocol.EEntityType.reference, optional: false }, 
 					token: { name: "token", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+					aliases: { name: "aliases", value: KeyValue, type: Protocol.EEntityType.repeated, optional: true }, 
 				}
 			}
 			static __signature: string = "15C342AF";
@@ -1121,11 +1122,13 @@ export namespace Message {
 			}
 			public event: EventDefinition;
 			public token: string = "";
+			public aliases?: Array<KeyValue> = [];
 
-			constructor(args: { clientId: string, guid?: string, event: EventDefinition, token: string }) {
+			constructor(args: { clientId: string, guid?: string, event: EventDefinition, token: string, aliases?: Array<KeyValue> }) {
 				super(Object.assign(args, {}));
 				this.event = args.event;
 				this.token = args.token;
+				args.aliases !== void 0 && (this.aliases = args.aliases);
 				const errors: Array<Error> = Protocol.validateParams(args, Request);
 				if (errors.length > 0) {
 					throw new Error(`Cannot create class of "Request" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);

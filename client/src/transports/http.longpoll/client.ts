@@ -3,7 +3,7 @@ import * as DescConnection from './connection/index';
 import * as DescMiddleware from '../../infrastructure/middleware/index';
 import { Request } from './request';
 import * as Protocol from '../../protocols/connection/protocol.connection';
-import { ITransportInterface } from '../../platform/interfaces/interface.transport';
+import { ITransportInterface, TClientAlias } from '../../platform/interfaces/interface.transport';
 import { SubdomainsController } from '../common/subdomains';
 
 const SETTINGS = {
@@ -308,8 +308,6 @@ class Requests {
     }
 
 }
-
-type TClientAlias = { [key: string]: string };
 
 export class Client extends Tools.EventEmitter implements ITransportInterface {
     
@@ -719,7 +717,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
      * @param protocol {Protocol} implementation of event's protocol
      * @returns Promise
      */
-    public eventEmit(event: any, protocol: any): Promise<Protocol.Message.Event.Response> {
+    public eventEmit(event: any, protocol: any, aliases: TClientAlias = {}): Promise<Protocol.Message.Event.Response> {
         return new Promise((resolve, reject) => {
             if (this._state.get() !== EClientStates.connected) {
                 return reject(new Error(`Cannot do operation: client isn't connected.`));
@@ -733,6 +731,23 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                 return reject(eventSignature);
             }
             const url = this._getURL();
+            const _aliases: Array<Protocol.KeyValue> = [];
+            try {
+                if (typeof aliases !== 'object' || aliases === null) {
+                    throw new Error(`As aliases can be provided an object { [key: string]: string }.`);
+                }
+                Object.keys(aliases).forEach((key: string) => {
+                    if (typeof aliases[key] !== 'string' || aliases[key].trim() === '') {
+                        throw new Error(`Alias with key = "${key}" is defined incorrectly. It should be not empty {string}.`);
+                    }
+                    _aliases.push(new Protocol.KeyValue({
+                        key: key,
+                        value: aliases[key]
+                    }));
+                });
+            } catch (error) {
+                return reject(error);
+            }
             this._requests.send(url, (new Protocol.Message.Event.Request({
                 clientId: this._clientGUID,
                 event: new Protocol.EventDefinition({
@@ -740,7 +755,8 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                     body: event.stringify(),
                     event: eventSignature
                 }),
-                token: this._token.get()
+                token: this._token.get(),
+                aliases: _aliases
             })).stringify())
                 .then((message: Protocol.TProtocolTypes) => {
                     this._setUrlFree(url);

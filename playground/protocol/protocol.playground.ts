@@ -1,5 +1,5 @@
 /*
-* This file generated automaticaly (Sat Sep 22 2018 14:35:25 GMT+0200 (CEST))
+* This file generated automaticaly (Thu Oct 11 2018 02:22:16 GMT+0200 (CEST))
 * Do not remove or change this code.
 * Protocol version: 0.0.1
 */
@@ -328,9 +328,11 @@ namespace Protocol {
 	                    });
 	                } else if (typeof desc.value === 'function') {
 	                    //It's reference to class
-	                    if (!(params[prop] instanceof desc.value)) {
-	                        errors.push(new Error(`Expecting property "${prop}" will be instance of "${desc.value.name}".`));
-	                    }
+	                    params[prop].forEach((instance: any, index: number) => {
+	                        if (!(instance instanceof desc.value)) {
+	                            errors.push(new Error(`Expecting property "${prop}", index "${index}" should be instance of "${desc.value.name}".`));
+	                        }
+	                    });
 	                } else if (typeof desc.value === 'object') {
 	                    //It's reference to enum
 	                    params[prop].forEach((value: any) => {
@@ -577,6 +579,7 @@ export namespace Events {
 			return {
 				guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
 				timestamp: { name: "timestamp", value: "datetime", type: Protocol.EEntityType.primitive, optional: false }, 
+				message: { name: "message", value: "string", type: Protocol.EEntityType.primitive, optional: true }, 
 			}
 		}
 		static __signature: string = "18DF1862";
@@ -594,10 +597,12 @@ export namespace Events {
 			return Protocol.stringify(this, Ping) as string;
 		}
 		public timestamp: Date = new Date();
+		public message?: string = "";
 
-		constructor(args: { guid?: string, timestamp: Date }) {
+		constructor(args: { guid?: string, timestamp: Date, message?: string }) {
 			super(Object.assign(args, {}));
 			this.timestamp = args.timestamp;
+			args.message !== void 0 && (this.message = args.message);
 			const errors: Array<Error> = Protocol.validateParams(args, Ping);
 			if (errors.length > 0) {
 				throw new Error(`Cannot create class of "Ping" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);

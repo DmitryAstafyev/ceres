@@ -2,7 +2,8 @@
     "Events": {
         "guid?": "guid",
         "Ping": {
-            "timestamp":"datetime"
+            "timestamp":"datetime",
+            "message?": "string"
         }
     },
     "version": "0.0.1"

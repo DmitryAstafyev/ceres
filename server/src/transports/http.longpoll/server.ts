@@ -153,10 +153,16 @@ class Aliases {
         return true;
     }
 
-    public get(alias: TAlias): Array<string> {
+    public get(aliases: TAlias | Array<Protocol.KeyValue>): Array<string> {
+        const _aliases: TAlias = {};
+        if (aliases instanceof Array) {
+            aliases.forEach((pair: Protocol.KeyValue) => {
+                _aliases[pair.key] = pair.value;
+            });
+        }
         const clients: Array<string> = [];
         this._clients.forEach((aliases: TAlias, clientId: string) => {
-            if (this._isInclude(aliases, alias)) {
+            if (this._isInclude(aliases, _aliases)) {
                 clients.push(clientId);
             }
         });
@@ -475,7 +481,14 @@ export class Server {
                     this._logger.warn(`Fail to close connection ${clientId} due error: ${error.message}`);
                 });
             }
-            const subscribers = this._subscriptions.get(message.event.protocol, message.event.event);
+            let subscribers = this._subscriptions.get(message.event.protocol, message.event.event);
+            //Check aliases
+            if (message.aliases instanceof Array) {
+                const targetClients = this._aliases.get(message.aliases);
+                subscribers = subscribers.filter((clientId: string) => {
+                    return targetClients.indexOf(clientId) !== -1;
+                });
+            }
             //Add tasks
             subscribers.forEach((clientId: string) => {
                 this._tasks.add(this._emitClientEvent.bind(this, message.event.protocol, message.event.event, message.event.body, clientId, token), clientId);

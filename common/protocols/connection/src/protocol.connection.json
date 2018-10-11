@@ -37,7 +37,8 @@
         "Event": {
             "Request": {
                 "event": "EventDefinition",
-                "token": "string"
+                "token": "string",
+                "aliases?": "array<KeyValue>"
             },
             "Response": {
                 "subscribers": "integer"

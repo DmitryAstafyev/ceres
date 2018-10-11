@@ -44,6 +44,7 @@ export default class Test {
     });
     private _client: Transports.HTTPLongpollClient.Client;
     private _greetingMessageTimer: number = -1;
+    private _targetMessageTimer: number = -1;
 
     constructor(){    
         //Create HTTP Longpoll client
@@ -79,11 +80,13 @@ export default class Test {
     private _onConnected(){
         this._output.add(`HTTP.Longpoll transport test: Connected`);
         this._sendGreetingMessage();
+        this._sendTargetMessage();
     }
 
     private _onDisconnected(){
         this._output.add(`Client is disconnected.`, { color: 'rgb(255,255,0)'});
         this._stopSendGreetingMessage();
+        this._stopSendTargetMessage();
     }
 
     private _onError(error: any){
@@ -109,7 +112,7 @@ export default class Test {
                     this._sendGreetingMessage();
                 });
             
-        }, 1500);
+        }, 2000);
     }
 
     private _stopSendGreetingMessage(){
@@ -118,5 +121,33 @@ export default class Test {
         }
         clearTimeout(this._greetingMessageTimer);
         this._greetingMessageTimer = -1;
+    }
+
+    private _sendTargetMessage(){
+        this._targetMessageTimer = setTimeout(() => {
+            const greeting = new Protocol.Events.Ping({
+                timestamp: new Date(),
+                message: 'This is target message for Bred Pitt'
+            });
+            
+            this._client.eventEmit(greeting, Protocol, { name: 'Bred', group: 'artist'})
+                .then((res) => {
+                    this._output.add(`Event sent: ${Tools.inspect(res)}`, { color: 'rgb(200,200,200)'});
+                    this._sendTargetMessage();
+                })
+                .catch((e) => {
+                    this._output.add(`Error: ${Tools.inspect(e)}`, { color: 'rgb(255,0,0)'});
+                    this._sendTargetMessage();
+                });
+            
+        }, 1000);
+    }
+
+    private _stopSendTargetMessage(){
+        if (this._targetMessageTimer === -1){
+            return;
+        }
+        clearTimeout(this._targetMessageTimer);
+        this._targetMessageTimer = -1;
     }
 }
