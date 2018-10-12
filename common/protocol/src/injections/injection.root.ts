@@ -11,17 +11,17 @@ export enum EEntityType {
     primitive = 'primitive',
     repeated = 'repeated',
     reference = 'reference',
-    enum = 'enum'
-};
-
-export interface IProperty {
-    name: string,
-    type: EEntityType,
-    optional: boolean,
-    value: any
+    enum = 'enum',
 }
 
-export function _parse(json: any, target?: any): TTypes | Array<Error> {
+export interface IProperty {
+    name: string;
+    type: EEntityType;
+    optional: boolean;
+    value: any;
+}
+
+export function _parse(json: any, target?: any): TTypes | Error[] {
     const types: {[key: string]: any} = getTypes();
     if (typeof json !== 'object' || json === null) {
         if (typeof json === 'string') {
@@ -41,40 +41,40 @@ export function _parse(json: any, target?: any): TTypes | Array<Error> {
     }
     const classRef: any = ReferencesMap[json.__signature];
     if (target !== undefined) {
-        if (classRef.getSignature() !== target.getSignature()){
+        if (classRef.getSignature() !== target.getSignature()) {
             return [new Error(`Target reference doesn't match with entity in json.`)];
         }
     }
-    //Get description of entity
+    // Get description of entity
     const description: {[key: string]: IProperty} = classRef.getDescription();
-    //Parsing properties
-    let errors: Array<Error> = [];
+    // Parsing properties
+    const errors: Error[] = [];
     Object.keys(description).forEach((prop: string) => {
         const desc = description[prop];
         if (desc.optional && json[prop] === void 0) {
             return;
         }
-        switch(desc.type) {
+        switch (desc.type) {
             case EEntityType.repeated:
-                if (!(json[prop] instanceof Array)){
+                if (!(json[prop] instanceof Array)) {
                     errors.push(new Error(`Property "${prop}" has wrong format. Expected an array (repeated).`));
                     break;
                 }
                 if (typeof desc.value === 'string') {
                     json[prop] = json[prop].map((value: any) => {
-                        const type = types[desc.value];
-                        if (!type.validate(value)){
+                        const nestedType = types[desc.value];
+                        if (!nestedType.validate(value)) {
                             errors.push(new Error(`Property "${prop}" has wrong format.`));
                             return undefined;
                         }
-                        return type.parse(value);
+                        return nestedType.parse(value);
                     });
                 } else if (typeof desc.value === 'function') {
-                    //It's reference to class
+                    // It's reference to class
                     const parsed = json[prop].map((value: any) => {
                         const nested = _parse(value, desc.value);
                         if (nested instanceof Array) {
-                            errors.push(new Error(`Cannot get instance of class "${desc.value.name}" from property "${prop}" due error: \n${nested.map((e:Error)=>e.message).join(';\n')}`));
+                            errors.push(new Error(`Cannot get instance of class "${desc.value.name}" from property "${prop}" due error: \n${nested.map((e: Error) => e.message).join(';\n')}`));
                             return null;
                         }
                         return nested;
@@ -84,7 +84,7 @@ export function _parse(json: any, target?: any): TTypes | Array<Error> {
                     }
                     json[prop] = parsed;
                 } else if (typeof desc.value === 'object') {
-                    //It's reference to enum
+                    // It's reference to enum
                     json[prop].forEach((value: any) => {
                         if (desc.value[value] === void 0) {
                             errors.push(new Error(`Property "${prop}" has wrong value: "${value}". Available values: ${Object.keys(desc.value).join(', ')}.`));
@@ -94,22 +94,22 @@ export function _parse(json: any, target?: any): TTypes | Array<Error> {
                 break;
             case EEntityType.primitive:
                 const type = types[desc.value];
-                if (!type.validate(json[prop])){
+                if (!type.validate(json[prop])) {
                     errors.push(new Error(`Property "${prop}" has wrong format.`));
                 }
                 json[prop] = type.parse(json[prop]);
                 break;
             case EEntityType.reference:
                 if (typeof desc.value === 'function') {
-                    //It's reference to class
+                    // It's reference to class
                     const nested = _parse(json[prop], desc.value);
                     if (nested instanceof Array) {
-                        errors.push(new Error(`Cannot get instance of class "${desc.value.name}" from property "${prop}" due error: \n${nested.map((e:Error)=>e.message).join(';\n')}`));
+                        errors.push(new Error(`Cannot get instance of class "${desc.value.name}" from property "${prop}" due error: \n${nested.map((e: Error) => e.message).join(';\n')}`));
                     } else {
                         json[prop] = nested;
                     }
                 } else if (typeof desc.value === 'object') {
-                    //It's reference to enum
+                    // It's reference to enum
                     if (desc.value[json[prop]] === void 0) {
                         errors.push(new Error(`Property "${prop}" has wrong value: "${json[prop]}". Available values: ${Object.keys(desc.value).join(', ')}.`));
                     }
@@ -120,50 +120,50 @@ export function _parse(json: any, target?: any): TTypes | Array<Error> {
     if (errors.length > 0) {
         return errors;
     }
-    //Create instance
+    // Create instance
     try {
         return new classRef(json);
     } catch (error) {
         return [error];
     }
-};
+}
 
-export function _stringify(target:any, classRef: any): string | Array<Error> {
+export function _stringify(target: any, classRef: any): string | Error[] {
     if (!(target instanceof classRef)) {
         return [new Error(`Defined wrong reference to class.`)];
     }
     const types: {[key: string]: any} = getTypes();
     const description: {[key: string]: IProperty} = classRef.getDescription();
-    const errors: Array<Error> = [];
-    let json: any = {
-        __signature: target.getSignature()
+    const errors: Error[] = [];
+    const json: any = {
+        __signature: target.getSignature(),
     };
     Object.keys(description).forEach((prop: string) => {
         const desc = description[prop];
         if (desc.optional && target[prop] === void 0) {
             return;
         }
-        switch(desc.type) {
+        switch (desc.type) {
             case EEntityType.repeated:
-                if (!(target[prop] instanceof Array)){
+                if (!(target[prop] instanceof Array)) {
                     errors.push(new Error(`Property "${prop}" has wrong format. Expected an array (repeated).`));
                     break;
                 }
                 if (typeof desc.value === 'string') {
                     json[prop] = target[prop].map((value: any) => {
-                        const type = types[desc.value];
-                        if (!type.validate(value)){
+                        const nestedType = types[desc.value];
+                        if (!nestedType.validate(value)) {
                             errors.push(new Error(`Property "${prop}" has wrong format.`));
                             return undefined;
                         }
-                        return type.serialize(value);
+                        return nestedType.serialize(value);
                     });
                 } else if (typeof desc.value === 'function') {
-                    //It's reference to class
+                    // It's reference to class
                     const parsed = target[prop].map((value: any) => {
                         const nested = _stringify(value, desc.value);
                         if (nested instanceof Array) {
-                            errors.push(new Error(`Cannot get instance of class "${desc.value.name}" from property "${prop}" due error: \n${nested.map((e:Error)=>e.message).join(';\n')}`));
+                            errors.push(new Error(`Cannot get instance of class "${desc.value.name}" from property "${prop}" due error: \n${nested.map((e: Error) => e.message).join(';\n')}`));
                             return null;
                         }
                         return nested;
@@ -173,7 +173,7 @@ export function _stringify(target:any, classRef: any): string | Array<Error> {
                     }
                     json[prop] = parsed;
                 } else if (typeof desc.value === 'object') {
-                    //It's reference to enum
+                    // It's reference to enum
                     json[prop] = target[prop].map((value: any) => {
                         if (desc.value[value] === void 0) {
                             errors.push(new Error(`Property "${prop}" has wrong value: "${value}". Available values: ${Object.keys(desc.value).join(', ')}.`));
@@ -185,7 +185,7 @@ export function _stringify(target:any, classRef: any): string | Array<Error> {
                 break;
             case EEntityType.primitive:
                 const type = types[desc.value];
-                if (!type.validate(target[prop])){
+                if (!type.validate(target[prop])) {
                     errors.push(new Error(`Property "${prop}" has wrong format.`));
                     break;
                 }
@@ -193,15 +193,15 @@ export function _stringify(target:any, classRef: any): string | Array<Error> {
                 break;
             case EEntityType.reference:
                 if (typeof desc.value === 'function') {
-                    //It's reference to class
+                    // It's reference to class
                     const nested = _stringify(target[prop], desc.value);
                     if (nested instanceof Array) {
-                        errors.push(new Error(`Cannot get instance of class "${desc.value.name}" from property "${prop}" due error: \n${nested.map((e:Error)=>e.message).join(';\n')}`));
+                        errors.push(new Error(`Cannot get instance of class "${desc.value.name}" from property "${prop}" due error: \n${nested.map((e: Error) => e.message).join(';\n')}`));
                         break;
                     }
                     json[prop] = nested;
                 } else if (typeof desc.value === 'object') {
-                    //It's reference to enum
+                    // It's reference to enum
                     if (desc.value[target[prop]] === void 0) {
                         errors.push(new Error(`Property "${prop}" has wrong value: "${target[prop]}". Available values: ${Object.keys(desc.value).join(', ')}.`));
                         break;
@@ -215,15 +215,15 @@ export function _stringify(target:any, classRef: any): string | Array<Error> {
         return errors;
     }
     return JSON.stringify(json);
-};
-
-export function getTypes(): {[key: string]: any} {
-    let defTypes = Object.assign({}, PrimitiveTypes);
-    let adTypes = Object.assign({}, AdvancedTypes);
-    return Object.assign(defTypes, adTypes); 
 }
 
-export function getJSONFromStr(str: string): Object | Error {
+export function getTypes(): {[key: string]: any} {
+    const defTypes = Object.assign({}, PrimitiveTypes);
+    const adTypes = Object.assign({}, AdvancedTypes);
+    return Object.assign(defTypes, adTypes);
+}
+
+export function getJSONFromStr(str: string): {} | Error {
     try {
         return JSON.parse(str);
     } catch (error) {
@@ -231,10 +231,10 @@ export function getJSONFromStr(str: string): Object | Error {
     }
 }
 
-export function stringify(target:any, classRef: any): string | Error {
+export function stringify(target: any, classRef: any): string | Error {
     const result = _stringify(target, classRef);
     if (result instanceof Array) {
-        return new Error(`Cannot stringify due errors:\n ${result.map((error: Error) => { return error.message; }).join('\n')}`)
+        return new Error(`Cannot stringify due errors:\n ${result.map((error: Error) => error.message).join('\n')}`);
     }
     return result;
 }
@@ -253,13 +253,13 @@ export function parse(str: string | object, target?: any): TTypes | Error {
     }
     const result = _parse(json, target);
     if (result instanceof Array) {
-        return new Error(`Cannot parse due errors:\n ${result.map((error: Error) => { return error.message; }).join('\n')}`)
+        return new Error(`Cannot parse due errors:\n ${result.map((error: Error) => error.message).join('\n')}`);
     }
     return result;
 }
 
 export function typeOf(smth: any): string {
-    switch(typeof smth) {
+    switch (typeof smth) {
         case 'object':
             if (smth === null) {
                 return 'null';
@@ -274,8 +274,8 @@ export function typeOf(smth: any): string {
 
 }
 
-export function validateParams(params: any, classRef: any): Array<Error> {
-    const errors: Array<Error> = [];
+export function validateParams(params: any, classRef: any): Error[] {
+    const errors: Error[] = [];
     const description: {[key: string]: any} = classRef.getDescription();
     const types: {[key: string]: any} = getTypes();
     const classRefName: string = classRef.name;
@@ -295,28 +295,28 @@ export function validateParams(params: any, classRef: any): Array<Error> {
         if (desc.optional && params[prop] === void 0) {
             return;
         }
-        switch(desc.type) {
+        switch (desc.type) {
             case EEntityType.repeated:
-                if (!(params[prop] instanceof Array)){
+                if (!(params[prop] instanceof Array)) {
                     errors.push(new Error(`Property "${prop}" has wrong format. Expected an array (repeated). Reference: "${classRefName}"`));
                     break;
                 }
                 if (typeof desc.value === 'string') {
                     params[prop] = params[prop].map((value: any) => {
-                        const type = types[desc.value];
-                        if (typeOf(value) !== type.tsType){
-                            errors.push(new Error(`Property "${prop}" has wrong format. Expected an array (repeated) of "${type.tsType}"`));
+                        const nestedType = types[desc.value];
+                        if (typeOf(value) !== nestedType.tsType) {
+                            errors.push(new Error(`Property "${prop}" has wrong format. Expected an array (repeated) of "${nestedType.tsType}"`));
                         }
                     });
                 } else if (typeof desc.value === 'function') {
-                    //It's reference to class
+                    // It's reference to class
                     params[prop].forEach((instance: any, index: number) => {
                         if (!(instance instanceof desc.value)) {
                             errors.push(new Error(`Expecting property "${prop}", index "${index}" should be instance of "${desc.value.name}".`));
                         }
                     });
                 } else if (typeof desc.value === 'object') {
-                    //It's reference to enum
+                    // It's reference to enum
                     params[prop].forEach((value: any) => {
                         if (desc.value[value] === void 0) {
                             errors.push(new Error(`Property "${prop}" has wrong value: "${value}". Available values: ${Object.keys(desc.value).join(', ')}.`));
@@ -326,18 +326,18 @@ export function validateParams(params: any, classRef: any): Array<Error> {
                 break;
             case EEntityType.primitive:
                 const type = types[desc.value];
-                if (typeOf(params[prop]) !== type.tsType){
+                if (typeOf(params[prop]) !== type.tsType) {
                     errors.push(new Error(`Property "${prop}" has wrong format. Expected: "${type.tsType}".`));
                 }
                 break;
             case EEntityType.reference:
                 if (typeof desc.value === 'function') {
-                    //It's reference to class
+                    // It's reference to class
                     if (!(params[prop] instanceof desc.value)) {
                         errors.push(new Error(`Expecting property "${prop}" will be instance of "${desc.value.name}".`));
                     }
                 } else if (typeof desc.value === 'object') {
-                    //It's reference to enum
+                    // It's reference to enum
                     if (desc.value[params[prop]] === void 0) {
                         errors.push(new Error(`Property "${prop}" has wrong value: "${params[prop]}". Available values: ${Object.keys(desc.value).join(', ')}.`));
                     }
@@ -346,8 +346,8 @@ export function validateParams(params: any, classRef: any): Array<Error> {
         }
     });
     return errors;
-};
+}
 
 export class Root {
-    
+
 }

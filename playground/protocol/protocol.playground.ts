@@ -1,6 +1,6 @@
 /* tslint:disable */
 /*
-* This file generated automaticaly (Fri Oct 12 2018 01:07:50 GMT+0200 (CEST))
+* This file generated automaticaly (Fri Oct 12 2018 02:11:01 GMT+0200 (CEST))
 * Do not remove or change this code.
 * Protocol version: 0.0.1
 */
@@ -14,141 +14,6 @@ namespace Protocol {
 		Events.Ping;
 
 	export const AdvancedTypes: {[key: string]: any} = {};
-	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	* Injection: injection.types.primitive.ts
-	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-	
-	export interface IPrimitiveType<T> {
-	    tsType          : string,
-	    init            : string,
-	    parse           : (value: string | number | T) => T,
-	    serialize       : (value: T) => string | number | boolean | T,
-	    validate        : (value: string | number | T) => boolean,
-	    implementation? : () => {}
-	}
-	
-	export const PrimitiveTypes:  { [key: string]: IPrimitiveType<any> } = {
-	
-	    string      : {
-	        tsType      : 'string',
-	        init        : '""',
-	        parse       : (value: string) => value,
-	        serialize   : (value: string) => value,
-	        validate    : (value: string) => {
-	            if (typeof value !== 'string') {
-	                return false;
-	            }
-	            return true;
-	        }
-	    } as IPrimitiveType<string>,
-	
-	    integer     : {
-	        tsType      : 'number',
-	        init        : '-1',
-	        parse       : (value: number) => { return value; },
-	        serialize   : (value: number) => { return value; },
-	        validate    : (value: number) => { 
-	            if (typeof value !== 'number'){
-	                return false;
-	            }
-	            if (isNaN(value)) {
-	                return false;
-	            }
-	            if (!Number.isInteger(value)){
-	                return false;
-	            }
-	            return true;
-	        }
-	    } as IPrimitiveType<number>,
-	
-	    float     : {
-	        tsType      : 'number',
-	        init        : '-1',
-	        parse       : (value: number) => { return value; },
-	        serialize   : (value: number) => { return value; },
-	        validate    : (value: number) => { 
-	            if (typeof value !== 'number'){
-	                return false;
-	            }
-	            if (isNaN(value)) {
-	                return false;
-	            }
-	            return true;
-	        }
-	    } as IPrimitiveType<number>,
-	
-	    boolean     : {
-	        tsType      : 'boolean',
-	        init        : 'false',
-	        parse       : (value: boolean) => value,
-	        serialize   : (value: boolean) => value,
-	        validate    : (value: boolean) => { 
-	            if (typeof value !== 'boolean'){
-	                return false;
-	            }
-	            return true;
-	        }
-	    } as IPrimitiveType<boolean>,
-	
-	    datetime    : {
-	        tsType      : 'Date',
-	        init        : 'new Date()',
-	        parse       : (value: number) => { 
-	            return new Date(value);
-	        },
-	        serialize   : (value: Date) => { return value.getTime(); },
-	        validate    : (value: number | Date) => {
-	            if (value instanceof Date) {
-	                return true;
-	            } 
-	            if (typeof value !== 'number'){
-	                return false;
-	            }
-	            if (isNaN(value)) {
-	                return false;
-	            }
-	            if (!Number.isInteger(value)){
-	                return false;
-	            }
-	            const date = new Date(value);
-	            if (!(date instanceof Date)){
-	                return false;
-	            }
-	            if (~date.toString().toLowerCase().indexOf('invalid date')){
-	                return false;
-	            }
-	            return !isNaN(date.getTime());
-	        }
-	    } as IPrimitiveType<Date>,
-	
-	    guid     : {
-	        tsType          : 'string',
-	        init            : 'guid()',
-	        parse           : (value: string) => value,
-	        serialize       : (value: string) => value,
-	        validate        : (value: string) => { 
-	            return typeof value === 'string' ? (value.trim() !== '' ? true : false) : false;
-	        },
-	        implementation  : function guid(){
-	            const lengths = [4, 4, 4, 8];
-	            let guid = '';
-	            for (let i = lengths.length - 1; i >= 0; i -= 1){
-	                guid += (Math.round(Math.random() * Math.random() * Math.pow(10, lengths[i] * 2))
-	                            .toString(16)
-	                            .substr(0, lengths[i])
-	                            .toUpperCase() + '-');
-	            }
-	            guid += ((new Date()).getTime() * (Math.random() * 100))
-	                        .toString(16)
-	                        .substr(0, 12)
-	                        .toUpperCase();
-	            return guid;
-	        }
-	    } as IPrimitiveType<string>
-	
-	};
-	
-	
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	* Injection: injection.root.ts
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -165,17 +30,17 @@ namespace Protocol {
 	    primitive = 'primitive',
 	    repeated = 'repeated',
 	    reference = 'reference',
-	    enum = 'enum'
-	};
-	
-	export interface IProperty {
-	    name: string,
-	    type: EEntityType,
-	    optional: boolean,
-	    value: any
+	    enum = 'enum',
 	}
 	
-	export function _parse(json: any, target?: any): TTypes | Array<Error> {
+	export interface IProperty {
+	    name: string;
+	    type: EEntityType;
+	    optional: boolean;
+	    value: any;
+	}
+	
+	export function _parse(json: any, target?: any): TTypes | Error[] {
 	    const types: {[key: string]: any} = getTypes();
 	    if (typeof json !== 'object' || json === null) {
 	        if (typeof json === 'string') {
@@ -195,40 +60,40 @@ namespace Protocol {
 	    }
 	    const classRef: any = ReferencesMap[json.__signature];
 	    if (target !== undefined) {
-	        if (classRef.getSignature() !== target.getSignature()){
+	        if (classRef.getSignature() !== target.getSignature()) {
 	            return [new Error(`Target reference doesn't match with entity in json.`)];
 	        }
 	    }
-	    //Get description of entity
+	    // Get description of entity
 	    const description: {[key: string]: IProperty} = classRef.getDescription();
-	    //Parsing properties
-	    let errors: Array<Error> = [];
+	    // Parsing properties
+	    const errors: Error[] = [];
 	    Object.keys(description).forEach((prop: string) => {
 	        const desc = description[prop];
 	        if (desc.optional && json[prop] === void 0) {
 	            return;
 	        }
-	        switch(desc.type) {
+	        switch (desc.type) {
 	            case EEntityType.repeated:
-	                if (!(json[prop] instanceof Array)){
+	                if (!(json[prop] instanceof Array)) {
 	                    errors.push(new Error(`Property "${prop}" has wrong format. Expected an array (repeated).`));
 	                    break;
 	                }
 	                if (typeof desc.value === 'string') {
 	                    json[prop] = json[prop].map((value: any) => {
-	                        const type = types[desc.value];
-	                        if (!type.validate(value)){
+	                        const nestedType = types[desc.value];
+	                        if (!nestedType.validate(value)) {
 	                            errors.push(new Error(`Property "${prop}" has wrong format.`));
 	                            return undefined;
 	                        }
-	                        return type.parse(value);
+	                        return nestedType.parse(value);
 	                    });
 	                } else if (typeof desc.value === 'function') {
-	                    //It's reference to class
+	                    // It's reference to class
 	                    const parsed = json[prop].map((value: any) => {
 	                        const nested = _parse(value, desc.value);
 	                        if (nested instanceof Array) {
-	                            errors.push(new Error(`Cannot get instance of class "${desc.value.name}" from property "${prop}" due error: \n${nested.map((e:Error)=>e.message).join(';\n')}`));
+	                            errors.push(new Error(`Cannot get instance of class "${desc.value.name}" from property "${prop}" due error: \n${nested.map((e: Error) => e.message).join(';\n')}`));
 	                            return null;
 	                        }
 	                        return nested;
@@ -238,7 +103,7 @@ namespace Protocol {
 	                    }
 	                    json[prop] = parsed;
 	                } else if (typeof desc.value === 'object') {
-	                    //It's reference to enum
+	                    // It's reference to enum
 	                    json[prop].forEach((value: any) => {
 	                        if (desc.value[value] === void 0) {
 	                            errors.push(new Error(`Property "${prop}" has wrong value: "${value}". Available values: ${Object.keys(desc.value).join(', ')}.`));
@@ -248,22 +113,22 @@ namespace Protocol {
 	                break;
 	            case EEntityType.primitive:
 	                const type = types[desc.value];
-	                if (!type.validate(json[prop])){
+	                if (!type.validate(json[prop])) {
 	                    errors.push(new Error(`Property "${prop}" has wrong format.`));
 	                }
 	                json[prop] = type.parse(json[prop]);
 	                break;
 	            case EEntityType.reference:
 	                if (typeof desc.value === 'function') {
-	                    //It's reference to class
+	                    // It's reference to class
 	                    const nested = _parse(json[prop], desc.value);
 	                    if (nested instanceof Array) {
-	                        errors.push(new Error(`Cannot get instance of class "${desc.value.name}" from property "${prop}" due error: \n${nested.map((e:Error)=>e.message).join(';\n')}`));
+	                        errors.push(new Error(`Cannot get instance of class "${desc.value.name}" from property "${prop}" due error: \n${nested.map((e: Error) => e.message).join(';\n')}`));
 	                    } else {
 	                        json[prop] = nested;
 	                    }
 	                } else if (typeof desc.value === 'object') {
-	                    //It's reference to enum
+	                    // It's reference to enum
 	                    if (desc.value[json[prop]] === void 0) {
 	                        errors.push(new Error(`Property "${prop}" has wrong value: "${json[prop]}". Available values: ${Object.keys(desc.value).join(', ')}.`));
 	                    }
@@ -274,50 +139,50 @@ namespace Protocol {
 	    if (errors.length > 0) {
 	        return errors;
 	    }
-	    //Create instance
+	    // Create instance
 	    try {
 	        return new classRef(json);
 	    } catch (error) {
 	        return [error];
 	    }
-	};
+	}
 	
-	export function _stringify(target:any, classRef: any): string | Array<Error> {
+	export function _stringify(target: any, classRef: any): string | Error[] {
 	    if (!(target instanceof classRef)) {
 	        return [new Error(`Defined wrong reference to class.`)];
 	    }
 	    const types: {[key: string]: any} = getTypes();
 	    const description: {[key: string]: IProperty} = classRef.getDescription();
-	    const errors: Array<Error> = [];
-	    let json: any = {
-	        __signature: target.getSignature()
+	    const errors: Error[] = [];
+	    const json: any = {
+	        __signature: target.getSignature(),
 	    };
 	    Object.keys(description).forEach((prop: string) => {
 	        const desc = description[prop];
 	        if (desc.optional && target[prop] === void 0) {
 	            return;
 	        }
-	        switch(desc.type) {
+	        switch (desc.type) {
 	            case EEntityType.repeated:
-	                if (!(target[prop] instanceof Array)){
+	                if (!(target[prop] instanceof Array)) {
 	                    errors.push(new Error(`Property "${prop}" has wrong format. Expected an array (repeated).`));
 	                    break;
 	                }
 	                if (typeof desc.value === 'string') {
 	                    json[prop] = target[prop].map((value: any) => {
-	                        const type = types[desc.value];
-	                        if (!type.validate(value)){
+	                        const nestedType = types[desc.value];
+	                        if (!nestedType.validate(value)) {
 	                            errors.push(new Error(`Property "${prop}" has wrong format.`));
 	                            return undefined;
 	                        }
-	                        return type.serialize(value);
+	                        return nestedType.serialize(value);
 	                    });
 	                } else if (typeof desc.value === 'function') {
-	                    //It's reference to class
+	                    // It's reference to class
 	                    const parsed = target[prop].map((value: any) => {
 	                        const nested = _stringify(value, desc.value);
 	                        if (nested instanceof Array) {
-	                            errors.push(new Error(`Cannot get instance of class "${desc.value.name}" from property "${prop}" due error: \n${nested.map((e:Error)=>e.message).join(';\n')}`));
+	                            errors.push(new Error(`Cannot get instance of class "${desc.value.name}" from property "${prop}" due error: \n${nested.map((e: Error) => e.message).join(';\n')}`));
 	                            return null;
 	                        }
 	                        return nested;
@@ -327,7 +192,7 @@ namespace Protocol {
 	                    }
 	                    json[prop] = parsed;
 	                } else if (typeof desc.value === 'object') {
-	                    //It's reference to enum
+	                    // It's reference to enum
 	                    json[prop] = target[prop].map((value: any) => {
 	                        if (desc.value[value] === void 0) {
 	                            errors.push(new Error(`Property "${prop}" has wrong value: "${value}". Available values: ${Object.keys(desc.value).join(', ')}.`));
@@ -339,7 +204,7 @@ namespace Protocol {
 	                break;
 	            case EEntityType.primitive:
 	                const type = types[desc.value];
-	                if (!type.validate(target[prop])){
+	                if (!type.validate(target[prop])) {
 	                    errors.push(new Error(`Property "${prop}" has wrong format.`));
 	                    break;
 	                }
@@ -347,15 +212,15 @@ namespace Protocol {
 	                break;
 	            case EEntityType.reference:
 	                if (typeof desc.value === 'function') {
-	                    //It's reference to class
+	                    // It's reference to class
 	                    const nested = _stringify(target[prop], desc.value);
 	                    if (nested instanceof Array) {
-	                        errors.push(new Error(`Cannot get instance of class "${desc.value.name}" from property "${prop}" due error: \n${nested.map((e:Error)=>e.message).join(';\n')}`));
+	                        errors.push(new Error(`Cannot get instance of class "${desc.value.name}" from property "${prop}" due error: \n${nested.map((e: Error) => e.message).join(';\n')}`));
 	                        break;
 	                    }
 	                    json[prop] = nested;
 	                } else if (typeof desc.value === 'object') {
-	                    //It's reference to enum
+	                    // It's reference to enum
 	                    if (desc.value[target[prop]] === void 0) {
 	                        errors.push(new Error(`Property "${prop}" has wrong value: "${target[prop]}". Available values: ${Object.keys(desc.value).join(', ')}.`));
 	                        break;
@@ -369,15 +234,15 @@ namespace Protocol {
 	        return errors;
 	    }
 	    return JSON.stringify(json);
-	};
-	
-	export function getTypes(): {[key: string]: any} {
-	    let defTypes = Object.assign({}, PrimitiveTypes);
-	    let adTypes = Object.assign({}, AdvancedTypes);
-	    return Object.assign(defTypes, adTypes); 
 	}
 	
-	export function getJSONFromStr(str: string): Object | Error {
+	export function getTypes(): {[key: string]: any} {
+	    const defTypes = Object.assign({}, PrimitiveTypes);
+	    const adTypes = Object.assign({}, AdvancedTypes);
+	    return Object.assign(defTypes, adTypes);
+	}
+	
+	export function getJSONFromStr(str: string): {} | Error {
 	    try {
 	        return JSON.parse(str);
 	    } catch (error) {
@@ -385,10 +250,10 @@ namespace Protocol {
 	    }
 	}
 	
-	export function stringify(target:any, classRef: any): string | Error {
+	export function stringify(target: any, classRef: any): string | Error {
 	    const result = _stringify(target, classRef);
 	    if (result instanceof Array) {
-	        return new Error(`Cannot stringify due errors:\n ${result.map((error: Error) => { return error.message; }).join('\n')}`)
+	        return new Error(`Cannot stringify due errors:\n ${result.map((error: Error) => error.message).join('\n')}`);
 	    }
 	    return result;
 	}
@@ -407,13 +272,13 @@ namespace Protocol {
 	    }
 	    const result = _parse(json, target);
 	    if (result instanceof Array) {
-	        return new Error(`Cannot parse due errors:\n ${result.map((error: Error) => { return error.message; }).join('\n')}`)
+	        return new Error(`Cannot parse due errors:\n ${result.map((error: Error) => error.message).join('\n')}`);
 	    }
 	    return result;
 	}
 	
 	export function typeOf(smth: any): string {
-	    switch(typeof smth) {
+	    switch (typeof smth) {
 	        case 'object':
 	            if (smth === null) {
 	                return 'null';
@@ -428,8 +293,8 @@ namespace Protocol {
 	
 	}
 	
-	export function validateParams(params: any, classRef: any): Array<Error> {
-	    const errors: Array<Error> = [];
+	export function validateParams(params: any, classRef: any): Error[] {
+	    const errors: Error[] = [];
 	    const description: {[key: string]: any} = classRef.getDescription();
 	    const types: {[key: string]: any} = getTypes();
 	    const classRefName: string = classRef.name;
@@ -449,28 +314,28 @@ namespace Protocol {
 	        if (desc.optional && params[prop] === void 0) {
 	            return;
 	        }
-	        switch(desc.type) {
+	        switch (desc.type) {
 	            case EEntityType.repeated:
-	                if (!(params[prop] instanceof Array)){
+	                if (!(params[prop] instanceof Array)) {
 	                    errors.push(new Error(`Property "${prop}" has wrong format. Expected an array (repeated). Reference: "${classRefName}"`));
 	                    break;
 	                }
 	                if (typeof desc.value === 'string') {
 	                    params[prop] = params[prop].map((value: any) => {
-	                        const type = types[desc.value];
-	                        if (typeOf(value) !== type.tsType){
-	                            errors.push(new Error(`Property "${prop}" has wrong format. Expected an array (repeated) of "${type.tsType}"`));
+	                        const nestedType = types[desc.value];
+	                        if (typeOf(value) !== nestedType.tsType) {
+	                            errors.push(new Error(`Property "${prop}" has wrong format. Expected an array (repeated) of "${nestedType.tsType}"`));
 	                        }
 	                    });
 	                } else if (typeof desc.value === 'function') {
-	                    //It's reference to class
+	                    // It's reference to class
 	                    params[prop].forEach((instance: any, index: number) => {
 	                        if (!(instance instanceof desc.value)) {
 	                            errors.push(new Error(`Expecting property "${prop}", index "${index}" should be instance of "${desc.value.name}".`));
 	                        }
 	                    });
 	                } else if (typeof desc.value === 'object') {
-	                    //It's reference to enum
+	                    // It's reference to enum
 	                    params[prop].forEach((value: any) => {
 	                        if (desc.value[value] === void 0) {
 	                            errors.push(new Error(`Property "${prop}" has wrong value: "${value}". Available values: ${Object.keys(desc.value).join(', ')}.`));
@@ -480,18 +345,18 @@ namespace Protocol {
 	                break;
 	            case EEntityType.primitive:
 	                const type = types[desc.value];
-	                if (typeOf(params[prop]) !== type.tsType){
+	                if (typeOf(params[prop]) !== type.tsType) {
 	                    errors.push(new Error(`Property "${prop}" has wrong format. Expected: "${type.tsType}".`));
 	                }
 	                break;
 	            case EEntityType.reference:
 	                if (typeof desc.value === 'function') {
-	                    //It's reference to class
+	                    // It's reference to class
 	                    if (!(params[prop] instanceof desc.value)) {
 	                        errors.push(new Error(`Expecting property "${prop}" will be instance of "${desc.value.name}".`));
 	                    }
 	                } else if (typeof desc.value === 'object') {
-	                    //It's reference to enum
+	                    // It's reference to enum
 	                    if (desc.value[params[prop]] === void 0) {
 	                        errors.push(new Error(`Property "${prop}" has wrong value: "${params[prop]}". Available values: ${Object.keys(desc.value).join(', ')}.`));
 	                    }
@@ -500,11 +365,147 @@ namespace Protocol {
 	        }
 	    });
 	    return errors;
-	};
+	}
 	
 	export class Root {
-	    
+	
 	}
+	
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	* Injection: injection.types.primitive.ts
+	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	
+	export interface IPrimitiveType<T> {
+	    tsType: string;
+	    init: string;
+	    parse: (value: string | number | T) => T;
+	    serialize: (value: T) => string | number | boolean | T;
+	    validate: (value: string | number | T) => boolean;
+	    implementation?: () => {};
+	}
+	
+	export const PrimitiveTypes:  { [key: string]: IPrimitiveType<any> } = {
+	
+	    string      : {
+	        init        : '""',
+	        parse       : (value: string) => value,
+	        serialize   : (value: string) => value,
+	        tsType      : 'string',
+	        validate    : (value: string) => {
+	            if (typeof value !== 'string') {
+	                return false;
+	            }
+	            return true;
+	        },
+	    } as IPrimitiveType<string>,
+	
+	    integer     : {
+	        init        : '-1',
+	        parse       : (value: number) => value,
+	        serialize   : (value: number) => value,
+	        tsType      : 'number',
+	        validate    : (value: number) => {
+	            if (typeof value !== 'number') {
+	                return false;
+	            }
+	            if (isNaN(value)) {
+	                return false;
+	            }
+	            if (!Number.isInteger(value)) {
+	                return false;
+	            }
+	            return true;
+	        },
+	    } as IPrimitiveType<number>,
+	
+	    float     : {
+	        init        : '-1',
+	        parse       : (value: number) => value,
+	        serialize   : (value: number) => value,
+	        tsType      : 'number',
+	        validate    : (value: number) => {
+	            if (typeof value !== 'number') {
+	                return false;
+	            }
+	            if (isNaN(value)) {
+	                return false;
+	            }
+	            return true;
+	        },
+	    } as IPrimitiveType<number>,
+	
+	    boolean     : {
+	        init        : 'false',
+	        parse       : (value: boolean) => value,
+	        serialize   : (value: boolean) => value,
+	        tsType      : 'boolean',
+	        validate    : (value: boolean) => {
+	            if (typeof value !== 'boolean') {
+	                return false;
+	            }
+	            return true;
+	        },
+	    } as IPrimitiveType<boolean>,
+	
+	    datetime    : {
+	        init        : 'new Date()',
+	        parse       : (value: number) => {
+	            return new Date(value);
+	        },
+	        serialize   : (value: Date) => value.getTime(),
+	        tsType      : 'Date',
+	        validate    : (value: number | Date) => {
+	            if (value instanceof Date) {
+	                return true;
+	            }
+	            if (typeof value !== 'number') {
+	                return false;
+	            }
+	            if (isNaN(value)) {
+	                return false;
+	            }
+	            if (!Number.isInteger(value)) {
+	                return false;
+	            }
+	            const date = new Date(value);
+	            if (!(date instanceof Date)) {
+	                return false;
+	            }
+	            if (date.toString().toLowerCase().indexOf('invalid date') !== -1) {
+	                return false;
+	            }
+	            return !isNaN(date.getTime());
+	        },
+	    } as IPrimitiveType<Date>,
+	
+	    guid     : {
+	        implementation  : function guid() {
+	            const lengths = [4, 4, 4, 8];
+	            let resultGuid = '';
+	            for (let i = lengths.length - 1; i >= 0; i -= 1) {
+	                resultGuid += (Math.round(Math.random() * Math.random() * Math.pow(10, lengths[i] * 2))
+	                            .toString(16)
+	                            .substr(0, lengths[i])
+	                            .toUpperCase() + '-');
+	            }
+	            resultGuid += ((new Date()).getTime() * (Math.random() * 100))
+	                        .toString(16)
+	                        .substr(0, 12)
+	                        .toUpperCase();
+	            return resultGuid;
+	        },
+	        init            : 'guid()',
+	        parse           : (value: string) => value,
+	        serialize       : (value: string) => value,
+	        tsType          : 'string',
+	        validate        : (value: string) => {
+	            return typeof value === 'string' ? (value.trim() !== '' ? true : false) : false;
+	        },
+	
+	    } as IPrimitiveType<string>,
+	
+	};
+	
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	* Injection: map of references
@@ -528,18 +529,18 @@ namespace Protocol {
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 function guid() {
             const lengths = [4, 4, 4, 8];
-            let guid = '';
+            let resultGuid = '';
             for (let i = lengths.length - 1; i >= 0; i -= 1) {
-                guid += (Math.round(Math.random() * Math.random() * Math.pow(10, lengths[i] * 2))
+                resultGuid += (Math.round(Math.random() * Math.random() * Math.pow(10, lengths[i] * 2))
                     .toString(16)
                     .substr(0, lengths[i])
                     .toUpperCase() + '-');
             }
-            guid += ((new Date()).getTime() * (Math.random() * 100))
+            resultGuid += ((new Date()).getTime() * (Math.random() * 100))
                 .toString(16)
                 .substr(0, 12)
                 .toUpperCase();
-            return guid;
+            return resultGuid;
         }
 
 export class Events extends Protocol.Root {
@@ -567,7 +568,7 @@ export class Events extends Protocol.Root {
 	constructor(args: { guid?: string }) {
 		super();
 		args.guid !== void 0 && (this.guid = args.guid);
-		const errors: Array<Error> = Protocol.validateParams(args, Events);
+		const errors: Error[] = Protocol.validateParams(args, Events);
 		if (errors.length > 0) {
 			throw new Error(`Cannot create class of "Events" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
 		}
@@ -604,7 +605,7 @@ export namespace Events {
 			super(Object.assign(args, {}));
 			this.timestamp = args.timestamp;
 			args.message !== void 0 && (this.message = args.message);
-			const errors: Array<Error> = Protocol.validateParams(args, Ping);
+			const errors: Error[] = Protocol.validateParams(args, Ping);
 			if (errors.length > 0) {
 				throw new Error(`Cannot create class of "Ping" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
 			}

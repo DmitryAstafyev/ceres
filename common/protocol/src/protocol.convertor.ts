@@ -1,31 +1,32 @@
-import * as Tools from '../../platform/tools/index';
+import { EEntityType, EntityType, IEntity } from './protocol.entity';
 import { IInejection, Injections } from './protocol.injections';
-import { IEntity, EEntityType, EntityType } from './protocol.entity';
+
 import * as Path from 'path';
+import * as Tools from '../../platform/tools/index';
 
 const DEFAULT_INJECTIONS = [
     './injections/injection.root.ts',
-    './injections/injection.types.primitive.ts'
+    './injections/injection.types.primitive.ts',
 ];
 
 interface IArgument {
-    name: string,
-    type: EEntityType,
-    protoType: string,
-    tsType: string,
-    optional: boolean
+    name: string;
+    type: EEntityType;
+    protoType: string;
+    tsType: string;
+    optional: boolean;
 }
 
 export interface IAdvancedTypeDeclaration {
-    implementation: {[key: string]: any},
-    path: string
+    implementation: {[key: string]: any};
+    path: string;
 }
 
 export class Convertor {
-    private _requestFields : {[key: string]: string} = {
+    private _requestFields: {[key: string]: string} = {
         Request: 'Request',
         Response: 'Response',
-        Responses: 'Responses'
+        Responses: 'Responses',
     };
     private _logger: Tools.Logger = new Tools.Logger('Protocol.Convertor');
     private _entityType: EntityType = new EntityType();
@@ -34,39 +35,39 @@ export class Convertor {
     private _injections: Injections = new Injections();
     private _map: {[key: string]: string } = {};
 
-    public convert(JSON: any, injections: Array<string> = [], adTypes: IAdvancedTypeDeclaration | null = null): Promise<string> {
+    public convert(JSON: any, injections: string[] = [], adTypes: IAdvancedTypeDeclaration | null = null): Promise<string> {
         return new Promise((resolve, reject) => {
-            //Assign advanced types
+            // Assign advanced types
             if (adTypes !== null) {
-                const errors: Array<Error> | undefined = this._entityType.setAdvancedTypes(adTypes.implementation);
+                const errors: Error[] | undefined = this._entityType.setAdvancedTypes(adTypes.implementation);
                 if (errors instanceof Array) {
                     const message: string = errors.map((error: Error) => {
                         return `\t- ${error.message}`;
                     }).join('\n');
                     return reject(new Error(this._logger.error(`Cannot conver protocol due error(s):\n${message}`)));
                 }
-                //Add to injections
+                // Add to injections
                 injections.unshift(Path.join(__dirname, adTypes.path));
             }
-            //Get base
+            // Get base
             let base: string = '';
             try {
                 base = this._getBase(JSON);
             } catch (error) {
                 return reject(error);
             }
-            //Get injections
+            // Get injections
             injections.unshift(...(DEFAULT_INJECTIONS.map((file: string) => {
                 return Path.join(__dirname, file);
             })));
-            this._injections.get(injections).then((injections: Array<IInejection>) => {
+            this._injections.get(injections).then((readyInjections: IInejection[]) => {
                 let injectStr: string = '';
-                //Validate advanced type injection
+                // Validate advanced type injection
                 if (adTypes !== null) {
-                    let error: any = undefined;
-                    injections.forEach((injection: IInejection) => {
-                        if (adTypes.path.indexOf(injection.file) !== -1){
-                            if (injection.content.indexOf('export const AdvancedTypes:') === -1){
+                    let error: any;
+                    readyInjections.forEach((injection: IInejection) => {
+                        if (adTypes.path.indexOf(injection.file) !== -1) {
+                            if (injection.content.indexOf('export const AdvancedTypes:') === -1) {
                                 error = new Error(`TS file with implementation of advanced types doesn't have definition for it. Expected: "export const AdvancedTypes"`);
                             }
                         }
@@ -75,18 +76,18 @@ export class Convertor {
                         return reject(error);
                     }
                 } else {
-                    //Inject empty AdvancedTypes declaration
+                    // Inject empty AdvancedTypes declaration
                     injectStr += `\texport const AdvancedTypes: {[key: string]: any} = {};\n`;
                 }
-                injections.forEach((injection: IInejection) => {
-                    injectStr += 
-                    '\t/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n' + 
-                    `\t* Injection: ${injection.file}\n` + 
-                    '\t* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */\n' + 
-                    injection.content.split(/[\n\r]/gi).map((row: string) => { return `\t${row}`;}).join('\n') + 
+                readyInjections.forEach((injection: IInejection) => {
+                    injectStr +=
+                    '\t/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n' +
+                    `\t* Injection: ${injection.file}\n` +
+                    '\t* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */\n' +
+                    injection.content.split(/[\n\r]/gi).map((row: string) => `\t${row}`).join('\n') +
                     '\n';
                 });
-                let lints: string = '/* tslint:disable */\n';
+                const lints: string = '/* tslint:disable */\n';
                 let greeting: string = '';
                 greeting += `/*\n`;
                 greeting += `* This file generated automaticaly (${(new Date()).toString()})\n`;
@@ -104,7 +105,7 @@ export class Convertor {
                 base += this._getGlobalExport();
                 base += this._getInitialization();
                 resolve(base);
-            }).catch((errors: Array<Error> | Error) => {
+            }).catch((errors: Error[] | Error) => {
                 errors instanceof Error && (errors = [errors]);
                 const message: string = errors.map((error: Error) => {
                     return `\t- ${error.message}`;
@@ -121,24 +122,24 @@ export class Convertor {
         if (Object.keys(JSON).length < 1) {
             throw new Error(this._logger.error(`No properties found in target JSON.`));
         }
-        if (Tools.getTypeOf(JSON.version) !== Tools.EPrimitiveTypes.string || JSON.version.trim() === ''){
+        if (Tools.getTypeOf(JSON.version) !== Tools.EPrimitiveTypes.string || JSON.version.trim() === '') {
             throw new Error(this._logger.error(`Root level of protocol should have property "version" {string}.`));
         }
         this._version = JSON.version;
         delete JSON.version;
         this._entities.root = {
-            name: 'root',
-            type: EEntityType.root,
             children: {},
-            value: JSON,
-            single: true,
+            name: 'root',
             parent: null,
-            request: false
+            request: false,
+            single: true,
+            type: EEntityType.root,
+            value: JSON,
         };
         this._restoreStructure(JSON);
         this._getEntities(this._entities.root, JSON);
         this._validateEntities(this._entities.root);
-        return this._entityType.getInjections() 
+        return this._entityType.getInjections()
             + '\n'
             + this._getImplementation(this._entities.root);
     }
@@ -154,9 +155,9 @@ export class Convertor {
         return isRequest;
     }
 
-    private _restoreStructure(target: any){ 
-        let isRequest: boolean = this._isTargetRequest(target);
-        if (isRequest){
+    private _restoreStructure(target: any) {
+        const isRequest: boolean = this._isTargetRequest(target);
+        if (isRequest) {
             target[this._requestFields.Request] === void 0 && (target[this._requestFields.Request] = {});
             target[this._requestFields.Response] === void 0 && (target[this._requestFields.Response] = {});
         }
@@ -165,10 +166,10 @@ export class Convertor {
         });
     }
 
-    private _getMap(): string{
-        let output: string = 
-                    '\t/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n' + 
-                    `\t* Injection: map of references\n` + 
+    private _getMap(): string {
+        let output: string =
+                    '\t/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n' +
+                    `\t* Injection: map of references\n` +
                     '\t* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */\n';
         output += '\texport let ReferencesMap: {[key: string]: any} = {};\n';
         output += `\texport function init(){\n`;
@@ -185,9 +186,9 @@ export class Convertor {
             signature += entitySignature;
         });
         signature = Tools.hash(signature, true);
-        let output: string = 
-                    '\t/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n' + 
-                    `\t* Injection: protocol signature\n` + 
+        let output: string =
+                    '\t/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n' +
+                    `\t* Injection: protocol signature\n` +
                     '\t* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */\n';
         output += '\texport function getSignature() {\n';
         output += `\t\treturn "${signature}";\n`;
@@ -196,18 +197,18 @@ export class Convertor {
     }
 
     private _getInitialization(): string {
-        let output: string = 
-                    '/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n' + 
-                    `* Injection: initialization\n` + 
+        let output: string =
+                    '/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n' +
+                    `* Injection: initialization\n` +
                     '* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */\n';
         output += 'Protocol.init();\n';
         return output;
     }
 
     private _getGlobalExport(): string {
-        let output: string = 
-                    '/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n' + 
-                    `* Injection: export from Protocol namespace\n` + 
+        let output: string =
+                    '/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n' +
+                    `* Injection: export from Protocol namespace\n` +
                     '* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */\n';
         output += 'export type TProtocolTypes = Protocol.TTypes;\n';
         output += 'export const parse = Protocol.parse;\n';
@@ -217,46 +218,46 @@ export class Convertor {
     }
 
     private _getTypes(): string {
-        let output: string = 
-            '\t/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n' + 
-            `\t* Injection: map of types\n` + 
+        let output: string =
+            '\t/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n' +
+            `\t* Injection: map of types\n` +
             '\t* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */\n';
         output += '\texport type TTypes = \n';
         const count: number = Object.keys(this._map).length;
         Object.keys(this._map).forEach((signature: string, index: number) => {
-            output += `\t\t${this._map[signature]}${index !== count - 1 ? ' |': ';'}\n`;
+            output += `\t\t${this._map[signature]}${index !== count - 1 ? ' |' : ';'}\n`;
         });
         return output;
     }
 
     private _getEntities(parent: IEntity, target: any) {
-        //Check name conflicts
+        // Check name conflicts
         Object.keys(target).forEach((prop: string) => {
             const name: string = this._entityType.serializeName(prop);
             if (name === parent.name) {
                 throw new Error(this._logger.error(`Parent enitity "${parent.name}" has nested definition with name "${prop}". Use other name for nested definition.`));
             }
         });
-        //Proceed entities walking
+        // Proceed entities walking
         Object.keys(target).forEach((prop: string) => {
             const value: any = target[prop];
-            const type: EEntityType | Array<Error> = this._entityType.getType(prop, value);
+            const type: EEntityType | Error[] = this._entityType.getType(prop, value);
             if (type instanceof Array) {
-                throw new Error(this._logger.error(`Error converting: \n ${type.map((error: Error) => { return error.message; }).join('\n')}`));
+                throw new Error(this._logger.error(`Error converting: \n ${type.map((error: Error) => error.message).join('\n')}`));
             }
             if (parent.children[prop] !== void 0) {
                 throw new Error(this._logger.error(`Prop "${prop}" is defined twice.`));
             }
             parent.children[prop] = {
-                name: this._entityType.serializeName(prop),
-                type: type,
                 children: {},
-                value: value,
-                single: this._entityType.isSingle(prop),
+                name: this._entityType.serializeName(prop),
                 parent: parent,
-                request: this._isTargetRequest(value)
+                request: this._isTargetRequest(value),
+                single: this._entityType.isSingle(prop),
+                type: type,
+                value: value,
             };
-            switch(type){
+            switch (type) {
                 case EEntityType.class:
                 case EEntityType.complex:
                 case EEntityType.namespace:
@@ -270,28 +271,28 @@ export class Convertor {
         });
     }
 
-    private _validateEntities(entity: IEntity){
+    private _validateEntities(entity: IEntity) {
         Object.keys(entity.children).forEach((prop) => {
             const target: IEntity = entity.children[prop];
-            let ref: string = target.value;
+            const ref: string = target.value;
             if (entity.parent === null) {
                 return this._validateEntities(target);
             }
             if (entity.request && entity.children.Responses !== void 0) {
-                if (!(entity.children.Responses.value instanceof Array)){
-                    throw new Error(`Field "Responses" is reserved. Value can be only Array<string>. Check prop "${entity.name}".`);
+                if (!(entity.children.Responses.value instanceof Array)) {
+                    throw new Error(`Field "Responses" is reserved. Value can be only string[]. Check prop "${entity.name}".`);
                 }
-                entity.children.Responses.value.forEach((ref: string) => {
-                    const refImpl: string = this._findRefImpl(entity, ref);
-                    if (refImpl === '') {
-                        throw new Error(this._logger.error(`Cannot find definition for "${ref}". Define "${ref}" on root level or on parent levels of "${entity.name}".`));
+                entity.children.Responses.value.forEach((childRef: string) => {
+                    const childRefImpl: string = this._findRefImpl(entity, childRef);
+                    if (childRefImpl === '') {
+                        throw new Error(this._logger.error(`Cannot find definition for "${childRef}". Define "${childRef}" on root level or on parent levels of "${entity.name}".`));
                     }
                 });
             }
             if (target.type !== EEntityType.reference) {
                 return this._validateEntities(target);
             }
-            //Check reference implementation
+            // Check reference implementation
             const refImpl: string = this._findRefImpl(entity, ref);
             if (refImpl === '') {
                 throw new Error(this._logger.error(`Cannot find definition for "${ref}". Define "${ref}" on root level or on parent levels of "${entity.name}".`));
@@ -311,9 +312,9 @@ export class Convertor {
         return entity;
     }
 
-    private _getPathToRef(parent: IEntity, path: Array<string> = []): string {
+    private _getPathToRef(parent: IEntity, path: string[] = []): string {
         parent.type !== EEntityType.root && path.unshift(parent.name);
-        if (parent.parent !== null){
+        if (parent.parent !== null) {
             this._getPathToRef(parent.parent, path);
         }
         return path.join('.');
@@ -325,7 +326,7 @@ export class Convertor {
             return '';
         }
         if (entity.type === EEntityType.root) {
-            //Implementation of reference on root level - don't need full path
+            // Implementation of reference on root level - don't need full path
             return ref;
         }
         const path: string = this._getPathToRef(entity);
@@ -336,22 +337,21 @@ export class Convertor {
         const tab = '\t'.repeat(deep);
         const nested = '\t'.repeat(deep + 1);
         let output: string = '';
-        let ownArgs: Array<IArgument> = this._getOwnArguments(entity);
-        let parentArgs: Array<IArgument> = entity.parent !== null ? (!entity.single ? this._getParentsArguments(entity.parent) : []) : [];
-        let args: Array<IArgument> = [];
+        const ownArgs: IArgument[] = this._getOwnArguments(entity);
+        const parentArgs: IArgument[] = entity.parent !== null ? (!entity.single ? this._getParentsArguments(entity.parent) : []) : [];
+        const args: IArgument[] = [];
         args.push(...parentArgs);
         args.push(...ownArgs);
-        //Check conflicts
+        // Check conflicts
         ownArgs.forEach((ownArg: IArgument) => {
-            let hasConflict: boolean = false;
             parentArgs.forEach((parentArg: IArgument) => {
                 if (ownArg.name === parentArg.name) {
                     throw new Error(`Conflict. Property "${entity.name}" has definition for "${ownArg.name}", but this field is already defined on parent's level.`);
                 }
             });
         });
-        //Build class
-        output += `\n${tab}constructor(args: { ${args.map((arg: IArgument) => { return `${arg.name + (arg.optional ? '?' : '')}: ${arg.tsType}`; }).join(', ')} }) {`;
+        // Build class
+        output += `\n${tab}constructor(args: { ${args.map((arg: IArgument) => `${arg.name + (arg.optional ? '?' : '')}: ${arg.tsType}`).join(', ')} }) {`;
         if (parentArgs.length > 0) {
             output += `\n${nested}super(Object.assign(args, {}));`;
         } else {
@@ -365,7 +365,7 @@ export class Convertor {
             }
         });
         output += `\n`;
-        output += `${nested}const errors: Array<Error> = Protocol.validateParams(args, ${entity.name});\n`
+        output += `${nested}const errors: Error[] = Protocol.validateParams(args, ${entity.name});\n`;
         output += `${nested}if (errors.length > 0) {\n`;
         output += `${nested}\tthrow new Error(\`Cannot create class of "${entity.name}" due error(s):\\n\${errors.map((error: Error) => { return \`\\t- \${error.message}\`; }).join('\\n')}\`);\n`;
         output += `${nested}}\n`;
@@ -373,44 +373,45 @@ export class Convertor {
         return output;
     }
 
-    private _getOwnArguments(entity: IEntity): Array<IArgument> {
-        let args: Array<IArgument> = [];
+    private _getOwnArguments(entity: IEntity): IArgument[] {
+        const args: IArgument[] = [];
         Object.keys(entity.children).forEach((key: string) => {
             const target: IEntity = entity.children[key];
-            switch(target.type) {
+            switch (target.type) {
                 case EEntityType.primitive:
                     const type = this._entityType.getTypes()[target.value];
                     args.push({
                         name: target.name.replace(/\?/gi, ''),
-                        type: target.type,
+                        optional: target.name.indexOf('?') !== -1,
                         protoType: target.value,
                         tsType: this._entityType.getTypes()[target.value].tsType,
-                        optional: target.name.indexOf('?') !== -1
+                        type: target.type,
+
                     });
                     break;
                 case EEntityType.reference:
                     args.push({
                         name: target.name.replace(/\?/gi, ''),
-                        type: target.type,
+                        optional: target.name.indexOf('?') !== -1,
                         protoType: target.value,
                         tsType: this._findRefImpl(target.parent as IEntity, target.value),
-                        optional: target.name.indexOf('?') !== -1
+                        type: target.type,
                     });
                     break;
                 case EEntityType.repeated:
                     const typeAlias: string = this._entityType.getRepeatedType(target.value);
                     let tsType = '';
-                    if (this._entityType.isPrimitive(typeAlias)){
+                    if (this._entityType.isPrimitive(typeAlias)) {
                         tsType = this._entityType.getTypes()[typeAlias].tsType;
                     } else {
                         tsType = this._findRefImpl(target.parent as IEntity, typeAlias);
                     }
                     args.push({
                         name: target.name.replace(/\?/gi, ''),
-                        type: target.type,
+                        optional: target.name.indexOf('?') !== -1,
                         protoType: target.value,
                         tsType: `Array<${tsType}>`,
-                        optional: target.name.indexOf('?') !== -1
+                        type: target.type,
                     });
                     break;
             }
@@ -418,9 +419,9 @@ export class Convertor {
         return args;
     }
 
-    private _getParentsArguments(parent: IEntity): Array<IArgument> {
-        let args: Array<IArgument> = [];
-        switch(parent.type) {
+    private _getParentsArguments(parent: IEntity): IArgument[] {
+        const args: IArgument[] = [];
+        switch (parent.type) {
             case EEntityType.class:
             case EEntityType.complex:
             case EEntityType.namespace:
@@ -432,7 +433,7 @@ export class Convertor {
     }
 
     private _getClassChain(entity: IEntity): string {
-        let signature: string = entity.name;
+        const signature: string = entity.name;
         return (entity.parent !== null ? (entity.parent.type !== EEntityType.root ? `${this._getClassChain(entity.parent)}.` : '') : '') + signature;
     }
 
@@ -441,9 +442,9 @@ export class Convertor {
         const tab = '\t'.repeat(deep);
         const exttab = '\t'.repeat(deep + 1);
         const extended: string = (entity.parent !== null ? (entity.parent.type !== EEntityType.root ? ` extends ${entity.parent.name}` : ' extends Protocol.Root') : '');
-        //Open class
+        // Open class
         output += `${tab}export class ${entity.name}${entity.single ? ' extends Protocol.Root' : extended} {\n`;
-        //Define signature
+        // Define signature
         const chain: string = this._getClassChain(entity);
         const signature: string = Tools.hash(`${this._version}:${chain}`, true);
         output += this._getDescriptionEntity(entity, deep + 1);
@@ -455,49 +456,49 @@ export class Convertor {
         output += `${exttab}public getSignature(): string {\n`;
         output += `${exttab}\treturn this.__signature;\n`;
         output += `${exttab}}\n`;
-        //Define extractor
+        // Define extractor
         output += `${exttab}static parse(str: string | object): Protocol.TTypes | Error {\n`;
         output += `${exttab}\treturn Protocol.parse(str, ${entity.name});\n`;
         output += `${exttab}}\n`;
-        //Define stringify
+        // Define stringify
         output += `${exttab}public stringify(): string {\n`;
         output += `${exttab}\treturn Protocol.stringify(this, ${entity.name}) as string;\n`;
         output += `${exttab}}\n`;
-        //Save signature
+        // Save signature
         if (this._map[signature] !== void 0) {
             throw new Error(this._logger.error(`Signature (${signature}) for "${entity.name}" already exsist. Cannot continue converting.`));
         }
-        this._map[signature] = chain; 
-        //Define properties
+        this._map[signature] = chain;
+        // Define properties
         Object.keys(entity.children).forEach((prop: string) => {
             const child: IEntity = entity.children[prop];
-            switch(child.type) {
+            switch (child.type) {
                 case EEntityType.primitive:
                 case EEntityType.reference:
                 case EEntityType.repeated:
                     output += this._getImplementation(child, deep + 1);
                     break;
-            }               
+            }
         });
-        //Add constructor
+        // Add constructor
         output += this._getClassConstructor(entity, deep + 1);
         output += `${tab}}\n`;
-        //Close class
+        // Close class
         return output;
     }
 
     private _getDescriptionEntity(entity: IEntity, deep: number = 0): string {
         const tab = '\t'.repeat(deep);
-        let ownArgs: Array<IArgument> = this._getOwnArguments(entity);
-        let parentArgs: Array<IArgument> = entity.parent !== null ? (!entity.single ? this._getParentsArguments(entity.parent) : []) : [];
-        let args: Array<IArgument> = [];
+        const ownArgs: IArgument[] = this._getOwnArguments(entity);
+        const parentArgs: IArgument[] = entity.parent !== null ? (!entity.single ? this._getParentsArguments(entity.parent) : []) : [];
+        const args: IArgument[] = [];
         args.push(...parentArgs);
         args.push(...ownArgs);
         let output: string = `${tab}static getDescription(): {[key: string]: Protocol.IProperty } {\n`;
         output += `${tab}\treturn {\n`;
         args.forEach((arg: IArgument) => {
             const name: string = this._entityType.hardSerializeName(arg.name);
-            switch(arg.type) {
+            switch (arg.type) {
                 case EEntityType.class:
                 case EEntityType.complex:
                 case EEntityType.namespace:
@@ -525,7 +526,7 @@ export class Convertor {
         let output: string = '';
         const tab = '\t'.repeat(deep);
         const exttab = '\t'.repeat(deep + 1);
-        switch(entity.type) {
+        switch (entity.type) {
             case EEntityType.root:
                 Object.keys(entity.children).forEach((prop: string) => {
                     const child: IEntity = entity.children[prop];
@@ -533,15 +534,15 @@ export class Convertor {
                 });
                 break;
             case EEntityType.class:
-                //Open class
+                // Open class
                 output += this._getClassImplementation(entity, deep);
-                //Close class
+                // Close class
                 break;
             case EEntityType.complex:
-                //Open class
+                // Open class
                 output += this._getClassImplementation(entity, deep);
-                //Close class
-                //Open namespace
+                // Close class
+                // Open namespace
                 output += `${tab}export namespace ${entity.name} {\n`;
                 Object.keys(entity.children).forEach((prop: string) => {
                     const child: IEntity = entity.children[prop];
@@ -549,14 +550,14 @@ export class Convertor {
                         output += this._getImplementation(child, deep + 1);
                     }
                 });
-                //Close namespace
+                // Close namespace
                 output += `${tab}}\n`;
                 break;
             case EEntityType.namespace:
-                //Open class
+                // Open class
                 output += this._getClassImplementation(entity, deep);
-                //Close class
-                //Open namespace
+                // Close class
+                // Open namespace
                 output += `${tab}export namespace ${entity.name} {\n`;
                 Object.keys(entity.children).forEach((prop: string) => {
                     const child: IEntity = entity.children[prop];
@@ -565,12 +566,12 @@ export class Convertor {
                     }
                 });
                 if (entity.request) {
-                    //Add type description for request
-                    let responses: Array<string> = ['Response'];
+                    // Add type description for request
+                    const responses: string[] = ['Response'];
                     entity.children.Responses !== void 0 && responses.push(...entity.children.Responses.value);
                     output += `${exttab}type TResponses = ${responses.join(' | ')};\n`;
                 }
-                //Close namespace
+                // Close namespace
                 output += `${tab}}\n`;
                 break;
             case EEntityType.primitive:
@@ -578,12 +579,12 @@ export class Convertor {
                 output += `${tab}public ${entity.name}: ${type.tsType} = ${type.init};\n`;
                 break;
             case EEntityType.reference:
-                output += `${tab}public ${entity.name}: ${this._findRefImpl(entity.parent as IEntity, entity.value)};\n`; 
+                output += `${tab}public ${entity.name}: ${this._findRefImpl(entity.parent as IEntity, entity.value)};\n`;
                 break;
             case EEntityType.repeated:
                 const typeAlias: string = this._entityType.getRepeatedType(entity.value);
                 let tsType = '';
-                if (this._entityType.isPrimitive(typeAlias)){
+                if (this._entityType.isPrimitive(typeAlias)) {
                     tsType = this._entityType.getTypes()[typeAlias].tsType;
                 } else {
                     tsType = this._findRefImpl(entity.parent as IEntity, typeAlias);
@@ -591,9 +592,9 @@ export class Convertor {
                 output += `${tab}public ${entity.name}: Array<${tsType}> = [];\n`;
                 break;
             case EEntityType.enum:
-                output += `${tab}export enum ${entity.name} {\n`; 
+                output += `${tab}export enum ${entity.name} {\n`;
                 entity.value.forEach((value: string, index: number) => {
-                    output += `${tab}\t${value} = '${value}'${index < entity.value.length - 1 ? ',' : ''}\n`; 
+                    output += `${tab}\t${value} = '${value}'${index < entity.value.length - 1 ? ',' : ''}\n`;
                 });
                 output += `${tab}}\n`;
                 break;

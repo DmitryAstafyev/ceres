@@ -1,9 +1,9 @@
-export enum ERequestTypes {    
+export enum ERequestTypes {
     get     = 'GET',
     post    = 'POST',
     put     = 'PUT',
     delete  = 'DELETE',
-    option  = 'OPTION'
-};
+    option  = 'OPTION',
+}
 
 export type TRequestType = ERequestTypes.post | ERequestTypes.get | ERequestTypes.put | ERequestTypes.option | ERequestTypes.delete;

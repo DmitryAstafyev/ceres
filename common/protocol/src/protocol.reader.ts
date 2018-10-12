@@ -1,6 +1,6 @@
-import * as Tools from '../../platform/tools/index';
 import * as FS from 'fs';
 import * as Path from 'path';
+import * as Tools from '../../platform/tools/index';
 
 const logger: Tools.Logger = new Tools.Logger('ProtocolFileLoader');
 
@@ -8,7 +8,7 @@ export class Reader {
 
     private _path: string = '';
 
-    public read(file: string): Promise<any>{
+    public read(file: string): Promise<any> {
         return new Promise((resolve, reject) => {
             if (this._path === '') {
                 this._path = Path.dirname(file);
@@ -24,8 +24,8 @@ export class Reader {
                 if (error) {
                   return reject(error);
                 }
-                
-                let json: any = this._getJSONFromBuffer(buffer);
+
+                const json: any = this._getJSONFromBuffer(buffer);
 
                 if (json instanceof Error) {
                     reject(json);
@@ -70,15 +70,15 @@ export class Reader {
     }
 
     private _clearComments(str: string): string {
-        return str.replace(/[\n\r]/gi, '').replace(/\/\*[^\*\/]*\*\//gi, '')
+        return str.replace(/[\n\r]/gi, '').replace(/\/\*[^\*\/]*\*\//gi, '');
     }
 
     private _getJSONFromBuffer(buffer: Buffer): string | Error {
         try {
             return JSON.parse(
-                this._clearComments(buffer.toString('utf8'))
+                this._clearComments(buffer.toString('utf8')),
             );
-        } catch(e){
+        } catch (e) {
             return new Error(logger.error(`Error during parsing file: ${e.message}`));
         }
     }

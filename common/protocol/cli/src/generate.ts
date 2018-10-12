@@ -1,52 +1,54 @@
+/* tslint:disable:no-console */
+
 import { Builder } from '../../src/protocol.builder';
 
-type TArgumentDescription = { description: string, hasParameter: boolean, args: Array<string>, errors: {[key:string]:string}};
+type TArgumentDescription = { description: string, hasParameter: boolean, args: string[], errors: {[key: string]: string}};
 
 const ERRORS = {
+    doubleParameter: 'doubleParameter',
     noParameter: 'noParameter',
-    doubleParameter: 'doubleParameter'
 };
 
 const COMMANDS = {
-    output  : 'output',
-    source  : 'source',
-    replace : 'replace',
     help    : 'help',
+    output  : 'output',
+    replace : 'replace',
+    source  : 'source',
 };
 
-const ARGUMENTS : {[key:string]: TArgumentDescription } = {
-    [COMMANDS.output]  : { 
+const ARGUMENTS: {[key: string]: TArgumentDescription } = {
+    [COMMANDS.output]  : {
+        args: ['-o', '--outout', '--out'],
         description: 'Definition of output file. Format: ts (TypeScript)',
-        hasParameter: true,     
-        args: ['-o', '--outout', '--out'], 
-        errors: { [ERRORS.noParameter]: 'Key "-o" (--output, --out) expected file name after.', [ERRORS.doubleParameter]: 'Key "-o" (--output, --out) can be defined twice.'}
+        errors: { [ERRORS.noParameter]: 'Key "-o" (--output, --out) expected file name after.', [ERRORS.doubleParameter]: 'Key "-o" (--output, --out) can be defined twice.'},
+        hasParameter: true,
     },
-    [COMMANDS.source]  : { 
+    [COMMANDS.source]  : {
+        args: ['-s', '--source', '--src'],
         description: 'Definition of input file. Expected format is JSON',
-        hasParameter: true,     
-        args: ['-s', '--source', '--src'], 
-        errors: { [ERRORS.noParameter]: 'Key "-s" (--source, --src) expected file name after.', [ERRORS.doubleParameter]: 'Key "-s" (--source, --src) can be defined twice.'}
+        errors: { [ERRORS.noParameter]: 'Key "-s" (--source, --src) expected file name after.', [ERRORS.doubleParameter]: 'Key "-s" (--source, --src) can be defined twice.'},
+        hasParameter: true,
     },
-    [COMMANDS.replace]    : { 
+    [COMMANDS.replace]    : {
+        args: ['-r', '--replace'],
         description: 'Replace output file if it exists',
-        hasParameter: false,    
-        args: ['-r', '--replace'], 
-        errors: {} 
+        errors: {},
+        hasParameter: false,
     },
-    [COMMANDS.help]    : { 
+    [COMMANDS.help]    : {
+        args: ['-h', '--help'],
         description: 'Show this message',
-        hasParameter: false,    
-        args: ['-h', '--help'], 
-        errors: {} 
-    }
+        errors: {},
+        hasParameter: false,
+    },
 };
 
 function isItArgument(smth: string): boolean {
     let result = false;
     Object.keys(ARGUMENTS).forEach((command: string) => {
-        let description: TArgumentDescription = ARGUMENTS[command];
-        description.args.forEach((_arg: string)=>{
-            if (smth === _arg){
+        const description: TArgumentDescription = ARGUMENTS[command];
+        description.args.forEach((_arg: string) => {
+            if (smth === _arg) {
                 result = true;
             }
         });
@@ -56,27 +58,27 @@ function isItArgument(smth: string): boolean {
 
 const OUTPUTS = {
     help: () => {
-        console.log(`Supported commands: \n${Object.keys(ARGUMENTS).map((command: string)=>{
-            let description: TArgumentDescription = ARGUMENTS[command];
+        console.log(`Supported commands: \n${Object.keys(ARGUMENTS).map((command: string) => {
+            const description: TArgumentDescription = ARGUMENTS[command];
             return `${description.args.join(' | ')} - ${description.description};`;
-        }).join('\n')}`)
-    }
+        }).join('\n')}`);
+    },
 };
 
-if (process.argv instanceof Array){
-    let commands : { [key: string]: string} = {};
+if (process.argv instanceof Array) {
+    const commands: { [key: string]: string} = {};
     let error = false;
-    let started = (new Date()).getTime();
+    const started = (new Date()).getTime();
     try {
-        process.argv.forEach((arg: string, index: number)=>{
-            Object.keys(ARGUMENTS).forEach((command: string)=>{
-                let description: TArgumentDescription = ARGUMENTS[command];
-                description.args.forEach((_arg: string)=>{
-                    if (_arg === arg){
-                        if (description.hasParameter){
-                            if (process.argv[index + 1] !== void 0){
-                                if (!isItArgument(process.argv[index + 1]) && process.argv[index + 1].trim() !== ''){
-                                    if (commands[command] === void 0){
+        process.argv.forEach((arg: string, index: number) => {
+            Object.keys(ARGUMENTS).forEach((command: string) => {
+                const description: TArgumentDescription = ARGUMENTS[command];
+                description.args.forEach((_arg: string) => {
+                    if (_arg === arg) {
+                        if (description.hasParameter) {
+                            if (process.argv[index + 1] !== void 0) {
+                                if (!isItArgument(process.argv[index + 1]) && process.argv[index + 1].trim() !== '') {
+                                    if (commands[command] === void 0) {
                                         commands[command] = process.argv[index + 1];
                                     } else {
                                         console.log(description.errors[ERRORS.doubleParameter]);
@@ -97,30 +99,30 @@ if (process.argv instanceof Array){
                 });
             });
         });
-    } catch (e){
-        if (typeof e !== 'string'){
+    } catch (e) {
+        if (typeof e !== 'string') {
             throw e;
         } else {
             error = true;
         }
     }
 
-    if (!error){
-        if (Object.keys(commands).length > 0){
-            if (~Object.keys(commands).indexOf(COMMANDS.help)){
+    if (!error) {
+        if (Object.keys(commands).length > 0) {
+            if (Object.keys(commands).indexOf(COMMANDS.help) !== -1) {
                 OUTPUTS.help();
-            } else if (~Object.keys(commands).indexOf(COMMANDS.source) && ~Object.keys(commands).indexOf(COMMANDS.output)){
+            } else if (Object.keys(commands).indexOf(COMMANDS.source) !== -1 && Object.keys(commands).indexOf(COMMANDS.output) !== -1) {
                 try {
-                    let builder = new Builder();
-                    builder.build(commands[COMMANDS.source], commands[COMMANDS.output], ~Object.keys(commands).indexOf(COMMANDS.replace) ? true : false)
-                        .then(()=>{
-                            let finished = (new Date()).getTime();
+                    const builder = new Builder();
+                    builder.build(commands[COMMANDS.source], commands[COMMANDS.output], Object.keys(commands).indexOf(COMMANDS.replace) !== -1 ? true : false)
+                        .then(() => {
+                            const finished = (new Date()).getTime();
                             console.log(`File "${commands[COMMANDS.output]}" generated for ${((finished - started) / 1000).toFixed(2)} s.`);
                         })
-                        .catch((e)=>{
+                        .catch((e) => {
                             console.log(e.message);
                         });
-                } catch (e){
+                } catch (e) {
                     console.log(e.message);
                 }
             }
@@ -128,5 +130,5 @@ if (process.argv instanceof Array){
             OUTPUTS.help();
         }
     }
-    
+
 }
