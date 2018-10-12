@@ -1,50 +1,48 @@
+import { ERequestTypes, TRequestType } from '../../platform/enums/enum.http.request.types';
 import * as Tools from '../../platform/tools/index';
-import { TRequestType, ERequestTypes } from '../../platform/enums/enum.http.request.types';
-
 
 const HEADERS = {
+    ACCEPT          : 'Accept',
     CONTENT_TYPE    : 'Content-Type',
-    ACCEPT          : 'Accept'
 };
 
-type THeaders = {[key:string]: string};
+type THeaders = {[key: string]: string};
+type TCallback = (...args: any[]) => any;
 
 export interface IEventDone {
-    status: number
-    response: string | object
-};
+    status: number;
+    response: string | object;
+}
 
 export default class ImpXMLHTTPRequest {
 
-    static METHODS = ERequestTypes;
-    private _logger             : Tools.Logger      = new Tools.Logger('ImpXMLHTTPRequest');
-    private _httpRequest        : XMLHttpRequest;
-    private _method             : TRequestType      = ERequestTypes.post;
-    private _url                : string            = '';
-    private _timeout            : number            = 0;
-    private _requestHeaders     : THeaders          = {};
-    private _requestPost        : string            = '';
-    private _resolve            : Function          = () => {};
-    private _reject             : Function          = () => {};
-    private _resolved           : boolean           = false;
-    private _rejected           : boolean           = false;
-    private _aborted            : boolean           = false;
+    public static METHODS = ERequestTypes;
+    private _logger:            Tools.Logger      = new Tools.Logger('ImpXMLHTTPRequest');
+    private _httpRequest:       XMLHttpRequest;
+    private _method:            TRequestType      = ERequestTypes.post;
+    private _url:               string            = '';
+    private _timeout:           number            = 0;
+    private _requestHeaders:    THeaders          = {};
+    private _requestPost:       string            = '';
+    private _resolved:          boolean           = false;
+    private _rejected:          boolean           = false;
+    private _aborted:           boolean           = false;
 
     constructor(
         url: string,
         post: string,
         method: TRequestType = ERequestTypes.post,
         headers: THeaders = {},
-        timeout: number = 0
-    ){
-        if (typeof url !== 'string' || url.trim() === ''){
+        timeout: number = 0,
+    ) {
+        if (typeof url !== 'string' || url.trim() === '') {
             throw new Error(this._logger.env(`Parameter url should be defined.`));
         }
-        if (typeof post !== 'string' || post.trim() === ''){
+        if (typeof post !== 'string' || post.trim() === '') {
             throw new Error(this._logger.env(`Parameter post should be defined.`));
         }
-        if ((<any>Object).values(ERequestTypes).indexOf(method) === -1){
-            throw new Error(this._logger.env(`Method should be defined as value of: ${(<any>Object).values(ERequestTypes).join(', ')}`));
+        if ((Object as any).values(ERequestTypes).indexOf(method) === -1) {
+            throw new Error(this._logger.env(`Method should be defined as value of: ${(Object as any).values(ERequestTypes).join(', ')}`));
         }
         this._httpRequest                       = new XMLHttpRequest();
         this._url                               = url;
@@ -57,8 +55,12 @@ export default class ImpXMLHTTPRequest {
         this._timeout                           = timeout;
     }
 
-    send(): Promise<string> {
-        return new Promise((resolve: Function, reject: Function) => {
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 * Public
+	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+    public send(): Promise<string> {
+        return new Promise((resolve: TCallback, reject: TCallback) => {
             this._resolve = resolve;
             this._reject = reject;
             this._httpRequest.open(this._method, this._url, true);
@@ -68,14 +70,30 @@ export default class ImpXMLHTTPRequest {
         });
     }
 
+    public close() {
+        this._aborted = true;
+        this._httpRequest.abort();
+    }
+
+    public getUrl(): string {
+        return this._url;
+    }
+
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 * Private
+	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+    private _resolve: TCallback = () => void 0;
+    private _reject: TCallback  = () => void 0;
+
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * XMLHttpRequest handlers
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
     private _getRequestStateData(event: Event): { [key: string]: string | number | undefined } {
         const state = {
+            readyState: undefined,
             status: undefined,
-            readyState: undefined
         };
         if (typeof event !== 'object' || event === null) {
             return state;
@@ -89,21 +107,21 @@ export default class ImpXMLHTTPRequest {
         return state;
     }
 
-    private _ontimeout(event : Event){
+    private _ontimeout(event: Event) {
         this._logger.verbose(`Request to url "${this._url}" is timeouted: `, event);
         this._rejectRequest(
-            new Error(this._logger.env(`Request to url "${this._url}" is timeouted:`, this._getRequestStateData(event)))
-        );    
+            new Error(this._logger.env(`Request to url "${this._url}" is timeouted:`, this._getRequestStateData(event))),
+        );
     }
 
-    private _onerror(event : Event){
+    private _onerror(event: Event) {
         this._logger.verbose(`Request to url "${this._url}" finished with error: `, event);
         this._rejectRequest(
-            new Error(this._logger.env(`Request to url "${this._url}" finished with error:`, this._getRequestStateData(event)))
-        ); 
+            new Error(this._logger.env(`Request to url "${this._url}" finished with error:`, this._getRequestStateData(event))),
+        );
     }
 
-    private _onreadystatechange( event : Event) {
+    private _onreadystatechange( event: Event) {
         switch (this._httpRequest.readyState) {
             case XMLHttpRequest.DONE:
                 if (this._httpRequest.status !== 200) {
@@ -139,34 +157,22 @@ export default class ImpXMLHTTPRequest {
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Internal
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-    private _getResponseHeaders(): THeaders{
+    private _getResponseHeaders(): THeaders {
         const headers = this._httpRequest.getAllResponseHeaders();
-        let results: THeaders = {};
-        if (typeof headers === 'string'){
-            headers.split(/[\r\n]/gi).forEach((header)=>{
-                let pair = header.split(':');
-                if (pair.length === 2){
+        const results: THeaders = {};
+        if (typeof headers === 'string') {
+            headers.split(/[\r\n]/gi).forEach((header) => {
+                const pair = header.split(':');
+                if (pair.length === 2) {
                     results[pair[0]] = pair[1];
                 }
             });
         }
         return results;
     }
-    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	 * Public
-	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-    public close(){
-        this._aborted = true;
-        this._httpRequest.abort();
-    }
-
-    public getUrl(): string {
-        return this._url;
-    }
-
-    private _defaultRequestHeaders(headers : THeaders = {}){
-        if (typeof headers !== 'object' || headers === null){
+    private _defaultRequestHeaders(headers: THeaders = {}) {
+        if (typeof headers !== 'object' || headers === null) {
             headers = {};
         }
         headers[HEADERS.CONTENT_TYPE]   === void 0 && (headers[HEADERS.CONTENT_TYPE]    = 'application/x-www-form-urlencoded');
@@ -174,10 +180,10 @@ export default class ImpXMLHTTPRequest {
         return headers;
     }
 
-    private _parseRequestHeaders(headers : THeaders = {}){
-        Object.keys(headers).forEach((key)=>{
-            let parts = key.split('-');
-            parts.forEach((part, index)=>{
+    private _parseRequestHeaders(headers: THeaders = {}) {
+        Object.keys(headers).forEach((key) => {
+            const parts = key.split('-');
+            parts.forEach((part, index) => {
                 parts[index] = part.charAt(0).toUpperCase() + part.slice(1);
             });
             headers[parts.join('-')] = headers[key];
@@ -185,9 +191,9 @@ export default class ImpXMLHTTPRequest {
         return headers;
     }
 
-    private _setRequestHeaders(){
-        Object.keys(this._requestHeaders).forEach((key)=>{
-            if (typeof this._requestHeaders[key] !== 'string'){
+    private _setRequestHeaders() {
+        Object.keys(this._requestHeaders).forEach((key) => {
+            if (typeof this._requestHeaders[key] !== 'string') {
                 throw new Error(this._logger.env(`Value of header should be STRING. Check HEADER [${key}]`));
             }
             this._httpRequest.setRequestHeader(key, this._requestHeaders[key]);

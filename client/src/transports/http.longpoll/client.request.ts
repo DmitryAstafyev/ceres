@@ -2,19 +2,19 @@ import * as Tools from '../../platform/tools/index';
 import ImpXMLHTTPRequest from '../common/xmlhttprequest';
 
 const SETTINGS = {
-	DEFAULT_TIMEOUT: 30000 //30sec
+	DEFAULT_TIMEOUT: 30000, // 30sec
 };
 
 export class Request {
 
-	private _request    : ImpXMLHTTPRequest;
-	private _timeout  	: Tools.TimerEmitter;
-	private _id 		: string;
+	private _request: 	ImpXMLHTTPRequest;
+	private _timeout: 	Tools.TimerEmitter;
+	private _id: 		string;
 
     constructor(
-		url: string, 
-		post: string, 
-		timeout: number = SETTINGS.DEFAULT_TIMEOUT
+		url: 		string,
+		post: 		string,
+		timeout: 	number = SETTINGS.DEFAULT_TIMEOUT,
 	) {
 		this._id 			= Tools.guid();
 		this._timeout 		= new Tools.TimerEmitter(timeout);
@@ -22,23 +22,10 @@ export class Request {
 		this._timeout.subscribe(Tools.TimerEmitter.EVENTS.onTimeout, this._onTimeout.bind(this));
 	}
 
-	private _destroy(){
-		this._timeout.drop();
-		this._timeout.unsubscribeAll(Tools.TimerEmitter.EVENTS.onTimeout);
-		this._request.close();
-	}
-
-	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	 * Timer handlers
-	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-	private _onTimeout(){
-		this._destroy();
-	}
-
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Public
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-	public getId(){
+	public getId() {
 		return this._id;
 	}
 
@@ -48,5 +35,18 @@ export class Request {
 
 	public send(): Promise<string> {
 		return this._request.send();
+	}
+
+	private _destroy() {
+		this._timeout.drop();
+		this._timeout.unsubscribeAll(Tools.TimerEmitter.EVENTS.onTimeout);
+		this._request.close();
+	}
+
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 * Timer handlers
+	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	private _onTimeout() {
+		this._destroy();
 	}
 }

@@ -10,20 +10,23 @@
     "build-ts:watch": "tsc -p ./tsconfig.json -w",
     "test:unit": "./node_modules/.bin/jasmine-ts",
     "serve": "lite-server -c=bs-config.json",
-    "start": "concurrently \"npm run build:watch\" \"npm run serve\""
+    "start": "concurrently \"npm run build:watch\" \"npm run serve\"",
+    "tslint": "./node_modules/.bin/tslint -c tslint.json './src/**/*{.ts,.tsx}'",
+    "tslint-fix": "concurrently \"./node_modules/.bin/tslint --fix -c ./tslint.json 'src/**/*{.ts,.tsx}'\""
   },
   "author": "Dmitry Astafyev",
   "license": "MIT",
   "devDependencies": {
-    "concurrently": "^3.5.0",
-    "lite-server": "^2.3.0",
-    "typescript": "^2.5.3",
     "@types/jasmine": "^2.8.6",
+    "concurrently": "^3.5.0",
     "jasmine": "^3.1.0",
     "jasmine-core": "^3.1.0",
     "jasmine-ts": "^0.2.1",
+    "lite-server": "^2.3.0",
     "source-map-loader": "^0.2.3",
     "ts-loader": "^3.0.5",
+    "tslint": "^5.11.0",
+    "typescript": "^2.5.3",
     "webpack": "^3.8.1"
   },
   "dependencies": {}

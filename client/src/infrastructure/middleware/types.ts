@@ -1,4 +1,4 @@
-import { TResponseBody, TRequestBody } from '../../platform/interfaces/index';
+import { TRequestBody, TResponseBody } from '../../platform/interfaces/index';
 /**
  * Returns of middleware functions
  */
@@ -18,7 +18,6 @@ export type TMiddlewareAuthResponseParserReturn = Promise<boolean>;
 /**
  * Types of middleware functions
  */
-export type TMiddlewareAuthRequestBuilderFunction   = (GUID: symbol) => TMiddlewareAuthRequestBuilderReturn;
+export type TMiddlewareAuthRequestBuilderFunction = (GUID: symbol) => TMiddlewareAuthRequestBuilderReturn;
 
-export type TMiddlewareAuthResponseParserFunction   = (GUID: symbol, response: TResponseBody)  => TMiddlewareAuthResponseParserReturn
-
+export type TMiddlewareAuthResponseParserFunction = (GUID: symbol, response: TResponseBody)  => TMiddlewareAuthResponseParserReturn;

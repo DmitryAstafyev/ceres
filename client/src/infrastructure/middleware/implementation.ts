@@ -1,22 +1,22 @@
-import * as Tools from '../../platform/tools/index';
 import { TRequestBody } from '../../platform/interfaces/index';
+import * as Tools from '../../platform/tools/index';
 
 import { IMiddleware } from './interfaces';
 
-import { 
+import {
     TMiddlewareAuthRequestBuilderFunction,
-    TMiddlewareAuthResponseParserFunction,
     TMiddlewareAuthRequestBuilderReturn,
-    TMiddlewareAuthResponseParserReturn
+    TMiddlewareAuthResponseParserFunction,
+    TMiddlewareAuthResponseParserReturn,
 } from './types';
 
 export class Middleware implements IMiddleware {
 
-    constructor(middleware: IMiddleware){
+    constructor(middleware: IMiddleware) {
 
         middleware = Tools.objectValidate(middleware, {
             getAuthRequest      : this.getAuthRequest,
-            processAuthRequest  : this.processAuthRequest
+            processAuthRequest  : this.processAuthRequest,
         }) as IMiddleware;
 
         this.getAuthRequest     = middleware.getAuthRequest   as TMiddlewareAuthRequestBuilderFunction;
