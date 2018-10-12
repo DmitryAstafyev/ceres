@@ -1,6 +1,6 @@
 import * as Protocol from '../../protocols/connection/protocol.connection';
 
-import { Request } from './client.request';
+import { Request } from './client.request.connection';
 
 export class Requests {
 

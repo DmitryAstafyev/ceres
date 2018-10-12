@@ -144,7 +144,8 @@ export default class Test {
     // Tests protocol: handlers
     //////////////////////////////////////////////////////////////////////////////////////////////
     private _onTestProtocolGreeting(event: Protocol.Events.Ping){
-        this._output.add(`HTTP.Longpoll transport test: get event: ${Tools.inspect(event)}`, { color: 'rgb(170, 170, 236)'});
+        const color: string = typeof event.message === 'string' ? (event.message.indexOf('Bred') !== -1 ? 'rgb(170, 236, 236)' : 'rgb(170, 170, 236)') : 'rgb(170, 170, 236)';
+        this._output.add(`HTTP.Longpoll transport test: get event: ${Tools.inspect(event)}`, { color: color});
     }
 
 }

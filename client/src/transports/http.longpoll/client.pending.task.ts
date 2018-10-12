@@ -1,7 +1,7 @@
 import * as Tools from '../../platform/tools/index';
 import * as Protocol from '../../protocols/connection/protocol.connection';
 
-import { Request } from './client.request';
+import { Request } from './client.request.connection';
 import { Token } from './client.token';
 
 /**

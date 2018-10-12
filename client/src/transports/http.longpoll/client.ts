@@ -8,8 +8,8 @@ import { SubdomainsController } from '../common/subdomains';
 import { Hook } from './client.hook';
 import { PendingTasks } from './client.pending.storage';
 import { Pending } from './client.pending.task';
-import { Request } from './client.request';
-import { Requests } from './client.requests';
+import { Request } from './client.request.connection';
+import { Requests } from './client.request.storage';
 import { EClientStates, State } from './client.state';
 import { Token } from './client.token';
 
