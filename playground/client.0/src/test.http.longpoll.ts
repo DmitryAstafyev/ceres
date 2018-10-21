@@ -45,6 +45,7 @@ export default class Test {
     private _client: Transports.HTTPLongpollClient.Client;
     private _greetingMessageTimer: number = -1;
     private _targetMessageTimer: number = -1;
+    private _demandMessageTimer: number = -1;
 
     constructor(){    
         //Create HTTP Longpoll client
@@ -81,12 +82,14 @@ export default class Test {
         this._output.add(`HTTP.Longpoll transport test: Connected`);
         this._sendGreetingMessage();
         this._sendTargetMessage();
+        this._sendDemand();
     }
 
     private _onDisconnected(){
         this._output.add(`Client is disconnected.`, { color: 'rgb(255,255,0)'});
         this._stopSendGreetingMessage();
         this._stopSendTargetMessage();
+        this._stopSendDemand();
     }
 
     private _onError(error: any){
@@ -149,5 +152,35 @@ export default class Test {
         }
         clearTimeout(this._targetMessageTimer);
         this._targetMessageTimer = -1;
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Transprt demands: handlers
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    private _sendDemand(){
+        this._demandMessageTimer = setTimeout(() => {
+            const demand = new Protocol.Requests.IsOnline.Request({
+                sent: new Date()
+            });
+            
+            this._client.demand(Protocol, demand, Protocol.Requests.IsOnline.Response, { type: 'online'})
+                .then((response: Protocol.Requests.IsOnline.Response) => {
+                    this._output.add(`On request has gotten response: ${Tools.inspect(response)}`, { color: 'rgb(100,250,70)'});
+                    this._sendDemand();
+                })
+                .catch((e) => {
+                    this._output.add(`Error getting response on demand: ${Tools.inspect(e)}`, { color: 'rgb(255,0,0)'});
+                    this._sendDemand();
+                });
+            
+        }, 1000);
+    }
+
+    private _stopSendDemand(){
+        if (this._demandMessageTimer === -1){
+            return;
+        }
+        clearTimeout(this._demandMessageTimer);
+        this._demandMessageTimer = -1;
     }
 }

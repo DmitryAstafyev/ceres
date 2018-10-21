@@ -214,6 +214,8 @@ export class Convertor {
         output += 'export const parse = Protocol.parse;\n';
         output += 'export const stringify = Protocol.stringify;\n';
         output += 'export const getSignature = Protocol.getSignature;\n';
+        output += 'export interface IClass { getSignature: () => string; parse: (str: string | object) => any; }\n';
+        output += 'export interface IImplementation { getSignature: () => string; stringify: () => string; }\n';
         return output;
     }
 
@@ -351,7 +353,11 @@ export class Convertor {
             });
         });
         // Build class
-        output += `\n${tab}constructor(args: { ${args.map((arg: IArgument) => `${arg.name + (arg.optional ? '?' : '')}: ${arg.tsType}`).join(', ')} }) {`;
+        if (args.length === 0) {
+            output += `\n${tab}constructor() {`;
+        } else {
+            output += `\n${tab}constructor(args: { ${args.map((arg: IArgument) => `${arg.name + (arg.optional ? '?' : '')}: ${arg.tsType}`).join(', ')} }) {`;
+        }
         if (parentArgs.length > 0) {
             output += `\n${nested}super(Object.assign(args, {}));`;
         } else {
@@ -365,10 +371,12 @@ export class Convertor {
             }
         });
         output += `\n`;
-        output += `${nested}const errors: Error[] = Protocol.validateParams(args, ${entity.name});\n`;
-        output += `${nested}if (errors.length > 0) {\n`;
-        output += `${nested}\tthrow new Error(\`Cannot create class of "${entity.name}" due error(s):\\n\${errors.map((error: Error) => { return \`\\t- \${error.message}\`; }).join('\\n')}\`);\n`;
-        output += `${nested}}\n`;
+        if (args.length > 0) {
+            output += `${nested}const errors: Error[] = Protocol.validateParams(args, ${entity.name});\n`;
+            output += `${nested}if (errors.length > 0) {\n`;
+            output += `${nested}\tthrow new Error(\`Cannot create class of "${entity.name}" due error(s):\\n\${errors.map((error: Error) => { return \`\\t- \${error.message}\`; }).join('\\n')}\`);\n`;
+            output += `${nested}}\n`;
+        }
         output += `\n${tab}}\n`;
         return output;
     }

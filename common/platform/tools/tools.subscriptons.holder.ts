@@ -1,17 +1,20 @@
 type TProtocol = string;
 type TEvent = string;
 type TClientId = string;
+type TClientIdStorage = TClientId[];
+type TEventsStorage = Map<TEvent, TClientIdStorage>;
+type TProtocolsStorage = Map<TProtocol, TEventsStorage>;
 
 export default class SubscriptionsHolder {
 
-    private _subscriptions: Map<TProtocol, Map<TEvent, TClientId[]>> = new Map();
+    private _subscriptions: TProtocolsStorage = new Map();
 
     public subscribe(protocol: string, event: string, clientID: string): boolean {
-        let storage = this._subscriptions.get(protocol);
-        if (storage === undefined) {
-            storage = new Map();
+        let events: TEventsStorage | undefined = this._subscriptions.get(protocol);
+        if (events === undefined) {
+            events = new Map();
         }
-        let IDs = storage.get(event);
+        let IDs: TClientIdStorage | undefined = events.get(event);
         if (IDs === undefined) {
             IDs = [];
         }
@@ -19,31 +22,31 @@ export default class SubscriptionsHolder {
             return false;
         }
         IDs.push(clientID);
-        storage.set(event, IDs);
-        this._subscriptions.set(protocol, storage);
+        events.set(event, IDs);
+        this._subscriptions.set(protocol, events);
         return true;
     }
 
     public unsubscribe(clientID: string, protocol: string, event?: string): boolean {
-        const storage = this._subscriptions.get(protocol);
-        if (storage === undefined) {
+        const events: TEventsStorage | undefined = this._subscriptions.get(protocol);
+        if (events === undefined) {
             return false;
         }
         if (event === undefined) {
             let changed = false;
-            storage.forEach((storedIDs, storedEvent, map) => {
+            events.forEach((storedIDs: TClientIdStorage, storedEvent: TEvent) => {
                 if (storedIDs.indexOf(clientID) !== -1) {
                     storedIDs.splice(storedIDs.indexOf(clientID), 1);
-                    storage !== undefined && storage.set(storedEvent, storedIDs);
+                    events.set(storedEvent, storedIDs);
                     changed = true;
                 }
             });
             if (changed) {
-                this._subscriptions.set(protocol, storage);
+                this._subscriptions.set(protocol, events);
             }
             return changed;
         }
-        const IDs = storage.get(event);
+        const IDs: TClientIdStorage | undefined = events.get(event);
         if (IDs === undefined) {
             return false;
         }
@@ -51,17 +54,17 @@ export default class SubscriptionsHolder {
             return false;
         }
         IDs.splice(IDs.indexOf(clientID), 1);
-        storage.set(event, IDs);
-        this._subscriptions.set(protocol, storage);
+        events.set(event, IDs);
+        this._subscriptions.set(protocol, events);
         return true;
     }
 
     public get(protocol: string, event: string): TClientId[] {
-        const storage = this._subscriptions.get(protocol);
-        if (storage === undefined) {
+        const events: TEventsStorage | undefined = this._subscriptions.get(protocol);
+        if (events === undefined) {
             return [];
         }
-        const IDs = storage.get(event);
+        const IDs: TClientIdStorage | undefined = events.get(event);
         if (IDs === undefined) {
             return [];
         }
@@ -69,10 +72,12 @@ export default class SubscriptionsHolder {
     }
 
     public removeClient(clientID: string) {
-        this._subscriptions.forEach((storage: Map<TEvent, TClientId[]>, protocolName: string) => {
-            storage.forEach((storedIDs: TClientId[], storedEvent: string) => {
+        this._subscriptions.forEach((events: TEventsStorage, protocol: TProtocol) => {
+            events.forEach((storedIDs: TClientIdStorage, event: TEvent) => {
                 if (storedIDs.indexOf(clientID) !== -1) {
-                    this.unsubscribe(clientID, protocolName, storedEvent);
+                    storedIDs.splice(storedIDs.indexOf(clientID), 1);
+                    events.set(event, storedIDs);
+                    this._subscriptions.set(protocol, events);
                 }
             });
         });
@@ -80,8 +85,8 @@ export default class SubscriptionsHolder {
 
     public getInfo(): string {
         const info: TClientId[] = [];
-        this._subscriptions.forEach((storage: Map<TEvent, TClientId[]>, protocolName: string) => {
-            storage.forEach((IDs: TClientId[], storedEvent: string) => {
+        this._subscriptions.forEach((events: TEventsStorage, protocolName: TProtocol) => {
+            events.forEach((IDs: TClientIdStorage, storedEvent: TEvent) => {
                 info.push(`\t\t[${protocolName}:${storedEvent}]: ${IDs.length}`);
             });
         });

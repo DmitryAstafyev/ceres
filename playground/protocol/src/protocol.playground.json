@@ -6,5 +6,16 @@
             "message?": "string"
         }
     },
+    "Requests" : {
+        "IsOnline": {
+            "Request": {
+                "sent":"datetime"
+            },
+            "Response": {
+                "since":"datetime",
+                "message?": "string"
+            }
+        }
+    },
     "version": "0.0.1"
 }

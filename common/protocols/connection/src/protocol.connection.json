@@ -30,7 +30,9 @@
                 "token": "string"
             },
             "Response": {
-                "event?": "EventDefinition"
+                "event?": "EventDefinition",
+                "demand?": "DemandDefinition",
+                "return?": "DemandDefinition"
             },
             "Responses": ["Disconnect"]
         },
@@ -84,12 +86,76 @@
                 "status": "boolean"
             },
             "Responses" : ["ConnectionError"]
-        } 
+        },
+        "Demand": {
+            "FromExpectant": {
+                "Request": {
+                    "demand": "DemandDefinition",
+                    "token": "string",
+                    "query": "array<KeyValue>"
+                },
+                "Response": {
+                    "id": "string",
+                    "state": "State",
+                    "error?": "string"
+                },
+                "Responses" : ["ConnectionError"]
+            },
+            "FromRepondent": {
+                "Request": {
+                    "id": "string",
+                    "token": "string",
+                    "error?": "string",
+                    "demand?": "DemandDefinition"
+                },
+                "Response": {
+                    "status": "boolean",
+                    "error?": "string"
+                },
+                "Responses" : ["ConnectionError"]
+            },
+            "State": ["ERROR", "NO_RESPONDENTS", "SUCCESS", "DEMAND_SENT"]
+        },
+        "Respondent": {
+            "Bind" : {
+                "Request": {
+                    "demand": "string",
+                    "protocol": "string",
+                    "token": "string",
+                    "query": "array<KeyValue>"
+                },
+                "Response": {
+                    "status": "boolean",
+                    "error?": "string"
+                },
+                "Responses" : ["ConnectionError"]
+            },
+            "Unbind": {
+                "Request": {
+                    "demand": "string",
+                    "protocol": "string",
+                    "token": "string"
+                },
+                "Response": {
+                    "status": "boolean"
+                },
+                "Responses" : ["ConnectionError"]
+            }
+        }
     },
     "EventDefinition": {
         "protocol": "string",
         "event": "string",
         "body": "string"
+    },
+    "DemandDefinition": {
+        "id": "string",
+        "protocol": "string",
+        "demand": "string",
+        "body": "string",
+        "expected": "string",
+        "error?": "string",
+        "pending?": "boolean"
     },
     "Subscription": {
         "protocol": "string",

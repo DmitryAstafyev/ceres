@@ -10,6 +10,15 @@ import { Connection } from './server.connection';
 import { Connections } from './server.connections';
 import { Token, Tokens } from './server.tokens';
 
+type TPendingDemand = {
+    respondemtId: string,
+    protocol: string,
+    demand: string,
+    expected: string,
+    expectantId: string,
+    sent: number,
+};
+
 type TClientRequests =  Protocol.Message.Handshake.Request |
                         Protocol.Message.Hook.Request |
                         Protocol.Message.Pending.Request |
@@ -18,7 +27,11 @@ type TClientRequests =  Protocol.Message.Handshake.Request |
                         Protocol.Message.Subscribe.Request |
                         Protocol.Message.Unsubscribe.Request |
                         Protocol.Message.UnsubscribeAll.Request |
-                        Protocol.Message.Registration.Request;
+                        Protocol.Message.Registration.Request |
+                        Protocol.Message.Demand.FromExpectant.Request |
+                        Protocol.Message.Demand.FromRepondent.Request |
+                        Protocol.Message.Respondent.Bind.Request |
+                        Protocol.Message.Respondent.Unbind.Request;
 
 const ClientRequestsTypes = [Protocol.Message.Handshake.Request,
                             Protocol.Message.Hook.Request,
@@ -28,20 +41,26 @@ const ClientRequestsTypes = [Protocol.Message.Handshake.Request,
                             Protocol.Message.Subscribe.Request,
                             Protocol.Message.Unsubscribe.Request,
                             Protocol.Message.UnsubscribeAll.Request,
-                            Protocol.Message.Registration.Request];
+                            Protocol.Message.Registration.Request,
+                            Protocol.Message.Demand.FromExpectant.Request,
+                            Protocol.Message.Demand.FromRepondent.Request,
+                            Protocol.Message.Respondent.Bind.Request,
+                            Protocol.Message.Respondent.Unbind.Request];
 
 export class Server {
 
-    private _logger:        Tools.Logger              = new Tools.Logger('Http.Server');
-    private _pending:       Connections               = new Connections();
-    private _hooks:         Connections               = new Connections();
-    private _tokens:        Tokens;
-    private _subscriptions: Tools.SubscriptionsHolder = new Tools.SubscriptionsHolder();
-    private _tasks:         Tools.Queue               = new Tools.Queue();
-    private _aliases:       Aliases                   = new Aliases();
-    private _parameters:    DescConnection.ConnectionParameters;
-    private _middleware:    DescMiddleware.Middleware<Connection>;
-    private _http:          HTTP.Server;
+    private _logger:            Tools.Logger                = new Tools.Logger('Http.Server');
+    private _pending:           Connections                 = new Connections();
+    private _hooks:             Connections                 = new Connections();
+    private _tokens:            Tokens;
+    private _subscriptions:     Tools.SubscriptionsHolder   = new Tools.SubscriptionsHolder();
+    private _demands:           Tools.DemandsHolder         = new Tools.DemandsHolder();
+    private _tasks:             Tools.Queue                 = new Tools.Queue();
+    private _aliases:           Aliases                     = new Aliases();
+    private _pendingDemands:    Map<string, TPendingDemand> = new Map();
+    private _parameters:        DescConnection.ConnectionParameters;
+    private _middleware:        DescMiddleware.Middleware<Connection>;
+    private _http:              HTTP.Server;
 
     constructor(
         parameters: DescConnection.ConnectionParameters,
@@ -330,7 +349,16 @@ export class Server {
             }
             // Add tasks
             subscribers.forEach((subscriberId: string) => {
-                this._tasks.add(this._emitClientEvent.bind(this, message.event.protocol, message.event.event, message.event.body, subscriberId, token), subscriberId);
+                this._tasks.add(
+                    this._emitClientEvent.bind(this,
+                        message.event.protocol,
+                        message.event.event,
+                        message.event.body,
+                        subscriberId,
+                        token,
+                    ),
+                    subscriberId,
+                );
             });
             // Execute tasks
             this._tasks.procced();
@@ -380,6 +408,152 @@ export class Server {
                 this._logger.warn(`Fail to close connection ${clientId} due error: ${error.message}`);
             });
         }
+        // Registration as Respondent for Demand
+        if (message instanceof Protocol.Message.Respondent.Bind.Request) {
+            let status: boolean | Error = false;
+            if (message.query instanceof Array) {
+                if (message.query.length > 0) {
+                    status = this._demands.subscribe(message.protocol, message.demand, clientId, message.query);
+                }
+            }
+            return connection.close((new Protocol.Message.Respondent.Bind.Response({
+                clientId: clientId,
+                error: status instanceof Error ? status.message : undefined,
+                status: status instanceof Error ? false : true,
+            })).stringify()).then(() => {
+                this._logger.env(`Binding client ${clientId} with demand "${message.protocol}/${message.demand}" with query as "${message.query.map((alias: Protocol.KeyValue) => {
+                    return `${alias.key}: ${alias.value}`;
+                }).join(', ')}" is done.`);
+            }).catch((error: Error) => {
+                this._logger.warn(`Fail to close connection ${clientId} due error: ${error.message}`);
+            });
+        }
+        // Unregistration as Respondent for Demand
+        if (message instanceof Protocol.Message.Respondent.Unbind.Request) {
+            const status: boolean = this._demands.unsubscribe(clientId, message.protocol, message.demand);
+            return connection.close((new Protocol.Message.Respondent.Unbind.Response({
+                clientId: clientId,
+                status: status,
+            })).stringify()).then(() => {
+                this._logger.env(`Unbinding client ${clientId} with demand "${message.protocol}/${message.demand}" is done.`);
+            }).catch((error: Error) => {
+                this._logger.warn(`Fail to close connection ${clientId} due error: ${error.message}`);
+            });
+        }
+        // Demand request: call from expectant
+        if (message instanceof Protocol.Message.Demand.FromExpectant.Request) {
+            const respondents: string[] | Error = this._demands.get(message.demand.protocol, message.demand.demand, message.query);
+            const demandGUID: string = Tools.guid();
+            if (respondents instanceof Error) {
+                // Some error with demand definition
+                return connection.close((new Protocol.Message.Demand.FromExpectant.Response({
+                    clientId: clientId,
+                    error: respondents.message,
+                    id: demandGUID,
+                    state: Protocol.Message.Demand.State.ERROR,
+                })).stringify()).then(() => {
+                    this._logger.env(`Fail to process demand of client ${clientId} "${message.demand.protocol}/${message.demand.demand}". Error message was sent.`);
+                }).catch((error: Error) => {
+                    this._logger.warn(`Fail to close connection ${clientId} due error: ${error.message}`);
+                });
+            }
+            if (respondents.length === 0) {
+                const isPending: boolean = typeof message.demand.pending === 'boolean' ? message.demand.pending : false;
+                if (!isPending) {
+                    // Request isn't pending and no any respondents
+                    return connection.close((new Protocol.Message.Demand.FromExpectant.Response({
+                        clientId: clientId,
+                        id: demandGUID,
+                        state: Protocol.Message.Demand.State.NO_RESPONDENTS,
+                    })).stringify()).then(() => {
+                        this._logger.env(`No respondents for demand of client ${clientId} "${message.demand.protocol}/${message.demand.demand}". Response was sent.`);
+                    }).catch((error: Error) => {
+                        this._logger.warn(`Fail to close connection ${clientId} due error: ${error.message}`);
+                    });
+                }
+                // No respondents, create pending task
+                // ...
+                return;
+            }
+            // Select respondents based on some strategy
+            const respondentId: string = respondents[0];
+            // Send confirmation
+            return connection.close((new Protocol.Message.Demand.FromExpectant.Response({
+                clientId: clientId,
+                id: demandGUID,
+                state: Protocol.Message.Demand.State.DEMAND_SENT,
+            })).stringify()).then(() => {
+                this._logger.env(`Confirmation of sending demand of client ${clientId} "${message.demand.protocol}/${message.demand.demand}" is sent.`);
+                // Create task for sending demand
+                this._tasks.add(
+                    this._sendDemand.bind(this,
+                        message.demand.protocol,
+                        message.demand.demand,
+                        message.demand.body,
+                        message.demand.expected,
+                        clientId,
+                        respondentId,
+                        demandGUID,
+                    ),
+                    respondentId,
+                );
+            }).catch((error: Error) => {
+                this._logger.warn(`Fail to close connection ${clientId} due error: ${error.message}`);
+            });
+        }
+        // Demand request: response from respondent
+        if (message instanceof Protocol.Message.Demand.FromRepondent.Request) {
+            // Try to find data in pending tasks
+            const pendingDemand: TPendingDemand | undefined = this._pendingDemands.get(message.id);
+            if (typeof pendingDemand === 'undefined') {
+                // Already nobody expects an answer
+                return connection.close((new Protocol.Message.Demand.FromRepondent.Response({
+                    clientId: clientId,
+                    error: `No expectants are found`,
+                    status: false,
+                })).stringify()).then(() => {
+                    this._logger.env(`No expectants for demand are found. Responend ${clientId}. Response was sent.`);
+                }).catch((error: Error) => {
+                    this._logger.warn(`Fail to close connection ${clientId} due error: ${error.message}`);
+                });
+            }
+            // Expectant is found
+            if (message.error !== '') {
+                // Some error during proccessing demand
+
+            }
+            if (message.error === '' && message.demand !== void 0) {
+                // Demand proccessed successfully
+                // Create task for sending demand's response
+                this._tasks.add(
+                    this._sendDemandResponse.bind(this,
+                        message.demand.protocol,
+                        message.demand.demand,
+                        message.demand.body,
+                        message.demand.expected,
+                        pendingDemand.expectantId,
+                        message.id,
+                    ),
+                    pendingDemand.expectantId,
+                );
+            }
+            /**
+                     protocol: string,
+        demand: string,
+        body: string,
+        expected: string,
+        expectantId: string,
+        demandRequestId: string,
+             */
+            return connection.close((new Protocol.Message.Demand.FromRepondent.Response({
+                clientId: clientId,
+                status: true,
+            })).stringify()).then(() => {
+                this._logger.env(`Confirmation of sending demand's response sent Responend ${clientId}.`);
+            }).catch((error: Error) => {
+                this._logger.warn(`Fail to close connection ${clientId} due error: ${error.message}`);
+            });
+        }
     }
 
     private _onClientDisconnected(connection: Connection) {
@@ -400,12 +574,20 @@ export class Server {
         this._subscriptions.removeClient(clientId);
         // Remove ref
         this._aliases.unref(clientId);
+        // Remove demands
+        this._demands.removeClient(clientId);
         if (_hooks || _pending) {
             this._logger.env(`Client ${clientId} is disconnected`);
         }
     }
 
-    private _emitClientEvent(protocol: string, event: string, body: string, clientId: string, token: string) {
+    private _emitClientEvent(
+        protocol: string,
+        event: string,
+        body: string,
+        clientId: string,
+        token: string,
+    ): Promise<void> {
         return new Promise((resolve, reject) => {
             const connection = this._pending.get(clientId);
             if (connection === null) {
@@ -426,6 +608,87 @@ export class Server {
                 resolve();
             }).catch((error: Error) => {
                 this._logger.warn(`Fail to emit event for client ${clientId}: protocol ${protocol}, event ${event} due error: ${error.message}.`);
+                reject();
+            });
+        });
+    }
+
+    private _sendDemand(
+        protocol: string,
+        demand: string,
+        body: string,
+        expected: string,
+        expectantId: string,
+        respondentId: string,
+        demandRequestId: string,
+    ): Promise<void> {
+        return new Promise((resolve, reject) => {
+            const connection = this._pending.get(respondentId);
+            if (connection === null) {
+                return reject(new Error(
+                    this._logger.env(`Client (${respondentId}) is subscribed as respondent on "${protocol}/${demand}", but active connection wasn't found. Task will stay in a queue.`),
+                ));
+            }
+            this._logger.env(`Client (${respondentId}) is subscribed as respondent on  "${protocol}/${demand}". Demand will be sent.`);
+            connection.close((new Protocol.Message.Demand.Pending.Response({
+                clientId: respondentId,
+                demand: new Protocol.DemandDefinition({
+                    body: body,
+                    demand: demand,
+                    expected: expected,
+                    id: demandRequestId,
+                    protocol: protocol,
+                }),
+            })).stringify()).then(() => {
+                this._logger.env(`Demand to client ${respondentId}: protocol ${protocol}, demand ${demand} was sent.`);
+                // Register demand
+                this._pendingDemands.set(demandRequestId, {
+                    demand: demand,
+                    expectantId: expectantId,
+                    expected: expected,
+                    protocol: protocol,
+                    respondemtId: respondentId,
+                    sent: (new Date()).getTime(),
+                });
+                resolve();
+            }).catch((error: Error) => {
+                this._logger.warn(`Fail to demand to client ${respondentId}: protocol ${protocol}, demand ${demand} due error: ${error.message}.`);
+                reject();
+            });
+        });
+    }
+
+    private _sendDemandResponse(
+        protocol: string,
+        demand: string,
+        body: string,
+        expected: string,
+        expectantId: string,
+        demandRequestId: string,
+    ): Promise<void> {
+        return new Promise((resolve, reject) => {
+            const connection = this._pending.get(expectantId);
+            if (connection === null) {
+                return reject(new Error(
+                    this._logger.env(`Client (${expectantId}) is waiting for response on "${protocol}/${demand}", but active connection wasn't found. Task will stay in a queue.`),
+                ));
+            }
+            this._logger.env(`Client (${expectantId}) is waiting for response on  "${protocol}/${demand}". Response will be sent.`);
+            connection.close((new Protocol.Message.Pending.Response({
+                clientId: expectantId,
+                return: new Protocol.DemandDefinition({
+                    body: body,
+                    demand: demand,
+                    expected: expected,
+                    id: demandRequestId,
+                    protocol: protocol,
+                }),
+            })).stringify()).then(() => {
+                this._logger.env(`Response on demand to client ${expectantId}: protocol ${protocol}, demand ${demand} was sent.`);
+                resolve();
+            }).catch((error: Error) => {
+                this._logger.warn(`Fail to send response on demand to client ${expectantId}: protocol ${protocol}, demand ${demand} due error: ${error.message}.`);
+                reject();
             });
         });
     }

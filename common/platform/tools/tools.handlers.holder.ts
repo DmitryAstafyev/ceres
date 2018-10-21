@@ -1,71 +1,73 @@
 import * as Types from './tools.primitivetypes';
 
-import EventEmitter from './tools.emitter';
 import inspect from './tools.inspect';
 
+type TGroup = string;
+type TId = string;
 type THandler = (...args: any[]) => any;
+type THolder = Map<TId, THandler>;
+type TStorage = Map<TGroup, THolder>;
 
-export default class EventHandlers {
+export default class HandlersHolder {
 
-    private _handlers: Map<string, EventEmitter>  = new Map();
+    private _handlers: TStorage  = new Map();
 
-    public subscribe(protocol: string, event: string, handler: THandler): boolean | Error {
-        const error = this._validate(protocol, event);
+    public add(group: string, id: string, handler: THandler): boolean | Error {
+        const error = this._validate(group, id);
         if (error !== null) {
             return error;
         }
         if (Types.getTypeOf(handler) !== Types.ETypes.function) {
             return new Error(`Expect type of handler will be {function}. Bug has gotten: ${inspect(handler)}`);
         }
-        if (!this._handlers.has(protocol)) {
-            this._handlers.set(protocol, new EventEmitter());
+        let holder = this._handlers.get(group);
+        if (holder === undefined) {
+            holder = new Map();
         }
-        const emitter = this._handlers.get(protocol);
-        (emitter as EventEmitter).subscribe(event, handler);
+        holder.set(id, handler);
+        this._handlers.set(group, holder);
         return true;
     }
 
-    public unsubscribe(protocol: string, event?: string, handler?: THandler): boolean | Error {
-        const emitter = this._handlers.get(protocol);
-        if (emitter === undefined) {
+    public remove(group: string, id?: string): boolean | Error {
+        const holder = this._handlers.get(group);
+        if (holder === undefined) {
             return false;
         }
-        if (event === undefined) {
-            emitter.unsubscribeAll();
-            this._handlers.delete(protocol);
+        if (id === undefined) {
+            this._handlers.delete(group);
             return true;
         }
-        if (handler === void 0) {
-            emitter.unsubscribeAll(event);
-            this._handlers.set(protocol, emitter);
-            return true;
-        }
-        emitter.unsubscribe(event, handler);
+        holder.delete(id);
         return true;
     }
 
-    public emit(protocol: string, event: string, ...args: any[]): boolean {
-        const emitter = this._handlers.get(protocol);
-        if (emitter === undefined) {
+    public get(group: string, id: string): THandler | undefined {
+        const holder = this._handlers.get(group);
+        if (holder === undefined) {
+            return void 0;
+        }
+        return holder.get(id);
+    }
+
+    public has(group: string, id: string): boolean {
+        const holder = this._handlers.get(group);
+        if (holder === undefined) {
             return false;
         }
-        emitter.emit(event, ...args);
-        return true;
+        return holder.has(id);
     }
 
     public clear() {
-        this._handlers.forEach((emitter: EventEmitter) => {
-            emitter.clear();
-        });
         this._handlers.clear();
     }
 
-    private _validate(protocol: string, event: string) {
-        if (Types.getTypeOf(protocol) !== Types.ETypes.string) {
-            return new Error(`Expect type of protocol will be {string}. Bug has gotten: ${inspect(protocol)}`);
+    private _validate(group: string, id: string) {
+        if (Types.getTypeOf(group) !== Types.ETypes.string) {
+            return new Error(`Expect type of protocol will be {string}. Bug has gotten: ${inspect(group)}`);
         }
-        if (Types.getTypeOf(event) !== Types.ETypes.string) {
-            return new Error(`Expect type of event will be {string}. Bug has gotten: ${inspect(event)}`);
+        if (Types.getTypeOf(id) !== Types.ETypes.string) {
+            return new Error(`Expect type of entity will be {string}. Bug has gotten: ${inspect(id)}`);
         }
         return null;
     }

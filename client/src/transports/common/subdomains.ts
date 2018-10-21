@@ -16,7 +16,7 @@ export class SubdomainsController {
     private _subdomains:    string[] = [];
     private _state:         { [key: string]: number } = {};
     private _own:           { [key: string]: number } = {};
-    private _channel:       BroadcastChannel;
+    private _channel:       BroadcastChannel | null;
 
     constructor(url: string, mask: string, broadcast: string) {
         this._url = url;
@@ -26,29 +26,34 @@ export class SubdomainsController {
             throw subdomains;
         }
         this._subdomains = subdomains;
-        this._channel = new BroadcastChannel(this._broadcast);
-        this._onBoardcastMessage = this._onBoardcastMessage.bind(this);
-        this._bind();
-        this._synchState();
+        if ((window as any).BroadcastChannel === undefined) {
+            this._channel = null;
+        } else {
+            this._channel = new BroadcastChannel(this._broadcast);
+            this._onBoardcastMessage = this._onBoardcastMessage.bind(this);
+            this._bind();
+            this._synchState();
+        }
+
     }
 
     public destroy() {
         this._subdomains = [];
         this._state = {};
-        this._channel.close();
+        this._channel !== null && this._channel.close();
         this._unbind();
     }
 
     public setBusy(url: string) {
         this._state[url] = (new Date()).getTime();
         this._own[url] = (new Date()).getTime();
-        this._channel.postMessage({ busy: [url] });
+        this._channel !== null && this._channel.postMessage({ busy: [url] });
     }
 
     public setFree(url: string) {
         delete this._state[url];
         delete this._own[url];
-        this._channel.postMessage({ free: [url] });
+        this._channel !== null && this._channel.postMessage({ free: [url] });
     }
 
     public get(): string {
@@ -68,15 +73,15 @@ export class SubdomainsController {
     }
 
     private _bind() {
-        this._channel.onmessage = this._onBoardcastMessage;
+        this._channel !== null && (this._channel.onmessage = this._onBoardcastMessage);
     }
 
     private _unbind() {
-        this._channel.onmessage = () => void 0;
+        this._channel !== null && (this._channel.onmessage = () => void 0);
     }
 
     private _synchState() {
-        this._channel.postMessage({ getBusy: true });
+        this._channel !== null && this._channel.postMessage({ getBusy: true });
     }
 
     private _getRandom(): string {
@@ -97,9 +102,11 @@ export class SubdomainsController {
         data.free instanceof Array && data.free.forEach((url: string) => {
             delete this._state[url];
         });
-        data.getBusy && this._channel.postMessage({ busy: Object.keys(this._own).map((url: string) => {
-            return url;
-        })});
+        if (this._channel !== null && data.getBusy) {
+            this._channel.postMessage({ busy: Object.keys(this._own).map((url: string) => {
+                return url;
+            })});
+        }
     }
 
     private _getUrl(subdomain: string): string {

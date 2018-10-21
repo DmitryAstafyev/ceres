@@ -3,15 +3,14 @@ import * as Tools from '../../platform/tools/index';
 import * as Protocol from '../../protocols/connection/protocol.connection';
 import * as DescConnection from './connection/index';
 
-import { ITransportInterface, TClientAlias } from '../../platform/interfaces/interface.transport';
-import { SubdomainsController } from '../common/subdomains';
-import { Hook } from './client.hook';
-import { PendingTasks } from './client.pending.storage';
-import { Pending } from './client.pending.task';
-import { Request } from './client.request.connection';
-import { Requests } from './client.request.storage';
-import { EClientStates, State } from './client.state';
-import { Token } from './client.token';
+import { ITransportInterface, TClientAlias  } from '../../platform/interfaces/interface.transport';
+import { SubdomainsController               } from '../common/subdomains';
+import { Hook                               } from './client.hook';
+import { PendingTasks                       } from './client.pending.storage';
+import { Request                            } from './client.request.connection';
+import { Requests                           } from './client.request.storage';
+import { EClientStates, State               } from './client.state';
+import { Token                              } from './client.token';
 
 export { EClientStates };
 
@@ -31,24 +30,33 @@ export enum EClientEvents {
     message = 'message',
 }
 
+type TQuery             = { [key: string]: string};
+type THandler           = (...args: any[]) => any;
+
+export interface IDemandOptions {
+    pending?: boolean;
+}
+
 export class Client extends Tools.EventEmitter implements ITransportInterface {
 
     public static STATES = EClientStates;
     public static EVENTS = EClientEvents;
 
-    private _logger: Tools.Logger          = new Tools.Logger('Http.Client');
-    private _token: Token                 = new Token();
-    private _state: State                 = new State();
-    private _hook: Hook                  = new Hook();
-    private _tasks: PendingTasks          = new PendingTasks();
-    private _requests: Requests              = new Requests();
-    private _subscriptions: Tools.HandlersHolder  = new Tools.HandlersHolder();
-    private _clientGUID: string                = Tools.guid();
-    private _protocols: Tools.ProtocolsHolder = new Tools.ProtocolsHolder();
-    private _parameters: DescConnection.ConnectionParameters;
-    private _middleware: DescMiddleware.Middleware;
-    private _subdomains: SubdomainsController | null;
-    private _aliases: TClientAlias = {};
+    private _logger:            Tools.Logger            = new Tools.Logger('Http.Client');
+    private _token:             Token                   = new Token();
+    private _state:             State                   = new State();
+    private _hook:              Hook                    = new Hook();
+    private _tasks:             PendingTasks            = new PendingTasks();
+    private _requests:          Requests                = new Requests();
+    private _subscriptions:     Tools.EmittersHolder    = new Tools.EmittersHolder();
+    private _clientGUID:        string                  = Tools.guid();
+    private _protocols:         Tools.ProtocolsHolder   = new Tools.ProtocolsHolder();
+    private _aliases:           TClientAlias            = {};
+    private _demands:           Tools.HandlersHolder    = new Tools.HandlersHolder();
+    private _pendingDemands:    Tools.PromisesHolder    = new Tools.PromisesHolder();
+    private _parameters:        DescConnection.ConnectionParameters;
+    private _middleware:        DescMiddleware.Middleware;
+    private _subdomains:        SubdomainsController | null;
 
     constructor(
         parameters: DescConnection.ConnectionParameters,
@@ -86,15 +94,15 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
             this._subdomains = null;
         }
         // Bind shared methods
-        this._getURL = this._getURL.bind(this);
-        this._setUrlFree = this._setUrlFree.bind(this);
+        this._getURL            = this._getURL.bind(this);
+        this._setUrlFree        = this._setUrlFree.bind(this);
         // Subscribe to tasks
-        this._onTask = this._onTask.bind(this);
-        this._onTaskDisconnect = this._onTaskDisconnect.bind(this);
-        this._onTaskError = this._onTaskError.bind(this);
-        this._tasks.subscribe(PendingTasks.EVENTS.onTask, this._onTask);
+        this._onTask            = this._onTask.bind(this);
+        this._onTaskDisconnect  = this._onTaskDisconnect.bind(this);
+        this._onTaskError       = this._onTaskError.bind(this);
+        this._tasks.subscribe(PendingTasks.EVENTS.onTask,       this._onTask);
         this._tasks.subscribe(PendingTasks.EVENTS.onDisconnect, this._onTaskDisconnect);
-        this._tasks.subscribe(PendingTasks.EVENTS.onError, this._onTaskError);
+        this._tasks.subscribe(PendingTasks.EVENTS.onError,      this._onTaskError);
         // Connect
         this._connect().catch((error: Error) => {
             this._logger.warn(`Error of connection on start due error: ${error.message}`);
@@ -279,6 +287,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
             if (eventSignature instanceof Error) {
                 return reject(eventSignature);
             }
+            // Register implementation of protocol
             this._protocols.add(protocol)
                 .then(() => {
                     const subscription = this._subscriptions.subscribe(protocolSignature, eventSignature, handler);
@@ -471,13 +480,231 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
         });
     }
 
-    public request(request: any, protocol: any) {
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 * Requests: Public
+	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+    /**
+     * Register as respondent: bind handler with protocol / demand (request)
+     * @param protocol {Protocol} implementation of demand's protocol
+     * @param demand {Demand | string} reference to demand class or signature of demand class
+     * @param query {TQuery} query, which will used for calls to respondent
+     * @param handler {Function} handler to process income request (demand)
+     * @returns Promise
+     */
+    public subscribeToRequest(protocol: any, demand: Protocol.IClass | string, query: TQuery, handler: THandler): Promise<Protocol.Message.Respondent.Bind.Response> {
         return new Promise((resolve, reject) => {
-            const signature = this._getEntitySignature(protocol);
-            if (signature instanceof Error) {
-                return reject(signature);
+            protocol = protocol as Protocol.IImplementation;
+            if (this._state.get() !== EClientStates.connected) {
+                return reject(new Error(this._logger.verbose(`Cannot do operation: client isn't connected.`)));
             }
-            // implementation
+            if (Tools.getTypeOf(handler) !== Tools.EPrimitiveTypes.function) {
+                return reject(new Error(this._logger.verbose(`As handler can be used only function: Promise<results>.`)));
+            }
+            const protocolSignature = this._getEntitySignature(protocol);
+            if (protocolSignature instanceof Error) {
+                return reject(protocolSignature);
+            }
+            const demandSignature = typeof demand === 'string' ? demand : this._getEntitySignature(demand);
+            if (demandSignature instanceof Error) {
+                return reject(demandSignature);
+            }
+            if (this._demands.has(protocolSignature, demandSignature)) {
+                return reject(new Error(this._logger.verbose(`Protocol and demand "${protocolSignature}/${demandSignature}" is already bound with handler.`)));
+            }
+            if (typeof query !== 'object' || query === null) {
+                return reject(new Error(this._logger.verbose(`As query can be used only object { [key: string]: string }.`)));
+            }
+            const queryArray: Protocol.KeyValue[] = [];
+            let valid: boolean = true;
+            Object.keys(query).forEach((key: string) => {
+                if (typeof query[key] !== 'string') {
+                    valid = false;
+                }
+                if (!valid) {
+                    return;
+                }
+                queryArray.push(new Protocol.KeyValue({ key: key, value: query[key]}));
+            });
+            if (!valid) {
+                return reject(new Error(this._logger.verbose(`As query can be used only object { [key: string]: string }. Some of values of target isn't a {string}.`)));
+            }
+            if (queryArray.length === 0) {
+                return reject(new Error(this._logger.verbose(`Query can not be empty. Define at least one property.`)));
+            }
+            // Register protocol implementation
+            this._protocols.add(protocol).then(() => {
+                // Send request to server
+                const url = this._getURL();
+                this._requests.send(url, (new Protocol.Message.Respondent.Bind.Request({
+                    clientId: this._clientGUID,
+                    demand: demandSignature,
+                    protocol: protocolSignature,
+                    query: queryArray,
+                    token: this._token.get(),
+                })).stringify()).then((message: Protocol.TProtocolTypes) => {
+                    this._setUrlFree(url);
+                    if (message instanceof Protocol.ConnectionError) {
+                        return reject(new Error(this._logger.warn(`Connection error. Reason: ${message.reason} (error: ${message.message}). Initialize hard reconnection.`)));
+                    }
+                    if (!(message instanceof Protocol.Message.Respondent.Bind.Response)) {
+                        return reject(new Error(this._logger.verbose(`Unexpected server response (expected "Protocol.Message.Respondent.Bind.Response"): ${message.stringify()}`)));
+                    }
+                    if (!message.status) {
+                        return reject(this._logger.env(`Binding client with "${protocolSignature}/${demandSignature}" wasn't done.`));
+                    }
+                    this._logger.env(`Registration of client has status: ${message.status}.`);
+                    // Save handler
+                    this._demands.add(protocolSignature, demandSignature, handler);
+                    resolve(message);
+                }).catch((error: Error) => {
+                    this._setUrlFree(url);
+                    this._logger.env(`Error binding of client to demand "${protocolSignature}/${demandSignature}": ${error.message}.`);
+                    reject(error);
+                });
+            }).catch((protocolError: Error) => {
+                this._logger.env(`Error subscribe demand (request): ${protocolError.message}`);
+                reject(protocolError);
+            });
+        });
+    }
+
+    /**
+     * Unregister as respondent: unbind handler with protocol / demand (request)
+     * @param protocol {Protocol} implementation of demand's protocol
+     * @param demand {Demand | string} reference to demand class or signature of demand class
+     * @param query {TQuery} query, which will used for calls to respondent
+     * @param handler {Function} handler to process income request (demand)
+     * @returns Promise
+     */
+    public unsubscribeToRequest(protocol: Protocol.IClass, demand: Protocol.IImplementation | string): Promise<Protocol.Message.Respondent.Unbind.Response> {
+        return new Promise((resolve, reject) => {
+            if (this._state.get() !== EClientStates.connected) {
+                return reject(new Error(`Cannot do operation: client isn't connected.`));
+            }
+            const protocolSignature = this._getEntitySignature(protocol);
+            if (protocolSignature instanceof Error) {
+                return reject(protocolSignature);
+            }
+            const demandSignature = typeof demand === 'string' ? demand : this._getEntitySignature(demand);
+            if (demandSignature instanceof Error) {
+                return reject(demandSignature);
+            }
+            if (!this._demands.has(protocolSignature, demandSignature)) {
+                return reject(new Error(`Protocol and demand "${protocolSignature}/${demandSignature}" is already unbound with handler.`));
+            }
+            const url = this._getURL();
+            this._requests.send(url, (new Protocol.Message.Respondent.Unbind.Request({
+                clientId: this._clientGUID,
+                demand: demandSignature,
+                protocol: protocolSignature,
+                token: this._token.get(),
+            })).stringify()).then((message: Protocol.TProtocolTypes) => {
+                this._setUrlFree(url);
+                if (message instanceof Protocol.ConnectionError) {
+                    return reject(new Error(this._logger.warn(`Connection error. Reason: ${message.reason} (error: ${message.message}). Initialize hard reconnection.`)));
+                }
+                if (!(message instanceof Protocol.Message.Respondent.Unbind.Response)) {
+                    return reject(new Error(`Unexpected server response (expected "Protocol.Message.Respondent.Unbind.Response"): ${message.stringify()}`));
+                }
+                if (!message.status) {
+                    return reject(this._logger.env(`Unbinding client with "${protocolSignature}/${demandSignature}" wasn't done.`));
+                }
+                this._logger.env(`Registration of client has status: ${message.status}.`);
+                // Save handler
+                this._demands.remove(protocolSignature, demandSignature);
+                resolve(message);
+            }).catch((error: Error) => {
+                this._setUrlFree(url);
+                this._logger.env(`Error unbinding of client to demand "${protocolSignature}/${demandSignature}": ${error.message}.`);
+                reject(error);
+            });
+        });
+    }
+
+    public demand(
+        protocol: any,
+        demand: Protocol.IImplementation,
+        expected: Protocol.IClass | string,
+        query: TQuery,
+        options: IDemandOptions = {},
+    ): Promise<any> {
+        return new Promise((resolve, reject) => {
+            protocol = protocol as Protocol.IImplementation;
+            if (this._state.get() !== EClientStates.connected) {
+                return reject(new Error(`Cannot do operation: client isn't connected.`));
+            }
+            const protocolSignature = this._getEntitySignature(protocol);
+            if (protocolSignature instanceof Error) {
+                return reject(protocolSignature);
+            }
+            const demandSignature = this._getEntitySignature(demand);
+            if (demandSignature instanceof Error) {
+                return reject(demandSignature);
+            }
+            const expectedSignature = typeof expected === 'string' ? expected : this._getEntitySignature(expected);
+            if (expectedSignature instanceof Error) {
+                return reject(demandSignature);
+            }
+            options = typeof options !== 'object' ? (options !== null ? options : {}) : {};
+            if (typeof query !== 'object' || query === null) {
+                return reject(new Error(this._logger.verbose(`As query can be used only object { [key: string]: string }.`)));
+            }
+            const queryArray: Protocol.KeyValue[] = [];
+            let valid: boolean = true;
+            Object.keys(query).forEach((key: string) => {
+                if (typeof query[key] !== 'string') {
+                    valid = false;
+                }
+                if (!valid) {
+                    return;
+                }
+                queryArray.push(new Protocol.KeyValue({ key: key, value: query[key]}));
+            });
+            if (!valid) {
+                return reject(new Error(this._logger.verbose(`As query can be used only object { [key: string]: string }. Some of values of target isn't a {string}.`)));
+            }
+            if (queryArray.length === 0) {
+                return reject(new Error(this._logger.verbose(`Query can not be empty. Define at least one property.`)));
+            }
+            // Register protocol implementation
+            this._protocols.add(protocol).then(() => {
+                // Send demand's request to server
+                const url = this._getURL();
+                this._requests.send(url, (new Protocol.Message.Demand.FromExpectant.Request({
+                    clientId: this._clientGUID,
+                    demand: (new Protocol.DemandDefinition({
+                        body: demand.stringify(),
+                        demand: demandSignature,
+                        expected: expectedSignature,
+                        id: '',                                                                 // ID will be defined on server
+                        pending: typeof options.pending === 'boolean' ? options.pending : false,
+                        protocol: protocolSignature,
+                    })),
+                    query: queryArray,
+                    token: this._token.get(),
+                })).stringify()).then((message: Protocol.TProtocolTypes) => {
+                    this._setUrlFree(url);
+                    if (message instanceof Protocol.ConnectionError) {
+                        return reject(new Error(this._logger.warn(`Connection error. Reason: ${message.reason} (error: ${message.message}). Initialize hard reconnection.`)));
+                    }
+                    if (!(message instanceof Protocol.Message.Demand.FromExpectant.Response)) {
+                        return reject(new Error(this._logger.verbose(`Unexpected server response (expected "Protocol.Message.Demand.FromExpectant.Response"): ${message.stringify()}`)));
+                    }
+                    if (message.state !== Protocol.Message.Demand.State.DEMAND_SENT) {
+                        return reject(this._logger.env(`Fail to send demand's request "${protocolSignature}/${demandSignature}". Server answers: ${message.state}`));
+                    }
+                    this._logger.env(`Demand's request "${protocolSignature}/${demandSignature}" was sent. Server answers: ${message.state}`);
+                    // Save resolver & rejector
+                    this._pendingDemands.add(message.id, resolve, reject);
+                }).catch((error: Error) => {
+                    this._setUrlFree(url);
+                    this._logger.env(`Error with sending demand's request "${protocolSignature}/${demandSignature}": ${error.message}.`);
+                    reject(error);
+                });
+            }).catch((protocolError: Error) => {
+                this._logger.env(`Error with sending demand's request "${protocolSignature}/${demandSignature}": ${protocolError.message}`);
+                reject(protocolError);
+            });
         });
     }
 
@@ -499,6 +726,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
         }
         return this._subdomains.setFree(url);
     }
+
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Connection / reconnection
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -699,7 +927,85 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
             // Processing income event
             return this._emitIncomeEvent(message.event);
         }
-        // Here processing of request results also
+        if (message.demand instanceof Protocol.DemandDefinition) {
+            // Processing income demand
+            const demand = message.demand as Protocol.DemandDefinition;
+            this._proccessDemand(message.demand).then((results: string) => {
+                // Send success message
+                const url = this._getURL();
+                this._requests.send(url, (new Protocol.Message.Demand.FromRepondent.Request({
+                    clientId: this._clientGUID,
+                    demand: new Protocol.DemandDefinition({
+                        body: results,
+                        demand: demand.demand,
+                        expected: demand.expected,
+                        id: demand.id,
+                        protocol: demand.protocol,
+                    }),
+                    id: demand.id,
+                    token: this._token.get(),
+                })).stringify()).then((messageResResponse: Protocol.TProtocolTypes) => {
+                    this._setUrlFree(url);
+                    if (messageResResponse instanceof Protocol.ConnectionError) {
+                        return this._logger.warn(`Connection error. Reason: ${messageResResponse.reason} (error: ${messageResResponse.message}). Initialize hard reconnection.`);
+                    }
+                    if (!(messageResResponse instanceof Protocol.Message.Demand.FromRepondent.Response)) {
+                        return this._logger.warn(`Unexpected server response (expected "Protocol.Message.Demand.FromRepondent.Response"): ${messageResResponse.stringify()}`);
+                    }
+                    if (!messageResResponse.status) {
+                        return this._logger.env(`Results for demand ${demand.protocol}/${demand.demand} isn't accepted`);
+                    }
+                    this._logger.env(`Results for demand ${demand.protocol}/${demand.demand} accepted`);
+                }).catch((errorErrResponse: Error) => {
+                    this._setUrlFree(url);
+                    this._logger.env(`Fail to send results for demand ${demand.protocol}/${demand.demand} due error: ${errorErrResponse.message}`);
+                });
+            }).catch((error: Error) => {
+                // Send error message
+                const url = this._getURL();
+                this._requests.send(url, (new Protocol.Message.Demand.FromRepondent.Request({
+                    clientId: this._clientGUID,
+                    error: error.message,
+                    id: demand.id,
+                    token: this._token.get(),
+                })).stringify()).then((messageErrResponse: Protocol.TProtocolTypes) => {
+                    this._setUrlFree(url);
+                    if (messageErrResponse instanceof Protocol.ConnectionError) {
+                        return this._logger.warn(`Connection error. Reason: ${messageErrResponse.reason} (error: ${messageErrResponse.message}). Initialize hard reconnection.`);
+                    }
+                    if (!(messageErrResponse instanceof Protocol.Message.Demand.FromRepondent.Response)) {
+                        return this._logger.warn(`Unexpected server response (expected "Protocol.Message.Demand.FromRepondent.Response"): ${messageErrResponse.stringify()}`);
+                    }
+                    if (!messageErrResponse.status) {
+                        return this._logger.env(`Results for demand ${demand.protocol}/${demand.demand} isn't accepted`);
+                    }
+                    this._logger.env(`Results for demand ${demand.protocol}/${demand.demand} accepted`);
+                }).catch((errorErrResponse: Error) => {
+                    this._setUrlFree(url);
+                    this._logger.env(`Fail to send results for demand ${demand.protocol}/${demand.demand} due error: ${errorErrResponse.message}`);
+                });
+            });
+        }
+        if (message.return instanceof Protocol.DemandDefinition) {
+            const demandReturn: Protocol.DemandDefinition = message.return;
+            // Processing income demand's results
+            if (typeof demandReturn.error === 'string' && demandReturn.error.trim() !== '') {
+                // Error handled
+                return this._pendingDemands.reject(demandReturn.id, new Error(demandReturn.error));
+            }
+            // Get instance of protocol
+            this._protocols.parse(demandReturn.protocol, demandReturn.body).then((returnImpl: Protocol.IImplementation) => {
+                // Check correction of return
+                if (returnImpl.getSignature() !== demandReturn.expected) {
+                    return this._pendingDemands.reject(demandReturn.id, new Error(`Signatures aren't match: expected demand's return "${demandReturn.expected}", but was gotten "${returnImpl.getSignature()}".`));
+                }
+                // Return success
+                this._pendingDemands.resolve(demandReturn.id, returnImpl);
+            }).catch((errorGettingReturn: Error) => {
+                this._pendingDemands.reject(demandReturn.id, new Error(this._logger.env(`Error during parsing demand's return: ${errorGettingReturn.message}.`)));
+            });
+
+        }
     }
 
     private _onTaskDisconnect(message: Protocol.Disconnect) {
@@ -714,14 +1020,56 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Events: private
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-    private _emitIncomeEvent(message: Protocol.EventDefinition) {
-        this._protocols.parse(message.protocol, message.body)
-            .then((event: any) => {
-                this._subscriptions.emit(message.protocol, event.getSignature(), event);
+    private _emitIncomeEvent(eventDef: Protocol.EventDefinition) {
+        this._protocols.parse(eventDef.protocol, eventDef.body)
+            .then((eventImpl: any) => {
+                this._subscriptions.emit(eventDef.protocol, eventImpl.getSignature(), eventImpl);
             })
             .catch((error: Error) => {
                 this._logger.env(`Error during emit income event: ${error.message}.`);
             });
+    }
+
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 * Demands: private
+	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+    private _proccessDemand(demand: Protocol.DemandDefinition): Promise<any> {
+        return new Promise((resolve, reject) => {
+            this._protocols.parse(demand.protocol, demand.body)
+            .then((demandImpl: any) => {
+                // Check signature
+                if (demandImpl.getSignature() !== demand.demand) {
+                    return reject(new Error(this._logger.env(`Implementation demand mismatch with demand name in request. Implemented: "${demandImpl.getSignature()}"; defined in request: ${demand.demand}.`)));
+                }
+                // Get handler
+                const handler: THandler | undefined = this._demands.get(demand.protocol, demand.demand);
+                if (handler === undefined) {
+                    return reject(new Error(this._logger.env(`Cannot find handler for processing demand ${demand.demand} on protocol ${demand.protocol}.`)));
+                }
+                // Try to get results
+                const output: any = handler(demandImpl, (error: Error, results: any) => {
+                    if (error instanceof Error) {
+                        return reject(error);
+                    }
+                    if (typeof results !== 'object' || results === null) {
+                        return reject(new Error(this._logger.env(`Expected results of demand will be an object.`)));
+                    }
+                    if (typeof results.getSignature !== 'function' || typeof results.stringify !== 'function') {
+                        return reject(new Error(this._logger.env(`Expected results will be an instance of protocol implementation.`)));
+                    }
+                    if (results.getSignature() !== demand.expected) {
+                        return reject(new Error(this._logger.env(`Expected results as implementation of ${demand.expected}, but gotten ${results.getSignature()}.`)));
+                    }
+                    resolve(results.stringify());
+                });
+                // TODO: add support of promisses as return of handlers
+            })
+            .catch((error: Error) => {
+                this._logger.env(`Error during processing demand: ${error.message}.`);
+                reject(error);
+            });
+        });
+
     }
 
     /**

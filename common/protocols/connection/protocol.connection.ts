@@ -1,6 +1,6 @@
 /* tslint:disable */
 /*
-* This file generated automaticaly (Fri Oct 12 2018 02:10:59 GMT+0200 (CEST))
+* This file generated automaticaly (Sun Oct 21 2018 00:11:59 GMT+0200 (CEST))
 * Do not remove or change this code.
 * Protocol version: 0.0.1
 */
@@ -39,7 +39,22 @@ namespace Protocol {
 		Message.UnsubscribeAll.Response |
 		Message.Registration |
 		Message.Registration.Request |
+		Message.Demand |
+		Message.Demand.FromExpectant |
+		Message.Demand.FromExpectant.Request |
+		Message.Demand.FromExpectant.Response |
+		Message.Demand.FromRepondent |
+		Message.Demand.FromRepondent.Request |
+		Message.Demand.FromRepondent.Response |
+		Message.Respondent |
+		Message.Respondent.Bind |
+		Message.Respondent.Bind.Request |
+		Message.Respondent.Bind.Response |
+		Message.Respondent.Unbind |
+		Message.Respondent.Unbind.Request |
+		Message.Respondent.Unbind.Response |
 		EventDefinition |
+		DemandDefinition |
 		Subscription |
 		ConnectionError |
 		KeyValue;
@@ -572,7 +587,22 @@ namespace Protocol {
 		ReferencesMap["6EDC0A13"] = Message.UnsubscribeAll.Response;
 		ReferencesMap["C78C95B"] = Message.Registration;
 		ReferencesMap["34F5A3DA"] = Message.Registration.Request;
+		ReferencesMap["2B39E6C9"] = Message.Demand;
+		ReferencesMap["9BE21CD"] = Message.Demand.FromExpectant;
+		ReferencesMap["47D79F4E"] = Message.Demand.FromExpectant.Request;
+		ReferencesMap["49BC009E"] = Message.Demand.FromExpectant.Response;
+		ReferencesMap["12DA4DDE"] = Message.Demand.FromRepondent;
+		ReferencesMap["7297F55D"] = Message.Demand.FromRepondent.Request;
+		ReferencesMap["22C0FEAD"] = Message.Demand.FromRepondent.Response;
+		ReferencesMap["4C521D22"] = Message.Respondent;
+		ReferencesMap["502499A9"] = Message.Respondent.Bind;
+		ReferencesMap["2A67B2A"] = Message.Respondent.Bind.Request;
+		ReferencesMap["55509F06"] = Message.Respondent.Bind.Response;
+		ReferencesMap["5EDF73E"] = Message.Respondent.Unbind;
+		ReferencesMap["699C3EBD"] = Message.Respondent.Unbind.Request;
+		ReferencesMap["393C1C0D"] = Message.Respondent.Unbind.Response;
 		ReferencesMap["282376D8"] = EventDefinition;
+		ReferencesMap["61578FC3"] = DemandDefinition;
 		ReferencesMap["2DEBB962"] = Subscription;
 		ReferencesMap["583DFB65"] = ConnectionError;
 		ReferencesMap["1DB68EE9"] = KeyValue;
@@ -582,7 +612,7 @@ namespace Protocol {
 	* Injection: protocol signature
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 	export function getSignature() {
-		return "7DB7A9F3";
+		return "2D99F941";
 	}
 
 }
@@ -1033,6 +1063,8 @@ export namespace Message {
 					clientId: { name: "clientId", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
 					guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
 					event: { name: "event", value: EventDefinition, type: Protocol.EEntityType.reference, optional: true }, 
+					demand: { name: "demand", value: DemandDefinition, type: Protocol.EEntityType.reference, optional: true }, 
+					return: { name: "return", value: DemandDefinition, type: Protocol.EEntityType.reference, optional: true }, 
 				}
 			}
 			static __signature: string = "2FFB32C4";
@@ -1050,10 +1082,14 @@ export namespace Message {
 				return Protocol.stringify(this, Response) as string;
 			}
 			public event?: EventDefinition;
+			public demand?: DemandDefinition;
+			public return?: DemandDefinition;
 
-			constructor(args: { clientId: string, guid?: string, event?: EventDefinition }) {
+			constructor(args: { clientId: string, guid?: string, event?: EventDefinition, demand?: DemandDefinition, return?: DemandDefinition }) {
 				super(Object.assign(args, {}));
 				args.event !== void 0 && (this.event = args.event);
+				args.demand !== void 0 && (this.demand = args.demand);
+				args.return !== void 0 && (this.return = args.return);
 				const errors: Error[] = Protocol.validateParams(args, Response);
 				if (errors.length > 0) {
 					throw new Error(`Cannot create class of "Response" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
@@ -1609,6 +1645,540 @@ export namespace Message {
 		}
 		type TResponses = Response | ConnectionError;
 	}
+	export class Demand extends Message {
+		static getDescription(): {[key: string]: Protocol.IProperty } {
+			return {
+				clientId: { name: "clientId", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+				guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
+			}
+		}
+		static __signature: string = "2B39E6C9";
+		static getSignature(): string {
+			return Demand.__signature;
+		}
+		public __signature: string = Demand.__signature;
+		public getSignature(): string {
+			return this.__signature;
+		}
+		static parse(str: string | object): Protocol.TTypes | Error {
+			return Protocol.parse(str, Demand);
+		}
+		public stringify(): string {
+			return Protocol.stringify(this, Demand) as string;
+		}
+
+		constructor(args: { clientId: string, guid?: string }) {
+			super(Object.assign(args, {}));
+			const errors: Error[] = Protocol.validateParams(args, Demand);
+			if (errors.length > 0) {
+				throw new Error(`Cannot create class of "Demand" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+			}
+
+		}
+	}
+	export namespace Demand {
+		export class FromExpectant extends Demand {
+			static getDescription(): {[key: string]: Protocol.IProperty } {
+				return {
+					clientId: { name: "clientId", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+					guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
+				}
+			}
+			static __signature: string = "9BE21CD";
+			static getSignature(): string {
+				return FromExpectant.__signature;
+			}
+			public __signature: string = FromExpectant.__signature;
+			public getSignature(): string {
+				return this.__signature;
+			}
+			static parse(str: string | object): Protocol.TTypes | Error {
+				return Protocol.parse(str, FromExpectant);
+			}
+			public stringify(): string {
+				return Protocol.stringify(this, FromExpectant) as string;
+			}
+
+			constructor(args: { clientId: string, guid?: string }) {
+				super(Object.assign(args, {}));
+				const errors: Error[] = Protocol.validateParams(args, FromExpectant);
+				if (errors.length > 0) {
+					throw new Error(`Cannot create class of "FromExpectant" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+				}
+
+			}
+		}
+		export namespace FromExpectant {
+			export class Request extends FromExpectant {
+				static getDescription(): {[key: string]: Protocol.IProperty } {
+					return {
+						clientId: { name: "clientId", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+						guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
+						demand: { name: "demand", value: DemandDefinition, type: Protocol.EEntityType.reference, optional: false }, 
+						token: { name: "token", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+						query: { name: "query", value: KeyValue, type: Protocol.EEntityType.repeated, optional: false }, 
+					}
+				}
+				static __signature: string = "47D79F4E";
+				static getSignature(): string {
+					return Request.__signature;
+				}
+				public __signature: string = Request.__signature;
+				public getSignature(): string {
+					return this.__signature;
+				}
+				static parse(str: string | object): Protocol.TTypes | Error {
+					return Protocol.parse(str, Request);
+				}
+				public stringify(): string {
+					return Protocol.stringify(this, Request) as string;
+				}
+				public demand: DemandDefinition;
+				public token: string = "";
+				public query: Array<KeyValue> = [];
+
+				constructor(args: { clientId: string, guid?: string, demand: DemandDefinition, token: string, query: Array<KeyValue> }) {
+					super(Object.assign(args, {}));
+					this.demand = args.demand;
+					this.token = args.token;
+					this.query = args.query;
+					const errors: Error[] = Protocol.validateParams(args, Request);
+					if (errors.length > 0) {
+						throw new Error(`Cannot create class of "Request" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+					}
+
+				}
+			}
+			export class Response extends FromExpectant {
+				static getDescription(): {[key: string]: Protocol.IProperty } {
+					return {
+						clientId: { name: "clientId", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+						guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
+						id: { name: "id", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+						state: { name: "state", value: Message.Demand.State, type: Protocol.EEntityType.reference, optional: false }, 
+						error: { name: "error", value: "string", type: Protocol.EEntityType.primitive, optional: true }, 
+					}
+				}
+				static __signature: string = "49BC009E";
+				static getSignature(): string {
+					return Response.__signature;
+				}
+				public __signature: string = Response.__signature;
+				public getSignature(): string {
+					return this.__signature;
+				}
+				static parse(str: string | object): Protocol.TTypes | Error {
+					return Protocol.parse(str, Response);
+				}
+				public stringify(): string {
+					return Protocol.stringify(this, Response) as string;
+				}
+				public id: string = "";
+				public state: Message.Demand.State;
+				public error?: string = "";
+
+				constructor(args: { clientId: string, guid?: string, id: string, state: Message.Demand.State, error?: string }) {
+					super(Object.assign(args, {}));
+					this.id = args.id;
+					this.state = args.state;
+					args.error !== void 0 && (this.error = args.error);
+					const errors: Error[] = Protocol.validateParams(args, Response);
+					if (errors.length > 0) {
+						throw new Error(`Cannot create class of "Response" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+					}
+
+				}
+			}
+			export enum Responses {
+				ConnectionError = 'ConnectionError'
+			}
+			type TResponses = Response | ConnectionError;
+		}
+		export class FromRepondent extends Demand {
+			static getDescription(): {[key: string]: Protocol.IProperty } {
+				return {
+					clientId: { name: "clientId", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+					guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
+				}
+			}
+			static __signature: string = "12DA4DDE";
+			static getSignature(): string {
+				return FromRepondent.__signature;
+			}
+			public __signature: string = FromRepondent.__signature;
+			public getSignature(): string {
+				return this.__signature;
+			}
+			static parse(str: string | object): Protocol.TTypes | Error {
+				return Protocol.parse(str, FromRepondent);
+			}
+			public stringify(): string {
+				return Protocol.stringify(this, FromRepondent) as string;
+			}
+
+			constructor(args: { clientId: string, guid?: string }) {
+				super(Object.assign(args, {}));
+				const errors: Error[] = Protocol.validateParams(args, FromRepondent);
+				if (errors.length > 0) {
+					throw new Error(`Cannot create class of "FromRepondent" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+				}
+
+			}
+		}
+		export namespace FromRepondent {
+			export class Request extends FromRepondent {
+				static getDescription(): {[key: string]: Protocol.IProperty } {
+					return {
+						clientId: { name: "clientId", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+						guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
+						id: { name: "id", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+						token: { name: "token", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+						error: { name: "error", value: "string", type: Protocol.EEntityType.primitive, optional: true }, 
+						demand: { name: "demand", value: DemandDefinition, type: Protocol.EEntityType.reference, optional: true }, 
+					}
+				}
+				static __signature: string = "7297F55D";
+				static getSignature(): string {
+					return Request.__signature;
+				}
+				public __signature: string = Request.__signature;
+				public getSignature(): string {
+					return this.__signature;
+				}
+				static parse(str: string | object): Protocol.TTypes | Error {
+					return Protocol.parse(str, Request);
+				}
+				public stringify(): string {
+					return Protocol.stringify(this, Request) as string;
+				}
+				public id: string = "";
+				public token: string = "";
+				public error?: string = "";
+				public demand?: DemandDefinition;
+
+				constructor(args: { clientId: string, guid?: string, id: string, token: string, error?: string, demand?: DemandDefinition }) {
+					super(Object.assign(args, {}));
+					this.id = args.id;
+					this.token = args.token;
+					args.error !== void 0 && (this.error = args.error);
+					args.demand !== void 0 && (this.demand = args.demand);
+					const errors: Error[] = Protocol.validateParams(args, Request);
+					if (errors.length > 0) {
+						throw new Error(`Cannot create class of "Request" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+					}
+
+				}
+			}
+			export class Response extends FromRepondent {
+				static getDescription(): {[key: string]: Protocol.IProperty } {
+					return {
+						clientId: { name: "clientId", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+						guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
+						status: { name: "status", value: "boolean", type: Protocol.EEntityType.primitive, optional: false }, 
+						error: { name: "error", value: "string", type: Protocol.EEntityType.primitive, optional: true }, 
+					}
+				}
+				static __signature: string = "22C0FEAD";
+				static getSignature(): string {
+					return Response.__signature;
+				}
+				public __signature: string = Response.__signature;
+				public getSignature(): string {
+					return this.__signature;
+				}
+				static parse(str: string | object): Protocol.TTypes | Error {
+					return Protocol.parse(str, Response);
+				}
+				public stringify(): string {
+					return Protocol.stringify(this, Response) as string;
+				}
+				public status: boolean = false;
+				public error?: string = "";
+
+				constructor(args: { clientId: string, guid?: string, status: boolean, error?: string }) {
+					super(Object.assign(args, {}));
+					this.status = args.status;
+					args.error !== void 0 && (this.error = args.error);
+					const errors: Error[] = Protocol.validateParams(args, Response);
+					if (errors.length > 0) {
+						throw new Error(`Cannot create class of "Response" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+					}
+
+				}
+			}
+			export enum Responses {
+				ConnectionError = 'ConnectionError'
+			}
+			type TResponses = Response | ConnectionError;
+		}
+		export enum State {
+			ERROR = 'ERROR',
+			NO_RESPONDENTS = 'NO_RESPONDENTS',
+			SUCCESS = 'SUCCESS',
+			DEMAND_SENT = 'DEMAND_SENT'
+		}
+	}
+	export class Respondent extends Message {
+		static getDescription(): {[key: string]: Protocol.IProperty } {
+			return {
+				clientId: { name: "clientId", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+				guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
+			}
+		}
+		static __signature: string = "4C521D22";
+		static getSignature(): string {
+			return Respondent.__signature;
+		}
+		public __signature: string = Respondent.__signature;
+		public getSignature(): string {
+			return this.__signature;
+		}
+		static parse(str: string | object): Protocol.TTypes | Error {
+			return Protocol.parse(str, Respondent);
+		}
+		public stringify(): string {
+			return Protocol.stringify(this, Respondent) as string;
+		}
+
+		constructor(args: { clientId: string, guid?: string }) {
+			super(Object.assign(args, {}));
+			const errors: Error[] = Protocol.validateParams(args, Respondent);
+			if (errors.length > 0) {
+				throw new Error(`Cannot create class of "Respondent" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+			}
+
+		}
+	}
+	export namespace Respondent {
+		export class Bind extends Respondent {
+			static getDescription(): {[key: string]: Protocol.IProperty } {
+				return {
+					clientId: { name: "clientId", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+					guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
+				}
+			}
+			static __signature: string = "502499A9";
+			static getSignature(): string {
+				return Bind.__signature;
+			}
+			public __signature: string = Bind.__signature;
+			public getSignature(): string {
+				return this.__signature;
+			}
+			static parse(str: string | object): Protocol.TTypes | Error {
+				return Protocol.parse(str, Bind);
+			}
+			public stringify(): string {
+				return Protocol.stringify(this, Bind) as string;
+			}
+
+			constructor(args: { clientId: string, guid?: string }) {
+				super(Object.assign(args, {}));
+				const errors: Error[] = Protocol.validateParams(args, Bind);
+				if (errors.length > 0) {
+					throw new Error(`Cannot create class of "Bind" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+				}
+
+			}
+		}
+		export namespace Bind {
+			export class Request extends Bind {
+				static getDescription(): {[key: string]: Protocol.IProperty } {
+					return {
+						clientId: { name: "clientId", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+						guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
+						demand: { name: "demand", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+						protocol: { name: "protocol", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+						token: { name: "token", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+						query: { name: "query", value: KeyValue, type: Protocol.EEntityType.repeated, optional: false }, 
+					}
+				}
+				static __signature: string = "2A67B2A";
+				static getSignature(): string {
+					return Request.__signature;
+				}
+				public __signature: string = Request.__signature;
+				public getSignature(): string {
+					return this.__signature;
+				}
+				static parse(str: string | object): Protocol.TTypes | Error {
+					return Protocol.parse(str, Request);
+				}
+				public stringify(): string {
+					return Protocol.stringify(this, Request) as string;
+				}
+				public demand: string = "";
+				public protocol: string = "";
+				public token: string = "";
+				public query: Array<KeyValue> = [];
+
+				constructor(args: { clientId: string, guid?: string, demand: string, protocol: string, token: string, query: Array<KeyValue> }) {
+					super(Object.assign(args, {}));
+					this.demand = args.demand;
+					this.protocol = args.protocol;
+					this.token = args.token;
+					this.query = args.query;
+					const errors: Error[] = Protocol.validateParams(args, Request);
+					if (errors.length > 0) {
+						throw new Error(`Cannot create class of "Request" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+					}
+
+				}
+			}
+			export class Response extends Bind {
+				static getDescription(): {[key: string]: Protocol.IProperty } {
+					return {
+						clientId: { name: "clientId", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+						guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
+						status: { name: "status", value: "boolean", type: Protocol.EEntityType.primitive, optional: false }, 
+						error: { name: "error", value: "string", type: Protocol.EEntityType.primitive, optional: true }, 
+					}
+				}
+				static __signature: string = "55509F06";
+				static getSignature(): string {
+					return Response.__signature;
+				}
+				public __signature: string = Response.__signature;
+				public getSignature(): string {
+					return this.__signature;
+				}
+				static parse(str: string | object): Protocol.TTypes | Error {
+					return Protocol.parse(str, Response);
+				}
+				public stringify(): string {
+					return Protocol.stringify(this, Response) as string;
+				}
+				public status: boolean = false;
+				public error?: string = "";
+
+				constructor(args: { clientId: string, guid?: string, status: boolean, error?: string }) {
+					super(Object.assign(args, {}));
+					this.status = args.status;
+					args.error !== void 0 && (this.error = args.error);
+					const errors: Error[] = Protocol.validateParams(args, Response);
+					if (errors.length > 0) {
+						throw new Error(`Cannot create class of "Response" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+					}
+
+				}
+			}
+			export enum Responses {
+				ConnectionError = 'ConnectionError'
+			}
+			type TResponses = Response | ConnectionError;
+		}
+		export class Unbind extends Respondent {
+			static getDescription(): {[key: string]: Protocol.IProperty } {
+				return {
+					clientId: { name: "clientId", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+					guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
+				}
+			}
+			static __signature: string = "5EDF73E";
+			static getSignature(): string {
+				return Unbind.__signature;
+			}
+			public __signature: string = Unbind.__signature;
+			public getSignature(): string {
+				return this.__signature;
+			}
+			static parse(str: string | object): Protocol.TTypes | Error {
+				return Protocol.parse(str, Unbind);
+			}
+			public stringify(): string {
+				return Protocol.stringify(this, Unbind) as string;
+			}
+
+			constructor(args: { clientId: string, guid?: string }) {
+				super(Object.assign(args, {}));
+				const errors: Error[] = Protocol.validateParams(args, Unbind);
+				if (errors.length > 0) {
+					throw new Error(`Cannot create class of "Unbind" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+				}
+
+			}
+		}
+		export namespace Unbind {
+			export class Request extends Unbind {
+				static getDescription(): {[key: string]: Protocol.IProperty } {
+					return {
+						clientId: { name: "clientId", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+						guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
+						demand: { name: "demand", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+						protocol: { name: "protocol", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+						token: { name: "token", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+					}
+				}
+				static __signature: string = "699C3EBD";
+				static getSignature(): string {
+					return Request.__signature;
+				}
+				public __signature: string = Request.__signature;
+				public getSignature(): string {
+					return this.__signature;
+				}
+				static parse(str: string | object): Protocol.TTypes | Error {
+					return Protocol.parse(str, Request);
+				}
+				public stringify(): string {
+					return Protocol.stringify(this, Request) as string;
+				}
+				public demand: string = "";
+				public protocol: string = "";
+				public token: string = "";
+
+				constructor(args: { clientId: string, guid?: string, demand: string, protocol: string, token: string }) {
+					super(Object.assign(args, {}));
+					this.demand = args.demand;
+					this.protocol = args.protocol;
+					this.token = args.token;
+					const errors: Error[] = Protocol.validateParams(args, Request);
+					if (errors.length > 0) {
+						throw new Error(`Cannot create class of "Request" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+					}
+
+				}
+			}
+			export class Response extends Unbind {
+				static getDescription(): {[key: string]: Protocol.IProperty } {
+					return {
+						clientId: { name: "clientId", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+						guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
+						status: { name: "status", value: "boolean", type: Protocol.EEntityType.primitive, optional: false }, 
+					}
+				}
+				static __signature: string = "393C1C0D";
+				static getSignature(): string {
+					return Response.__signature;
+				}
+				public __signature: string = Response.__signature;
+				public getSignature(): string {
+					return this.__signature;
+				}
+				static parse(str: string | object): Protocol.TTypes | Error {
+					return Protocol.parse(str, Response);
+				}
+				public stringify(): string {
+					return Protocol.stringify(this, Response) as string;
+				}
+				public status: boolean = false;
+
+				constructor(args: { clientId: string, guid?: string, status: boolean }) {
+					super(Object.assign(args, {}));
+					this.status = args.status;
+					const errors: Error[] = Protocol.validateParams(args, Response);
+					if (errors.length > 0) {
+						throw new Error(`Cannot create class of "Response" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+					}
+
+				}
+			}
+			export enum Responses {
+				ConnectionError = 'ConnectionError'
+			}
+			type TResponses = Response | ConnectionError;
+		}
+	}
 }
 export class EventDefinition extends Protocol.Root {
 	static getDescription(): {[key: string]: Protocol.IProperty } {
@@ -1644,6 +2214,56 @@ export class EventDefinition extends Protocol.Root {
 		const errors: Error[] = Protocol.validateParams(args, EventDefinition);
 		if (errors.length > 0) {
 			throw new Error(`Cannot create class of "EventDefinition" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+		}
+
+	}
+}
+export class DemandDefinition extends Protocol.Root {
+	static getDescription(): {[key: string]: Protocol.IProperty } {
+		return {
+			id: { name: "id", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+			protocol: { name: "protocol", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+			demand: { name: "demand", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+			body: { name: "body", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+			expected: { name: "expected", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
+			error: { name: "error", value: "string", type: Protocol.EEntityType.primitive, optional: true }, 
+			pending: { name: "pending", value: "boolean", type: Protocol.EEntityType.primitive, optional: true }, 
+		}
+	}
+	static __signature: string = "61578FC3";
+	static getSignature(): string {
+		return DemandDefinition.__signature;
+	}
+	public __signature: string = DemandDefinition.__signature;
+	public getSignature(): string {
+		return this.__signature;
+	}
+	static parse(str: string | object): Protocol.TTypes | Error {
+		return Protocol.parse(str, DemandDefinition);
+	}
+	public stringify(): string {
+		return Protocol.stringify(this, DemandDefinition) as string;
+	}
+	public id: string = "";
+	public protocol: string = "";
+	public demand: string = "";
+	public body: string = "";
+	public expected: string = "";
+	public error?: string = "";
+	public pending?: boolean = false;
+
+	constructor(args: { id: string, protocol: string, demand: string, body: string, expected: string, error?: string, pending?: boolean }) {
+		super();
+		this.id = args.id;
+		this.protocol = args.protocol;
+		this.demand = args.demand;
+		this.body = args.body;
+		this.expected = args.expected;
+		args.error !== void 0 && (this.error = args.error);
+		args.pending !== void 0 && (this.pending = args.pending);
+		const errors: Error[] = Protocol.validateParams(args, DemandDefinition);
+		if (errors.length > 0) {
+			throw new Error(`Cannot create class of "DemandDefinition" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
 		}
 
 	}
@@ -1812,6 +2432,8 @@ export type TProtocolTypes = Protocol.TTypes;
 export const parse = Protocol.parse;
 export const stringify = Protocol.stringify;
 export const getSignature = Protocol.getSignature;
+export interface IClass { getSignature: () => string; parse: (str: string | object) => any; }
+export interface IImplementation { getSignature: () => string; stringify: () => string; }
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 * Injection: initialization
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */

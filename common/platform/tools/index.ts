@@ -13,8 +13,11 @@ export { default as hash } from './tools.hash';
 export { default as inspect } from './tools.inspect';
 export * from './tools.tostring';
 
+export { default as DemandsHolder } from './tools.demands.holder';
 export { default as EventEmitter } from './tools.emitter';
+export { default as EmittersHolder} from './tools.emitters.holder';
 export { default as HandlersHolder} from './tools.handlers.holder';
+export { default as PromisesHolder} from './tools.promises.holder';
 export { default as SubscriptionsHolder } from './tools.subscriptons.holder';
 export { default as ProtocolsHolder } from './tools.protocols.holder';
 export { default as Queue } from './tools.queue';

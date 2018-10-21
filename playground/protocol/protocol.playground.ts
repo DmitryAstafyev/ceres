@@ -1,6 +1,6 @@
 /* tslint:disable */
 /*
-* This file generated automaticaly (Fri Oct 12 2018 02:11:01 GMT+0200 (CEST))
+* This file generated automaticaly (Sun Oct 21 2018 00:13:40 GMT+0200 (CEST))
 * Do not remove or change this code.
 * Protocol version: 0.0.1
 */
@@ -11,7 +11,11 @@ namespace Protocol {
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 	export type TTypes = 
 		Events |
-		Events.Ping;
+		Events.Ping |
+		Requests |
+		Requests.IsOnline |
+		Requests.IsOnline.Request |
+		Requests.IsOnline.Response;
 
 	export const AdvancedTypes: {[key: string]: any} = {};
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -514,13 +518,17 @@ namespace Protocol {
 	export function init(){
 		ReferencesMap["D7E6E2"] = Events;
 		ReferencesMap["18DF1862"] = Events.Ping;
+		ReferencesMap["527E5577"] = Requests;
+		ReferencesMap["8091E02"] = Requests.IsOnline;
+		ReferencesMap["6B919683"] = Requests.IsOnline.Request;
+		ReferencesMap["9C8EECD"] = Requests.IsOnline.Response;
 	}
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	* Injection: protocol signature
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 	export function getSignature() {
-		return "2F01D4D2";
+		return "6DF0D967";
 	}
 
 }
@@ -613,6 +621,128 @@ export namespace Events {
 		}
 	}
 }
+export class Requests extends Protocol.Root {
+	static getDescription(): {[key: string]: Protocol.IProperty } {
+		return {
+		}
+	}
+	static __signature: string = "527E5577";
+	static getSignature(): string {
+		return Requests.__signature;
+	}
+	public __signature: string = Requests.__signature;
+	public getSignature(): string {
+		return this.__signature;
+	}
+	static parse(str: string | object): Protocol.TTypes | Error {
+		return Protocol.parse(str, Requests);
+	}
+	public stringify(): string {
+		return Protocol.stringify(this, Requests) as string;
+	}
+
+	constructor() {
+		super();
+
+	}
+}
+export namespace Requests {
+	export class IsOnline extends Requests {
+		static getDescription(): {[key: string]: Protocol.IProperty } {
+			return {
+			}
+		}
+		static __signature: string = "8091E02";
+		static getSignature(): string {
+			return IsOnline.__signature;
+		}
+		public __signature: string = IsOnline.__signature;
+		public getSignature(): string {
+			return this.__signature;
+		}
+		static parse(str: string | object): Protocol.TTypes | Error {
+			return Protocol.parse(str, IsOnline);
+		}
+		public stringify(): string {
+			return Protocol.stringify(this, IsOnline) as string;
+		}
+
+		constructor() {
+			super();
+
+		}
+	}
+	export namespace IsOnline {
+		export class Request extends IsOnline {
+			static getDescription(): {[key: string]: Protocol.IProperty } {
+				return {
+					sent: { name: "sent", value: "datetime", type: Protocol.EEntityType.primitive, optional: false }, 
+				}
+			}
+			static __signature: string = "6B919683";
+			static getSignature(): string {
+				return Request.__signature;
+			}
+			public __signature: string = Request.__signature;
+			public getSignature(): string {
+				return this.__signature;
+			}
+			static parse(str: string | object): Protocol.TTypes | Error {
+				return Protocol.parse(str, Request);
+			}
+			public stringify(): string {
+				return Protocol.stringify(this, Request) as string;
+			}
+			public sent: Date = new Date();
+
+			constructor(args: { sent: Date }) {
+				super();
+				this.sent = args.sent;
+				const errors: Error[] = Protocol.validateParams(args, Request);
+				if (errors.length > 0) {
+					throw new Error(`Cannot create class of "Request" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+				}
+
+			}
+		}
+		export class Response extends IsOnline {
+			static getDescription(): {[key: string]: Protocol.IProperty } {
+				return {
+					since: { name: "since", value: "datetime", type: Protocol.EEntityType.primitive, optional: false }, 
+					message: { name: "message", value: "string", type: Protocol.EEntityType.primitive, optional: true }, 
+				}
+			}
+			static __signature: string = "9C8EECD";
+			static getSignature(): string {
+				return Response.__signature;
+			}
+			public __signature: string = Response.__signature;
+			public getSignature(): string {
+				return this.__signature;
+			}
+			static parse(str: string | object): Protocol.TTypes | Error {
+				return Protocol.parse(str, Response);
+			}
+			public stringify(): string {
+				return Protocol.stringify(this, Response) as string;
+			}
+			public since: Date = new Date();
+			public message?: string = "";
+
+			constructor(args: { since: Date, message?: string }) {
+				super();
+				this.since = args.since;
+				args.message !== void 0 && (this.message = args.message);
+				const errors: Error[] = Protocol.validateParams(args, Response);
+				if (errors.length > 0) {
+					throw new Error(`Cannot create class of "Response" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+				}
+
+			}
+		}
+		type TResponses = Response;
+	}
+}
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 * Injection: export from Protocol namespace
@@ -621,6 +751,8 @@ export type TProtocolTypes = Protocol.TTypes;
 export const parse = Protocol.parse;
 export const stringify = Protocol.stringify;
 export const getSignature = Protocol.getSignature;
+export interface IClass { getSignature: () => string; parse: (str: string | object) => any; }
+export interface IImplementation { getSignature: () => string; stringify: () => string; }
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 * Injection: initialization
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
