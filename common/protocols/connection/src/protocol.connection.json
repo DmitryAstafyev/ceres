@@ -114,7 +114,7 @@
                 },
                 "Responses" : ["ConnectionError"]
             },
-            "State": ["ERROR", "NO_RESPONDENTS", "SUCCESS", "DEMAND_SENT"]
+            "State": ["ERROR", "NO_RESPONDENTS", "SUCCESS", "DEMAND_SENT", "PENDING"]
         },
         "Respondent": {
             "Bind" : {

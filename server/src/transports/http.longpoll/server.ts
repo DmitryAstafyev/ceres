@@ -11,12 +11,14 @@ import { Connections } from './server.connections';
 import { Token, Tokens } from './server.tokens';
 
 type TPendingDemand = {
+    body?: string;
     respondemtId: string,
     protocol: string,
     demand: string,
     expected: string,
     expectantId: string,
     sent: number,
+    query?: Protocol.KeyValue[],
 };
 
 type TClientRequests =  Protocol.Message.Handshake.Request |
@@ -49,18 +51,19 @@ const ClientRequestsTypes = [Protocol.Message.Handshake.Request,
 
 export class Server {
 
-    private _logger:            Tools.Logger                = new Tools.Logger('Http.Server');
-    private _pending:           Connections                 = new Connections();
-    private _hooks:             Connections                 = new Connections();
-    private _tokens:            Tokens;
-    private _subscriptions:     Tools.SubscriptionsHolder   = new Tools.SubscriptionsHolder();
-    private _demands:           Tools.DemandsHolder         = new Tools.DemandsHolder();
-    private _tasks:             Tools.Queue                 = new Tools.Queue();
-    private _aliases:           Aliases                     = new Aliases();
-    private _pendingDemands:    Map<string, TPendingDemand> = new Map();
-    private _parameters:        DescConnection.ConnectionParameters;
-    private _middleware:        DescMiddleware.Middleware<Connection>;
-    private _http:              HTTP.Server;
+    private _logger:                    Tools.Logger                = new Tools.Logger('Http.Server');
+    private _pending:                   Connections                 = new Connections();
+    private _hooks:                     Connections                 = new Connections();
+    private _tokens:                    Tokens;
+    private _subscriptions:             Tools.SubscriptionsHolder   = new Tools.SubscriptionsHolder();
+    private _demands:                   Tools.DemandsHolder         = new Tools.DemandsHolder();
+    private _tasks:                     Tools.Queue                 = new Tools.Queue();
+    private _aliases:                   Aliases                     = new Aliases();
+    private _pendingDemandResults:      Map<string, TPendingDemand> = new Map();
+    private _pendingDemandRespondent:   Map<string, TPendingDemand> = new Map();
+    private _parameters:                DescConnection.ConnectionParameters;
+    private _middleware:                DescMiddleware.Middleware<Connection>;
+    private _http:                      HTTP.Server;
 
     constructor(
         parameters: DescConnection.ConnectionParameters,
@@ -355,7 +358,6 @@ export class Server {
                         message.event.event,
                         message.event.body,
                         subscriberId,
-                        token,
                     ),
                     subscriberId,
                 );
@@ -424,6 +426,7 @@ export class Server {
                 this._logger.env(`Binding client ${clientId} with demand "${message.protocol}/${message.demand}" with query as "${message.query.map((alias: Protocol.KeyValue) => {
                     return `${alias.key}: ${alias.value}`;
                 }).join(', ')}" is done.`);
+                this._checkPendingRespondent();
             }).catch((error: Error) => {
                 this._logger.warn(`Fail to close connection ${clientId} due error: ${error.message}`);
             });
@@ -471,11 +474,30 @@ export class Server {
                         this._logger.warn(`Fail to close connection ${clientId} due error: ${error.message}`);
                     });
                 }
-                // No respondents, create pending task
-                // ...
-                return;
+                // Send confirmation
+                return connection.close((new Protocol.Message.Demand.FromExpectant.Response({
+                    clientId: clientId,
+                    id: demandGUID,
+                    state: Protocol.Message.Demand.State.PENDING,
+                })).stringify()).then(() => {
+                    this._logger.env(`Confirmation of pendinng demand of client ${clientId} "${message.demand.protocol}/${message.demand.demand}" is sent.`);
+                    // No respondents, create pending task
+                    this._pendingDemandRespondent.set(demandGUID, {
+                        body: message.demand.body,
+                        demand: message.demand.demand,
+                        expectantId: clientId,
+                        expected: message.demand.expected,
+                        protocol: message.demand.protocol,
+                        query: message.query,
+                        respondemtId: '',
+                        sent: (new Date()).getTime(),
+                    });
+                }).catch((error: Error) => {
+                    this._logger.warn(`Fail to close connection ${clientId} due error: ${error.message}`);
+                });
             }
             // Select respondents based on some strategy
+            // TODO: strategy
             const respondentId: string = respondents[0];
             // Send confirmation
             return connection.close((new Protocol.Message.Demand.FromExpectant.Response({
@@ -504,7 +526,7 @@ export class Server {
         // Demand request: response from respondent
         if (message instanceof Protocol.Message.Demand.FromRepondent.Request) {
             // Try to find data in pending tasks
-            const pendingDemand: TPendingDemand | undefined = this._pendingDemands.get(message.id);
+            const pendingDemand: TPendingDemand | undefined = this._pendingDemandResults.get(message.id);
             if (typeof pendingDemand === 'undefined') {
                 // Already nobody expects an answer
                 return connection.close((new Protocol.Message.Demand.FromRepondent.Response({
@@ -518,9 +540,21 @@ export class Server {
                 });
             }
             // Expectant is found
-            if (message.error !== '') {
+            if (message.error !== void 0 && message.error !== '') {
                 // Some error during proccessing demand
-
+                // Create task for sending demand's error
+                this._tasks.add(
+                    this._sendDemandResponse.bind(this,
+                        pendingDemand.protocol,
+                        pendingDemand.demand,
+                        '',
+                        pendingDemand.expected,
+                        pendingDemand.expectantId,
+                        message.error,
+                        message.id,
+                    ),
+                    pendingDemand.expectantId,
+                );
             }
             if (message.error === '' && message.demand !== void 0) {
                 // Demand proccessed successfully
@@ -532,19 +566,12 @@ export class Server {
                         message.demand.body,
                         message.demand.expected,
                         pendingDemand.expectantId,
+                        '',
                         message.id,
                     ),
                     pendingDemand.expectantId,
                 );
             }
-            /**
-                     protocol: string,
-        demand: string,
-        body: string,
-        expected: string,
-        expectantId: string,
-        demandRequestId: string,
-             */
             return connection.close((new Protocol.Message.Demand.FromRepondent.Response({
                 clientId: clientId,
                 status: true,
@@ -586,7 +613,6 @@ export class Server {
         event: string,
         body: string,
         clientId: string,
-        token: string,
     ): Promise<void> {
         return new Promise((resolve, reject) => {
             const connection = this._pending.get(clientId);
@@ -642,7 +668,7 @@ export class Server {
             })).stringify()).then(() => {
                 this._logger.env(`Demand to client ${respondentId}: protocol ${protocol}, demand ${demand} was sent.`);
                 // Register demand
-                this._pendingDemands.set(demandRequestId, {
+                this._pendingDemandResults.set(demandRequestId, {
                     demand: demand,
                     expectantId: expectantId,
                     expected: expected,
@@ -664,6 +690,7 @@ export class Server {
         body: string,
         expected: string,
         expectantId: string,
+        error: string,
         demandRequestId: string,
     ): Promise<void> {
         return new Promise((resolve, reject) => {
@@ -679,6 +706,7 @@ export class Server {
                 return: new Protocol.DemandDefinition({
                     body: body,
                     demand: demand,
+                    error: error,
                     expected: expected,
                     id: demandRequestId,
                     protocol: protocol,
@@ -686,10 +714,38 @@ export class Server {
             })).stringify()).then(() => {
                 this._logger.env(`Response on demand to client ${expectantId}: protocol ${protocol}, demand ${demand} was sent.`);
                 resolve();
-            }).catch((error: Error) => {
-                this._logger.warn(`Fail to send response on demand to client ${expectantId}: protocol ${protocol}, demand ${demand} due error: ${error.message}.`);
+            }).catch((errorSending: Error) => {
+                this._logger.warn(`Fail to send response on demand to client ${expectantId}: protocol ${protocol}, demand ${demand} due error: ${errorSending.message}.`);
                 reject();
             });
+        });
+    }
+
+    private _checkPendingRespondent(): void {
+        this._pendingDemandRespondent.forEach((pending: TPendingDemand, demandGUID: string) => {
+            const respondents: string[] | Error = this._demands.get(pending.protocol, pending.demand, pending.query as Protocol.KeyValue[]);
+            if (respondents instanceof Error) {
+                return;
+            }
+            if (respondents.length === 0) {
+                return;
+            }
+            const respondentId: string = respondents[0];
+            // TODO: strategy
+            this._logger.env(`Respondennt of "${pending.protocol}/${pending.demand}" is registred. Demand for client ${pending.expectantId} will be requested.`);
+            // Create task for sending demand
+            this._tasks.add(
+                this._sendDemand.bind(this,
+                    pending.protocol,
+                    pending.demand,
+                    pending.body,
+                    pending.expected,
+                    pending.expectantId,
+                    respondentId,
+                    demandGUID,
+                ),
+                respondentId,
+            );
         });
     }
 
