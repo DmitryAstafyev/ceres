@@ -730,8 +730,8 @@ export class Server {
             if (respondents.length === 0) {
                 return;
             }
-            const respondentId: string = respondents[0];
             // TODO: strategy
+            const respondentId: string = respondents[0];
             this._logger.env(`Respondennt of "${pending.protocol}/${pending.demand}" is registred. Demand for client ${pending.expectantId} will be requested.`);
             // Create task for sending demand
             this._tasks.add(
@@ -746,6 +746,8 @@ export class Server {
                 ),
                 respondentId,
             );
+            // Remove pending task
+            this._pendingDemandRespondent.delete(demandGUID);
         });
     }
 
