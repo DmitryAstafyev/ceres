@@ -645,7 +645,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
             if (expectedSignature instanceof Error) {
                 return reject(demandSignature);
             }
-            options = typeof options !== 'object' ? (options !== null ? options : {}) : {};
+            options = typeof options === 'object' ? (options !== null ? options : {}) : {};
             if (typeof query !== 'object' || query === null) {
                 return reject(new Error(this._logger.verbose(`As query can be used only object { [key: string]: string }.`)));
             }
@@ -690,7 +690,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                     if (!(message instanceof Protocol.Message.Demand.FromExpectant.Response)) {
                         return reject(new Error(this._logger.verbose(`Unexpected server response (expected "Protocol.Message.Demand.FromExpectant.Response"): ${message.stringify()}`)));
                     }
-                    if (message.state !== Protocol.Message.Demand.State.DEMAND_SENT) {
+                    if ([Protocol.Message.Demand.State.DEMAND_SENT, Protocol.Message.Demand.State.PENDING].indexOf(message.state) === -1) {
                         return reject(this._logger.env(`Fail to send demand's request "${protocolSignature}/${demandSignature}". Server answers: ${message.state}`));
                     }
                     this._logger.env(`Demand's request "${protocolSignature}/${demandSignature}" was sent. Server answers: ${message.state}`);
@@ -1062,7 +1062,6 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                     }
                     resolve(results.stringify());
                 });
-                // TODO: add support of promisses as return of handlers
             })
             .catch((error: Error) => {
                 this._logger.env(`Error during processing demand: ${error.message}.`);

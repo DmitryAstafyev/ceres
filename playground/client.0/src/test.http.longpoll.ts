@@ -163,7 +163,7 @@ export default class Test {
                 sent: new Date()
             });
             
-            this._client.demand(Protocol, demand, Protocol.Requests.IsOnline.Response, { type: 'online'})
+            this._client.demand(Protocol, demand, Protocol.Requests.IsOnline.Response, { type: 'online'}, { pending: true })
                 .then((response: Protocol.Requests.IsOnline.Response) => {
                     this._output.add(`On request has gotten response: ${Tools.inspect(response)}`, { color: 'rgb(100,250,70)'});
                     this._sendDemand();

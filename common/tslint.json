@@ -30,7 +30,8 @@
               "property-declaration": "space",
               "variable-declaration": "space"
             }
-          ]
+          ],
+          "no-reference": false
     },
     "rulesDirectory": []
 }
