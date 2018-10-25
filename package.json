@@ -13,6 +13,8 @@
   },
   "homepage": "https://github.com/DmitryAstafyev/ceres#readme",
   "devDependencies": {
-    "jake": "^8.0.16"
+    "colors": "^1.3.2",
+    "jake": "^8.0.16",
+    "npm-check": "^5.9.0"
   }
 }
