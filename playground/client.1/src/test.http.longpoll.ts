@@ -2,42 +2,11 @@ import * as Transports from '../../../client/src/transports/index';
 import * as Enums from '../../../common/platform/enums/index';
 import * as Tools from '../../../common/platform/tools/index';
 import * as Protocol from '../../protocol/protocol.playground';
-
-class Output {
-    private node: HTMLElement | null = null;
-
-    constructor() {
-        this._setTargetNode();
-    }
-
-    _setTargetNode() {
-        if (this.node === null) {
-            this.node = document.querySelector('#output');
-        }
-    }
-
-    _serialize(str: string){
-        if (typeof str !== 'string') {
-            return '';
-        }
-        return str.replace(/</gi, '&lt').replace(/>/gi, '&gt');
-    }
-
-    add(str: string, style?: any) {
-        this._setTargetNode();
-        if (this.node !== null) {
-            const p = document.createElement('P');
-            p.innerHTML = `${(new Date).toTimeString()}: ${this._serialize(str)}`;
-            Object.assign(p.style, style);
-            this.node.appendChild(p);
-            p.scrollIntoView();
-        }
-    }
-}
+import { Output } from '../../client.common/output';
 
 export default class Test {
 
-    private _output: Output = new Output();
+    private _output: Output = new Output('Client.1');
     private _parameters: Transports.HTTPLongpollClient.ConnectionParameters = new Transports.HTTPLongpollClient.ConnectionParameters({
         host: 'http://{sub[1..200]}.localhost',
         port: 3005
