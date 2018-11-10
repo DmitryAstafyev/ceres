@@ -66,7 +66,7 @@ export class Connection extends EventEmitter {
     public close(response: string): Promise<void> {
         return new Promise((resolve, reject) => {
             this._setHeaders();
-            this._response.write(response, (error: Error) => {
+            this._response.write(response, (error: Error | null | undefined) => {
                 if (error) {
                     return reject();
                 }

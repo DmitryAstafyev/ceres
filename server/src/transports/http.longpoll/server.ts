@@ -268,7 +268,10 @@ export class Server {
         if (message instanceof Protocol.Message.Pending.Request) {
             connection.setClientGUID(clientId);
             connection.on(Connection.EVENTS.onAborted, this._onClientDisconnected);
+            // Add pending
             this._pending.add(clientId, connection);
+            // Execute tasks
+            this._tasks.procced();
             return this._logger.env(`Pending connection for ${clientId} is accepted.`);
         }
         // Subscribe to event
