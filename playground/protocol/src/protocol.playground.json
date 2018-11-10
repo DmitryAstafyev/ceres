@@ -4,6 +4,10 @@
         "Ping": {
             "timestamp":"datetime",
             "message?": "string"
+        },
+        "TargetedPing": {
+            "timestamp":"datetime",
+            "message?": "string"
         }
     },
     "Requests" : {

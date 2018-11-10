@@ -15,6 +15,9 @@ export class Output {
     }
 
     _createLayout() {
+        if (document.body === null) {
+            return;
+        }
         const output = document.createElement('div');
         output.id = 'output';
         output.className = 'output';
@@ -65,4 +68,7 @@ export class Output {
             scrollDown && this._scrollDown();
         }
     }
+
 }
+
+

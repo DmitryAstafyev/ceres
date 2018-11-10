@@ -1,6 +1,6 @@
 /* tslint:disable */
 /*
-* This file generated automaticaly (Wed Oct 24 2018 00:45:59 GMT+0200 (CEST))
+* This file generated automaticaly (Sun Nov 04 2018 20:09:20 GMT+0100 (CET))
 * Do not remove or change this code.
 * Protocol version: 0.0.1
 */
@@ -12,6 +12,7 @@ namespace Protocol {
 	export type TTypes = 
 		Events |
 		Events.Ping |
+		Events.TargetedPing |
 		Requests |
 		Requests.IsOnline |
 		Requests.IsOnline.Request |
@@ -518,6 +519,7 @@ namespace Protocol {
 	export function init(){
 		ReferencesMap["D7E6E2"] = Events;
 		ReferencesMap["18DF1862"] = Events.Ping;
+		ReferencesMap["1A957D8E"] = Events.TargetedPing;
 		ReferencesMap["527E5577"] = Requests;
 		ReferencesMap["8091E02"] = Requests.IsOnline;
 		ReferencesMap["6B919683"] = Requests.IsOnline.Request;
@@ -528,7 +530,7 @@ namespace Protocol {
 	* Injection: protocol signature
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 	export function getSignature() {
-		return "6DF0D967";
+		return "4B9EA81F";
 	}
 
 }
@@ -616,6 +618,42 @@ export namespace Events {
 			const errors: Error[] = Protocol.validateParams(args, Ping);
 			if (errors.length > 0) {
 				throw new Error(`Cannot create class of "Ping" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+			}
+
+		}
+	}
+	export class TargetedPing extends Events {
+		static getDescription(): {[key: string]: Protocol.IProperty } {
+			return {
+				guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
+				timestamp: { name: "timestamp", value: "datetime", type: Protocol.EEntityType.primitive, optional: false }, 
+				message: { name: "message", value: "string", type: Protocol.EEntityType.primitive, optional: true }, 
+			}
+		}
+		static __signature: string = "1A957D8E";
+		static getSignature(): string {
+			return TargetedPing.__signature;
+		}
+		public __signature: string = TargetedPing.__signature;
+		public getSignature(): string {
+			return this.__signature;
+		}
+		static parse(str: string | object): Protocol.TTypes | Error {
+			return Protocol.parse(str, TargetedPing);
+		}
+		public stringify(): string {
+			return Protocol.stringify(this, TargetedPing) as string;
+		}
+		public timestamp: Date = new Date();
+		public message?: string = "";
+
+		constructor(args: { guid?: string, timestamp: Date, message?: string }) {
+			super(Object.assign(args, {}));
+			this.timestamp = args.timestamp;
+			args.message !== void 0 && (this.message = args.message);
+			const errors: Error[] = Protocol.validateParams(args, TargetedPing);
+			if (errors.length > 0) {
+				throw new Error(`Cannot create class of "TargetedPing" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
 			}
 
 		}
