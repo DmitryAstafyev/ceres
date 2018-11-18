@@ -105,6 +105,22 @@ export default class DemandsHolder {
         return clientIds;
     }
 
+    public getAll(protocol: string, demand: string): string[] | Error {
+        const demands: TDemandsStorage | undefined = this._subscriptions.get(protocol);
+        if (demands === undefined) {
+            return [];
+        }
+        const querys: TQuerysStorage | undefined = demands.get(demand);
+        if (querys === undefined) {
+            return [];
+        }
+        const clientIds: string[] = [];
+        querys.forEach((query: TQuery, clientId: string) => {
+            clientIds.push(clientId);
+        });
+        return clientIds;
+    }
+
     public getInfo(): string {
         const info: TClientId[] = [];
         this._subscriptions.forEach((demands: TDemandsStorage, protocol: string) => {

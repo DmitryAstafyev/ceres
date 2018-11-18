@@ -14,6 +14,8 @@ export enum EClientTests {
     catchTargetedEvent = 'catchTargetedEvent',
     processDemand = 'processDemand',
     getDemandResponse = 'getDemandResponse',
+    getServerDemandResponse = 'getServerDemandResponse',
+    getClientDemandResponse = 'getClientDemandResponse',
     clientSetRef = 'clientSetRef',
     subscribeAsRespondent = 'subscribeAsRespondent'
 };

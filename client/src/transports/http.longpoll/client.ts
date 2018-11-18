@@ -35,12 +35,16 @@ type THandler           = (...args: any[]) => any;
 
 export interface IDemandOptions {
     pending?: boolean;
+    scope?: Protocol.Message.Demand.Options.Scope;
 }
 
 export class Client extends Tools.EventEmitter implements ITransportInterface {
 
     public static STATES = EClientStates;
     public static EVENTS = EClientEvents;
+    public static DemandOptions = {
+        scope: Protocol.Message.Demand.Options.Scope,
+    };
 
     private _logger:            Tools.Logger            = new Tools.Logger('Http.Client');
     private _token:             Token                   = new Token();
@@ -680,6 +684,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                         pending: typeof options.pending === 'boolean' ? options.pending : false,
                         protocol: protocolSignature,
                     })),
+                    options: new Protocol.Message.Demand.Options(options),
                     query: queryArray,
                     token: this._token.get(),
                 })).stringify()).then((message: Protocol.TProtocolTypes) => {

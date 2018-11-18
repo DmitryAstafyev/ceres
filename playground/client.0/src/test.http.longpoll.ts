@@ -1,5 +1,4 @@
 import * as Transports from '../../../client/src/transports/index';
-import * as Enums from '../../../common/platform/enums/index';
 import * as Tools from '../../../common/platform/tools/index';
 import * as Protocol from '../../protocol/protocol.playground';
 import { Output } from '../../client.common/output';
@@ -17,7 +16,8 @@ export default class Test {
     private _client: Transports.HTTPLongpollClient.Client;
     private _greetingMessageTimer: any = -1;
     private _targetMessageTimer: any = -1;
-    private _demandMessageTimer: any = -1;
+    private _demandClientMessageTimer: any = -1;
+    private _demandServerMessageTimer: any = -1;
     private _testDoneHandler: (test: EClientTests) => void;
     private _testFailHandler: (test: EClientTests) => void;
     private _indicators: Indicators = new Indicators();
@@ -34,8 +34,10 @@ export default class Test {
         this._indicators.add('disconnection', 'Disconnection');
         this._indicators.add('triggerBroadcastEvent', 'Broadcase event triggered');
         this._indicators.add('triggerTargetEvent', 'Targeted event triggered');
-        this._indicators.add('sendDemand', 'Demand sent');
-        this._indicators.add('demandResponse', 'Demand response is gotten');
+        this._indicators.add('sendClientDemand', 'Demand sent to client');
+        this._indicators.add('demandClientResponse', 'Demand response is gotten from client');
+        this._indicators.add('sendServerDemand', 'Demand sent to server/host');
+        this._indicators.add('demandServerResponse', 'Demand response is gotten from server');
         this._indicators.add('connection', 'Connection');
     }
 
@@ -68,7 +70,8 @@ export default class Test {
         this._output.add(`HTTP.Longpoll transport test: Connected`);
         this._sendGreetingMessage();
         this._sendTargetMessage();
-        this._sendDemand();
+        this._sendClientDemand();
+        this._sendServerDemand();
         this._indicators.state('connection', Indicators.States.success);
         this._indicators.increase('connection');
     }
@@ -78,7 +81,8 @@ export default class Test {
         this._output.add(`Client is disconnected.`, { color: 'rgb(255,255,0)'});
         this._stopSendGreetingMessage();
         this._stopSendTargetMessage();
-        this._stopSendDemand();
+        this._stopSendClientDemand();
+        this._stopSendServerDemand();
         this._indicators.state('disconnection', Indicators.States.success);
         this._indicators.increase('disconnection');
     }
@@ -163,38 +167,75 @@ export default class Test {
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
-    // Transprt demands: handlers
+    // Transprt client demands: handlers
     //////////////////////////////////////////////////////////////////////////////////////////////
-    private _sendDemand(){
-        this._demandMessageTimer = setTimeout(() => {
+    private _sendClientDemand(){
+        this._demandClientMessageTimer = setTimeout(() => {
             const demand = new Protocol.Requests.IsOnline.Request({
                 sent: new Date()
             });
-            this._indicators.state('sendDemand', Indicators.States.success);
-            this._indicators.increase('sendDemand');
-            this._client.demand(Protocol, demand, Protocol.Requests.IsOnline.Response, { type: 'online'}, { pending: true })
+            this._indicators.state('sendClientDemand', Indicators.States.success);
+            this._indicators.increase('sendClientDemand');
+            this._client.demand(Protocol, demand, Protocol.Requests.IsOnline.Response, { type: 'online'}, { pending: true, scope: Transports.HTTPLongpollClient.Client.DemandOptions.scope.clients })
                 .then((response: Protocol.Requests.IsOnline.Response) => {
-                    this._output.add(`On request has gotten response: ${Tools.inspect(response)}`, { color: 'rgb(100,250,70)'});
-                    this._sendDemand();
-                    this._testDoneHandler(EClientTests.getDemandResponse);
-                    this._indicators.state('demandResponse', Indicators.States.success);
-                    this._indicators.increase('demandResponse');
+                    this._output.add(`On client request has gotten response: ${Tools.inspect(response)}`, { color: 'rgb(100,250,70)'});
+                    this._sendClientDemand();
+                    this._testDoneHandler(EClientTests.getClientDemandResponse);
+                    this._indicators.state('demandClientResponse', Indicators.States.success);
+                    this._indicators.increase('demandClientResponse');
                 })
                 .catch((e) => {
-                    this._output.add(`Error getting response on demand: ${Tools.inspect(e)}`, { color: 'rgb(255,0,0)'});
-                    this._sendDemand();
-                    this._testFailHandler(EClientTests.getDemandResponse);
-                    this._indicators.state('demandResponse', Indicators.States.success);
+                    this._output.add(`Error getting response on client demand: ${Tools.inspect(e)}`, { color: 'rgb(255,0,0)'});
+                    this._sendClientDemand();
+                    this._testFailHandler(EClientTests.getClientDemandResponse);
+                    this._indicators.state('demandClientResponse', Indicators.States.success);
                 });
             
         }, 1000);
     }
 
-    private _stopSendDemand(){
-        if (this._demandMessageTimer === -1){
+    private _stopSendClientDemand(){
+        if (this._demandClientMessageTimer === -1){
             return;
         }
-        clearTimeout(this._demandMessageTimer);
-        this._demandMessageTimer = -1;
+        clearTimeout(this._demandClientMessageTimer);
+        this._demandClientMessageTimer = -1;
     }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Transprt server demands: handlers
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    private _sendServerDemand(){
+        this._demandServerMessageTimer = setTimeout(() => {
+            const demand = new Protocol.Requests.IsOnline.Request({
+                sent: new Date()
+            });
+            this._indicators.state('sendServerDemand', Indicators.States.success);
+            this._indicators.increase('sendServerDemand');
+            this._client.demand(Protocol, demand, Protocol.Requests.IsOnline.Response, { type: 'online'}, { pending: true, scope: Transports.HTTPLongpollClient.Client.DemandOptions.scope.hosts })
+                .then((response: Protocol.Requests.IsOnline.Response) => {
+                    this._output.add(`On server request has gotten response: ${Tools.inspect(response)}`, { color: 'rgb(100,250,250)'});
+                    this._sendServerDemand();
+                    this._testDoneHandler(EClientTests.getServerDemandResponse);
+                    this._indicators.state('demandServerResponse', Indicators.States.success);
+                    this._indicators.increase('demandServerResponse');
+                })
+                .catch((e) => {
+                    this._output.add(`Error getting response on server demand: ${Tools.inspect(e)}`, { color: 'rgb(255,0,0)'});
+                    this._sendServerDemand();
+                    this._testFailHandler(EClientTests.getServerDemandResponse);
+                    this._indicators.state('demandServerResponse', Indicators.States.success);
+                });
+            
+        }, 1000);
+    }
+
+    private _stopSendServerDemand(){
+        if (this._demandServerMessageTimer === -1){
+            return;
+        }
+        clearTimeout(this._demandServerMessageTimer);
+        this._demandServerMessageTimer = -1;
+    }
+
 }

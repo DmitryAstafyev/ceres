@@ -1,5 +1,4 @@
 import * as Transports from '../../../client/src/transports/index';
-import * as Enums from '../../../common/platform/enums/index';
 import * as Tools from '../../../common/platform/tools/index';
 import * as Protocol from '../../protocol/protocol.playground';
 import { Output } from '../../client.common/output';

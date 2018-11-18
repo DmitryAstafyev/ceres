@@ -92,7 +92,8 @@
                 "Request": {
                     "demand": "DemandDefinition",
                     "token": "string",
-                    "query": "array<KeyValue>"
+                    "query": "array<KeyValue>",
+                    "options?": "Options"
                 },
                 "Response": {
                     "id": "string",
@@ -114,7 +115,11 @@
                 },
                 "Responses" : ["ConnectionError"]
             },
-            "State": ["ERROR", "NO_RESPONDENTS", "SUCCESS", "DEMAND_SENT", "PENDING"]
+            "State": ["ERROR", "NO_RESPONDENTS", "SUCCESS", "DEMAND_SENT", "PENDING"],
+            "@Options": {
+                "scope?": "Scope",
+                "Scope": ["local", "hosts", "clients", "all"]
+            }
         },
         "Respondent": {
             "Bind" : {

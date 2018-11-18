@@ -18,6 +18,7 @@ type TPendingDemand = {
     expected: string,
     expectantId: string,
     sent: number,
+    options?: Protocol.Message.Demand.Options,
     query?: Protocol.KeyValue[],
 };
 
@@ -49,14 +50,30 @@ const ClientRequestsTypes = [Protocol.Message.Handshake.Request,
                             Protocol.Message.Respondent.Bind.Request,
                             Protocol.Message.Respondent.Unbind.Request];
 
+type TQuery = { [key: string]: string };
+
+type THandler = (...args: any[]) => any;
+
+interface IScopedRespondentList {
+    hosts: string[];
+    clients: string[];
+    all: string[];
+    target: string | null;
+    type: Protocol.Message.Demand.Options.Scope | null;
+}
+
+const ServerDemandHandlerSignature: string = '__ServerDemandHandlerSignature';
+
 export class Server {
 
     private _logger:                    Tools.Logger                = new Tools.Logger('Http.Server');
     private _pending:                   Connections                 = new Connections();
     private _hooks:                     Connections                 = new Connections();
+    private _protocols:                 Tools.ProtocolsHolder       = new Tools.ProtocolsHolder();
     private _tokens:                    Tokens;
     private _subscriptions:             Tools.SubscriptionsHolder   = new Tools.SubscriptionsHolder();
     private _demands:                   Tools.DemandsHolder         = new Tools.DemandsHolder();
+    private _serverDemandsHanlders:     Map<string, THandler>       = new Map();
     private _tasks:                     Tools.Queue                 = new Tools.Queue();
     private _aliases:                   Aliases                     = new Aliases();
     private _pendingDemandResults:      Map<string, TPendingDemand> = new Map();
@@ -112,6 +129,48 @@ export class Server {
                             this._http.close(resolve);
                         });
                 });
+        });
+    }
+
+    public subscribeToRequest(protocol: any, demand: Protocol.IClass | string, query: TQuery, handler: THandler): void | Error {
+        // Check handler
+        if ((handler as any)[ServerDemandHandlerSignature] !== void 0) {
+            return new Error(`Handler is already subscribed`);
+        }
+        // Create subscription
+        const guid: string = `${Tools.guid()}-${Tools.guid()}`;
+        const protocolSignature = this._getEntitySignature(protocol);
+        if (protocolSignature instanceof Error) {
+            return protocolSignature;
+        }
+        const demandSignature = typeof demand === 'string' ? demand : this._getEntitySignature(demand);
+        if (demandSignature instanceof Error) {
+            return demandSignature;
+        }
+        (handler as any)[ServerDemandHandlerSignature] = guid;
+        // Add handler
+        this._serverDemandsHanlders.set(guid, handler);
+        // Add protocol
+        this._protocols.add(protocol);
+        // Add subscription
+        this._demands.subscribe(protocolSignature, demandSignature, guid, query);
+    }
+
+    public unsubscribeFromRequest(protocol: any, demand: Protocol.IClass | string): void | Error {
+        const protocolSignature = this._getEntitySignature(protocol);
+        if (protocolSignature instanceof Error) {
+            return protocolSignature;
+        }
+        const demandSignature = typeof demand === 'string' ? demand : this._getEntitySignature(demand);
+        if (demandSignature instanceof Error) {
+            return demandSignature;
+        }
+        const subscriptions: string[] | Error = this._demands.getAll(protocolSignature, demandSignature);
+        if (subscriptions instanceof Error) {
+            return subscriptions;
+        }
+        subscriptions.forEach((guid: string) => {
+            this._serverDemandsHanlders.delete(guid);
         });
     }
 
@@ -448,7 +507,12 @@ export class Server {
         }
         // Demand request: call from expectant
         if (message instanceof Protocol.Message.Demand.FromExpectant.Request) {
-            const respondents: string[] | Error = this._demands.get(message.demand.protocol, message.demand.demand, message.query);
+            // Setup default options
+            if (message.options === undefined) {
+                message.options = new Protocol.Message.Demand.Options({});
+            }
+            message.options.scope = message.options.scope === undefined ? Protocol.Message.Demand.Options.Scope.all : message.options.scope;
+            const respondents: IScopedRespondentList | Error = this._getRespondentsForDemand(message.demand.protocol, message.demand.demand, message.query, message.options.scope);
             const demandGUID: string = Tools.guid();
             if (respondents instanceof Error) {
                 // Some error with demand definition
@@ -463,7 +527,7 @@ export class Server {
                     this._logger.warn(`Fail to close connection ${clientId} due error: ${error.message}`);
                 });
             }
-            if (respondents.length === 0) {
+            if (respondents.target === null) {
                 const isPending: boolean = typeof message.demand.pending === 'boolean' ? message.demand.pending : false;
                 if (!isPending) {
                     // Request isn't pending and no any respondents
@@ -490,6 +554,7 @@ export class Server {
                         demand: message.demand.demand,
                         expectantId: clientId,
                         expected: message.demand.expected,
+                        options: message.options as Protocol.Message.Demand.Options,
                         protocol: message.demand.protocol,
                         query: message.query,
                         respondemtId: '',
@@ -499,9 +564,6 @@ export class Server {
                     this._logger.warn(`Fail to close connection ${clientId} due error: ${error.message}`);
                 });
             }
-            // Select respondents based on some strategy
-            // TODO: strategy
-            const respondentId: string = respondents[0];
             // Send confirmation
             return connection.close((new Protocol.Message.Demand.FromExpectant.Response({
                 clientId: clientId,
@@ -509,19 +571,35 @@ export class Server {
                 state: Protocol.Message.Demand.State.DEMAND_SENT,
             })).stringify()).then(() => {
                 this._logger.env(`Confirmation of sending demand of client ${clientId} "${message.demand.protocol}/${message.demand.demand}" is sent.`);
-                // Create task for sending demand
-                this._tasks.add(
-                    this._sendDemand.bind(this,
-                        message.demand.protocol,
-                        message.demand.demand,
-                        message.demand.body,
-                        message.demand.expected,
-                        clientId,
-                        respondentId,
-                        demandGUID,
-                    ),
-                    respondentId,
-                );
+                if (respondents.type === Protocol.Message.Demand.Options.Scope.hosts) {
+                    // Respondent is host: proceed task
+                    this._tasks.add(
+                        this._proccessDemandByServer.bind(this,
+                            message.demand.protocol,
+                            message.demand.demand,
+                            message.demand.body,
+                            message.demand.expected,
+                            respondents.target as string,
+                            clientId,
+                            demandGUID,
+                        ),
+                        respondents.target as string,
+                    );
+                } else {
+                    // Respondent is client: create task for sending demand
+                    this._tasks.add(
+                        this._sendDemand.bind(this,
+                            message.demand.protocol,
+                            message.demand.demand,
+                            message.demand.body,
+                            message.demand.expected,
+                            clientId,
+                            respondents.target,
+                            demandGUID,
+                        ),
+                        respondents.target as string,
+                    );
+                }
             }).catch((error: Error) => {
                 this._logger.warn(`Fail to close connection ${clientId} due error: ${error.message}`);
             });
@@ -649,7 +727,7 @@ export class Server {
         expected: string,
         expectantId: string,
         respondentId: string,
-        demandRequestId: string,
+        demandGUID: string,
     ): Promise<void> {
         return new Promise((resolve, reject) => {
             const connection = this._pending.get(respondentId);
@@ -665,13 +743,13 @@ export class Server {
                     body: body,
                     demand: demand,
                     expected: expected,
-                    id: demandRequestId,
+                    id: demandGUID,
                     protocol: protocol,
                 }),
             })).stringify()).then(() => {
                 this._logger.env(`Demand to client ${respondentId}: protocol ${protocol}, demand ${demand} was sent.`);
                 // Register demand
-                this._pendingDemandResults.set(demandRequestId, {
+                this._pendingDemandResults.set(demandGUID, {
                     demand: demand,
                     expectantId: expectantId,
                     expected: expected,
@@ -724,34 +802,199 @@ export class Server {
         });
     }
 
+    private _getResponseOfDemandByServer(
+        protocol: string,
+        demand: string,
+        body: string,
+        expected: string,
+        respondentId: string,
+    ): Promise<string> {
+        return new Promise((resolve, reject) => {
+            this._protocols.parse(protocol, body).then((demandImpl: Protocol.IImplementation) => {
+                if (demandImpl.getSignature() !== demand) {
+                    return reject(new Error(this._logger.env(`Implementation demand mismatch with demand name in request. Implemented: "${demandImpl.getSignature()}"; defined in request: ${demand}.`)));
+                }
+                const handler = this._serverDemandsHanlders.get(respondentId);
+                if (handler === undefined) {
+                    return reject(new Error(this._logger.warn(`Cannot find server's hander for demand: "${protocol}" / "${demand}".`)));
+                }
+                handler(demandImpl, (error: Error | null, results: any) => {
+                    if (error instanceof Error) {
+                        return reject(error);
+                    }
+                    if (typeof results !== 'object' || results === null) {
+                        return reject(new Error(this._logger.env(`Expected results of demand will be an object.`)));
+                    }
+                    if (typeof results.getSignature !== 'function' || typeof results.stringify !== 'function') {
+                        return reject(new Error(this._logger.env(`Expected results will be an instance of protocol implementation.`)));
+                    }
+                    if (results.getSignature() !== expected) {
+                        return reject(new Error(this._logger.env(`Expected results as implementation of ${expected}, but gotten ${results.getSignature()}.`)));
+                    }
+                    resolve(results.stringify());
+                });
+            }).catch((error: Error) => {
+                this._logger.warn(`Fail to parse body "${body}" of protocol "${protocol}" due error: ${error.message}`);
+                reject(error);
+            });
+        });
+    }
+
+    private _proccessDemandByServer(
+        protocol: string,
+        demand: string,
+        body: string,
+        expected: string,
+        respondentId: string,
+        expectantId: string,
+        demandGUID: string,
+    ): Promise<void> {
+        return new Promise((resolve, reject) => {
+            this._getResponseOfDemandByServer(
+                protocol,
+                demand,
+                body,
+                expected,
+                respondentId,
+            ).then((response: string) => {
+                this._sendDemandResponse(
+                    protocol,
+                    demand,
+                    response,
+                    expected,
+                    expectantId,
+                    '',
+                    demandGUID,
+                ).then(() => {
+                    this._logger.env(`Server response successfully has been sent for demand: ${protocol}/${demand} to client: ${expectantId}`);
+                    resolve();
+                }).catch((error: Error) => {
+                    this._logger.warn(`Fail to send response for demand: ${protocol}/${demand} to client: ${expectantId} due error: ${error.message}`);
+                    reject(error);
+                });
+            }).catch((processingError: Error) => {
+                this._sendDemandResponse(
+                    protocol,
+                    demand,
+                    '',
+                    expected,
+                    expectantId,
+                    processingError.message,
+                    demandGUID,
+                ).then(() => {
+                    this._logger.env(`Server error-response successfully has been sent for demand: ${protocol}/${demand} to client: ${expectantId}`);
+                    resolve(); // Bad result -> also result. So, resolve.
+                }).catch((error: Error) => {
+                    this._logger.warn(`Fail to send error-response for demand: ${protocol}/${demand} to client: ${expectantId} due error: ${error.message}`);
+                    reject(error);
+                });
+            });
+        });
+    }
+
     private _checkPendingRespondent(): void {
         this._pendingDemandRespondent.forEach((pending: TPendingDemand, demandGUID: string) => {
-            const respondents: string[] | Error = this._demands.get(pending.protocol, pending.demand, pending.query as Protocol.KeyValue[]);
+            if (pending.options === undefined || pending.options.scope === undefined) {
+                return;
+            }
+            const respondents: IScopedRespondentList | Error = this._getRespondentsForDemand(
+                pending.protocol,
+                pending.demand,
+                pending.query as Protocol.KeyValue[],
+                pending.options.scope);
+
             if (respondents instanceof Error) {
                 return;
             }
-            if (respondents.length === 0) {
+            if (respondents.target === null) {
                 return;
             }
-            // TODO: strategy
-            const respondentId: string = respondents[0];
             this._logger.env(`Respondennt of "${pending.protocol}/${pending.demand}" is registred. Demand for client ${pending.expectantId} will be requested.`);
-            // Create task for sending demand
-            this._tasks.add(
-                this._sendDemand.bind(this,
+            if (respondents.type === Protocol.Message.Demand.Options.Scope.hosts) {
+                // Respondent is host: proceed task
+                this._proccessDemandByServer(
                     pending.protocol,
                     pending.demand,
-                    pending.body,
+                    pending.body as string,
                     pending.expected,
+                    respondents.target as string,
                     pending.expectantId,
-                    respondentId,
                     demandGUID,
-                ),
-                respondentId,
-            );
+                ).catch((error: Error) => {
+                    this._logger.warn(`Fail to proccess server's demand due error: ${error.message}`);
+                });
+            } else {
+                // Create task for sending demand
+                this._tasks.add(
+                    this._sendDemand.bind(this,
+                        pending.protocol,
+                        pending.demand,
+                        pending.body,
+                        pending.expected,
+                        pending.expectantId,
+                        respondents.target,
+                        demandGUID,
+                    ),
+                    respondents.target,
+                );
+            }
             // Remove pending task
             this._pendingDemandRespondent.delete(demandGUID);
         });
+    }
+
+    private _getRespondentsForDemand(protocol: string, demand: string, query: any[], scope: Protocol.Message.Demand.Options.Scope): IScopedRespondentList | Error {
+        const result: IScopedRespondentList = {
+            all: [],
+            clients: [],
+            hosts: [],
+            target: null,
+            type: null,
+        };
+        const respondents: string[] | Error = this._demands.get(protocol, demand, query);
+        if (respondents instanceof Error) {
+            return respondents;
+        }
+        result.all = respondents;
+        respondents.forEach((clientId: string) => {
+            if (this._serverDemandsHanlders.has(clientId)) {
+                // Server's handler
+                result.hosts.push(clientId);
+            } else {
+                // Client's handler
+                result.clients.push(clientId);
+            }
+        });
+        switch (scope) {
+            case Protocol.Message.Demand.Options.Scope.hosts:
+                result.target = result.hosts.length > 0 ? result.hosts[0] : null;
+                result.type = Protocol.Message.Demand.Options.Scope.hosts;
+                break;
+            case Protocol.Message.Demand.Options.Scope.clients:
+                result.target = result.clients.length > 0 ? result.clients[0] : null;
+                result.type = Protocol.Message.Demand.Options.Scope.clients;
+                break;
+            case Protocol.Message.Demand.Options.Scope.all:
+                result.target = result.all.length > 0 ? result.all[0] : null;
+                result.type = this._serverDemandsHanlders.has(result.target as string) ? result.type = Protocol.Message.Demand.Options.Scope.hosts : Protocol.Message.Demand.Options.Scope.clients;
+                break;
+        }
+        return result;
+    }
+
+    /**
+     * Gets entity's signature
+     * @param protocol {Protocol} implementation of protocol
+     * @returns {string | Error}
+     */
+    private _getEntitySignature(entity: any): string | Error {
+        if ((typeof entity !== 'object' || entity === null) && typeof entity !== 'function') {
+            return new Error('No protocol found. As protocol expecting: constructor or instance of protocol.');
+        }
+        if (typeof entity.getSignature !== 'function' || typeof entity.getSignature() !== 'string' || entity.getSignature().trim() === '') {
+            return new Error('No sigature of protocol found');
+        }
+        return entity.getSignature();
     }
 
     private _logState() {
