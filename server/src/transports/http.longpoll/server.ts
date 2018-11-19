@@ -573,17 +573,14 @@ export class Server {
                 this._logger.env(`Confirmation of sending demand of client ${clientId} "${message.demand.protocol}/${message.demand.demand}" is sent.`);
                 if (respondents.type === Protocol.Message.Demand.Options.Scope.hosts) {
                     // Respondent is host: proceed task
-                    this._tasks.add(
-                        this._proccessDemandByServer.bind(this,
-                            message.demand.protocol,
-                            message.demand.demand,
-                            message.demand.body,
-                            message.demand.expected,
-                            respondents.target as string,
-                            clientId,
-                            demandGUID,
-                        ),
+                    this._proccessDemandByServer(
+                        message.demand.protocol,
+                        message.demand.demand,
+                        message.demand.body,
+                        message.demand.expected,
                         respondents.target as string,
+                        clientId,
+                        demandGUID,
                     );
                 } else {
                     // Respondent is client: create task for sending demand
@@ -857,37 +854,33 @@ export class Server {
                 expected,
                 respondentId,
             ).then((response: string) => {
-                this._sendDemandResponse(
-                    protocol,
-                    demand,
-                    response,
-                    expected,
-                    expectantId,
-                    '',
-                    demandGUID,
-                ).then(() => {
-                    this._logger.env(`Server response successfully has been sent for demand: ${protocol}/${demand} to client: ${expectantId}`);
-                    resolve();
-                }).catch((error: Error) => {
-                    this._logger.warn(`Fail to send response for demand: ${protocol}/${demand} to client: ${expectantId} due error: ${error.message}`);
-                    reject(error);
-                });
+                this._tasks.add(
+                    this._sendDemandResponse.bind(this,
+                        protocol,
+                        demand,
+                        response,
+                        expected,
+                        expectantId,
+                        '',
+                        demandGUID,
+                    ),
+                    respondentId,
+                );
+                resolve();
             }).catch((processingError: Error) => {
-                this._sendDemandResponse(
-                    protocol,
-                    demand,
-                    '',
-                    expected,
-                    expectantId,
-                    processingError.message,
-                    demandGUID,
-                ).then(() => {
-                    this._logger.env(`Server error-response successfully has been sent for demand: ${protocol}/${demand} to client: ${expectantId}`);
-                    resolve(); // Bad result -> also result. So, resolve.
-                }).catch((error: Error) => {
-                    this._logger.warn(`Fail to send error-response for demand: ${protocol}/${demand} to client: ${expectantId} due error: ${error.message}`);
-                    reject(error);
-                });
+                this._tasks.add(
+                    this._sendDemandResponse.bind(this,
+                        protocol,
+                        demand,
+                        '',
+                        expected,
+                        expectantId,
+                        processingError.message,
+                        demandGUID,
+                    ),
+                    respondentId,
+                );
+                resolve();
             });
         });
     }
