@@ -791,6 +791,8 @@ export class Server {
                 }),
             })).stringify()).then(() => {
                 this._logger.env(`Response on demand to client ${expectantId}: protocol ${protocol}, demand ${demand} was sent.`);
+                this._pendingDemandRespondent.delete(demandRequestId);
+                this._pendingDemandResults.delete(demandRequestId);
                 resolve();
             }).catch((errorSending: Error) => {
                 this._logger.warn(`Fail to send response on demand to client ${expectantId}: protocol ${protocol}, demand ${demand} due error: ${errorSending.message}.`);
@@ -931,8 +933,6 @@ export class Server {
                     respondents.target,
                 );
             }
-            // Remove pending task
-            this._pendingDemandRespondent.delete(demandGUID);
         });
     }
 
@@ -991,7 +991,7 @@ export class Server {
     }
 
     private _logState() {
-        this._logger.debug(`\t[server state]: \n\pending:\n${this._pending.getInfo()}\n\hooks:\n${this._hooks.getInfo()}\n\tsubcribers\n ${this._subscriptions.getInfo()}\n\ttasks in queue: ${this._tasks.getTasksCount()}.`);
+        this._logger.debug(`\t[server state]: \n\pending:\n${this._pending.getInfo()}\n\hooks:\n${this._hooks.getInfo()}\n\tsubcribers\n ${this._subscriptions.getInfo()}\n\ttasks in queue: ${this._tasks.getTasksCount()}\n\tpending demands: ${this._pendingDemandRespondent.size}\n\tpending demand results: ${this._pendingDemandResults.size}.`);
         setTimeout(() => {
             this._logState();
         }, 3000);

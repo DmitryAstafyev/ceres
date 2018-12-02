@@ -118,9 +118,10 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
      * @returns {Promise<void>}
      */
     public destroy(): Promise<void> {
-        return this._drop().then(() => {
-            this._token.drop();
-            this._subscriptions.clear();
+        return new Promise((resolve) => {
+            this._drop().then(() => {
+                this._clear().then(resolve);
+            });
         });
     }
 
@@ -845,12 +846,13 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
     private _hardReconnection() {
         this._state.set(EClientStates.reconnecting);
         this._drop().then(() => {
-            this._token.drop();
-            setTimeout(() => {
-                this._connect().catch((error: Error) => {
-                    this._logger.warn(`Error of hard reconnectionn on start due error: ${error.message}`);
-                });
-            }, SETTINGS.RECONNECTION_TIMEOUT);
+            this._clear().then(() => {
+                setTimeout(() => {
+                    this._connect().catch((error: Error) => {
+                        this._logger.warn(`Error of hard reconnectionn on start due error: ${error.message}`);
+                    });
+                }, SETTINGS.RECONNECTION_TIMEOUT);
+            });
         });
     }
 
@@ -863,6 +865,21 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
             this._hook.drop();
             this._tasks.stop();
             this._requests.drop();
+            resolve();
+        });
+    }
+
+    /**
+     * Clear all data of client
+     * @returns {Promise<void>}
+     */
+    private _clear(): Promise<void> {
+        return new Promise((resolve) => {
+            this._token.drop();
+            this._subscriptions.clear();
+            this._demands.clear();
+            this._aliases = {};
+            this._pendingDemands.clear();
             resolve();
         });
     }
