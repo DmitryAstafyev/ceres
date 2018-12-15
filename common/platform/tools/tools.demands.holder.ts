@@ -83,6 +83,10 @@ export default class DemandsHolder {
         });
     }
 
+    public clear() {
+        this._subscriptions.clear();
+    }
+
     public get(protocol: string, demand: string, query: TQuery | TQueryArray): string[] | Error {
         const validQuery: TQuery | Error = this._serialize(query);
         if (validQuery instanceof Error) {

@@ -15,6 +15,7 @@ export * from './tools.tostring';
 
 export { default as DemandsHolder } from './tools.demands.holder';
 export { default as EventEmitter } from './tools.emitter';
+export { EventHandler } from './tools.emitter';
 export { default as EmittersHolder} from './tools.emitters.holder';
 export { default as HandlersHolder} from './tools.handlers.holder';
 export { default as PromisesHolder} from './tools.promises.holder';

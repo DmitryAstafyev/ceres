@@ -955,7 +955,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
             this._proccessDemand(message.demand).then((results: string) => {
                 // Send success message
                 const url = this._getURL();
-                this._requests.send(url, (new Protocol.Message.Demand.FromRepondent.Request({
+                this._requests.send(url, (new Protocol.Message.Demand.FromRespondent.Request({
                     clientId: this._clientGUID,
                     demand: new Protocol.DemandDefinition({
                         body: results,
@@ -971,8 +971,8 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                     if (messageResResponse instanceof Protocol.ConnectionError) {
                         return this._logger.warn(`Connection error. Reason: ${messageResResponse.reason} (error: ${messageResResponse.message}). Initialize hard reconnection.`);
                     }
-                    if (!(messageResResponse instanceof Protocol.Message.Demand.FromRepondent.Response)) {
-                        return this._logger.warn(`Unexpected server response (expected "Protocol.Message.Demand.FromRepondent.Response"): ${messageResResponse.stringify()}`);
+                    if (!(messageResResponse instanceof Protocol.Message.Demand.FromRespondent.Response)) {
+                        return this._logger.warn(`Unexpected server response (expected "Protocol.Message.Demand.FromRespondent.Response"): ${messageResResponse.stringify()}`);
                     }
                     if (!messageResResponse.status) {
                         return this._logger.env(`Results for demand ${demand.protocol}/${demand.demand} isn't accepted`);
@@ -985,7 +985,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
             }).catch((error: Error) => {
                 // Send error message
                 const url = this._getURL();
-                this._requests.send(url, (new Protocol.Message.Demand.FromRepondent.Request({
+                this._requests.send(url, (new Protocol.Message.Demand.FromRespondent.Request({
                     clientId: this._clientGUID,
                     error: error.message,
                     id: demand.id,
@@ -995,8 +995,8 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                     if (messageErrResponse instanceof Protocol.ConnectionError) {
                         return this._logger.warn(`Connection error. Reason: ${messageErrResponse.reason} (error: ${messageErrResponse.message}). Initialize hard reconnection.`);
                     }
-                    if (!(messageErrResponse instanceof Protocol.Message.Demand.FromRepondent.Response)) {
-                        return this._logger.warn(`Unexpected server response (expected "Protocol.Message.Demand.FromRepondent.Response"): ${messageErrResponse.stringify()}`);
+                    if (!(messageErrResponse instanceof Protocol.Message.Demand.FromRespondent.Response)) {
+                        return this._logger.warn(`Unexpected server response (expected "Protocol.Message.Demand.FromRespondent.Response"): ${messageErrResponse.stringify()}`);
                     }
                     if (!messageErrResponse.status) {
                         return this._logger.env(`Results for demand ${demand.protocol}/${demand.demand} isn't accepted`);

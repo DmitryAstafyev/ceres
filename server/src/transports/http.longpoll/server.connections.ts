@@ -1,10 +1,12 @@
 import { Connection } from './server.connection';
 
+import * as Tools from '../../platform/tools/index';
 import * as Protocol from '../../protocols/connection/protocol.connection';
 
 export class Connections {
 
     private _connections: Map<string, Connection[]> = new Map();
+    private _logger: Tools.Logger = new Tools.Logger(`Connections`);
 
     public add(clientId: string, connection: Connection) {
         let connections = this._connections.get(clientId);
@@ -60,8 +62,21 @@ export class Connections {
         });
     }
 
-    public delete(clientId: string) {
-        this._connections.delete(clientId);
+    public delete(clientId: string): Promise<void> {
+        return new Promise((resolve, reject) => {
+            const connections: Connection[] | undefined = this._connections.get(clientId);
+            if (!(connections instanceof Array)) {
+                return resolve();
+            }
+            connections.forEach((connection: Connection) => {
+                connection.close('').catch((error: Error) => {
+                    this._logger.error(`Fail to close connection due error: ${error.message}`);
+                });
+            });
+            this._connections.delete(clientId);
+            resolve();
+        });
+
     }
 
     public getInfo(): string {

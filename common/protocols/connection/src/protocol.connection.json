@@ -53,7 +53,8 @@
                 "token": "string"
             },
             "Response": {
-                "status": "boolean"
+                "status": "boolean",
+                "error?": "string"
             },
             "Responses" : ["ConnectionError"]
         },
@@ -63,7 +64,8 @@
                 "token": "string"
             },
             "Response": {
-                "status": "boolean"
+                "status": "boolean",
+                "error?": "string"
             },
             "Responses" : ["ConnectionError"]
         },
@@ -73,7 +75,8 @@
                 "token": "string"
             },
             "Response": {
-                "status": "boolean"
+                "status": "boolean",
+                "error?": "string"
             },
             "Responses" : ["ConnectionError"]
         },
@@ -83,7 +86,8 @@
                 "token": "string"
             },
             "Response": {
-                "status": "boolean"
+                "status": "boolean",
+                "error?": "string"
             },
             "Responses" : ["ConnectionError"]
         },
@@ -102,7 +106,7 @@
                 },
                 "Responses" : ["ConnectionError"]
             },
-            "FromRepondent": {
+            "FromRespondent": {
                 "Request": {
                     "id": "string",
                     "token": "string",

@@ -81,7 +81,7 @@ export default class Queue {
      * Execute all tasks in queue
      * @returns undefined
      */
-    public procced() {
+    public proceed() {
         if (this._destroyResolver !== null) {
             return;
         }
@@ -115,7 +115,7 @@ export default class Queue {
                 }
                 this._repeat();
                 this._working = false;
-                this._repeatFlag && this.procced();
+                this._repeatFlag && this.proceed();
                 this._repeatFlag = false;
             };
             Promise.all(tasks)
@@ -147,7 +147,7 @@ export default class Queue {
     }
 
     private _repeat() {
-        this._repeatTimer = setTimeout(this.procced, this._timeout);
+        this._repeatTimer = setTimeout(this.proceed, this._timeout);
     }
 
     private _stop() {

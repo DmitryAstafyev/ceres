@@ -83,6 +83,10 @@ export default class SubscriptionsHolder {
         });
     }
 
+    public clear() {
+        this._subscriptions.clear();
+    }
+
     public getInfo(): string {
         const info: TClientId[] = [];
         this._subscriptions.forEach((events: TEventsStorage, protocolName: TProtocol) => {

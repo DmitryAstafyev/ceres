@@ -1,10 +1,9 @@
 import * as HTTP from 'http';
-
-import { EventEmitter } from 'events';
+import * as Tools from '../../platform/tools/index';
 
 type THeaders = { [key: string]: string };
 
-export class Connection extends EventEmitter {
+export class Connection extends Tools.EventEmitter {
 
     public static EVENTS = {
         onAborted: Symbol(),
@@ -17,12 +16,11 @@ export class Connection extends EventEmitter {
     private _clientGUID: string | null = null;
 
     constructor(request: HTTP.IncomingMessage, response: HTTP.ServerResponse, maxSize: number, CORS: boolean) {
-        super();
+        super({ strict: true });
         this._request = request;
         this._response = response;
         this._maxSize = maxSize;
         this._CORS = CORS;
-
         this._onAborted = this._onAborted.bind(this);
         this._request.on('aborted', this._onAborted);
     }
