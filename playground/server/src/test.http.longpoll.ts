@@ -23,4 +23,19 @@ export default function test(){
         }
     );
     logger.info(`Server is created on: "localhost:${parameters.port}".`);
+    HTTPLongpoll.subscribeToEvent(Protocol, Protocol.Events.EventToServer, (event: Protocol.Events.EventToServer) => {
+        logger.info(`Server has gotten event: ${event.stringify()}`);
+    });
+    function sendServerEvent() {
+        HTTPLongpoll.emitEvent(Protocol, new Protocol.Events.EventFromServer({
+            timestamp: new Date(),
+            message: 'This is event from serve'
+        })).then((count: number) => {
+            logger.info(`Server event was sent to ${count} subscribers`);
+            setTimeout(sendServerEvent, 2500);
+        }).catch((error: Error) => {
+            logger.error(`Fail to emit server event due error: ${error.message}`);
+        });
+    }
+    sendServerEvent();
 }

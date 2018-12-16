@@ -4,7 +4,7 @@ import * as DescMiddleware from '../../infrastructure/middleware/implementation'
 import * as Tools from '../../platform/tools/index';
 import * as Protocol from '../../protocols/connection/protocol.connection';
 import * as DescConnection from './connection/index';
-
+import { TAlias } from './server.aliases';
 import { Connection } from './server.connection';
 import { MessageDemandFromExpectantProcessor } from './server.msg.processor.demand.fromexpectant';
 import { MessageDemandFromRespondentProcessor } from './server.msg.processor.demand.fromrespondent';
@@ -51,6 +51,7 @@ const ClientRequestsTypes = [Protocol.Message.Handshake.Request,
                             Protocol.Message.Respondent.Unbind.Request];
 
 const ServerDemandHandlerSignature: string = '__ServerDemandHandlerSignature';
+const ServerEventHandlerSignature: string = '__ServerEventHandlerSignature';
 
 export class Server {
 
@@ -113,16 +114,11 @@ export class Server {
         this._messageDemandFromExpectantProcessor = new MessageDemandFromExpectantProcessor(this._state);
         this._messageDemandFromRespondentProcessor = new MessageDemandFromRespondentProcessor(this._state);
 
-        // Bind processor events
-        this._messageHookProcessor.subscribe(MessageHookProcessor.EVENTS.disconnected, this._onClientDisconnected.bind(this));
-
         // Create server
         this._http = HTTP.createServer(this._onRequest.bind(this)).listen(this._parameters.getPort());
 
         // Turn off timeout for income connections
         this._http.timeout = 0;
-
-        this._onClientDisconnected = this._onClientDisconnected.bind(this);
 
         this._logState();
     }
@@ -182,6 +178,101 @@ export class Server {
         }
         subscriptions.forEach((guid: string) => {
             this._state.processors.demands.unrefServerHandler(guid);
+        });
+    }
+
+    public subscribeToEvent(protocol: any, event: Protocol.IClass | string, handler: THandler): void | Error {
+        // Check handler
+        if ((handler as any)[ServerEventHandlerSignature] !== void 0) {
+            return new Error(`Handler is already subscribed`);
+        }
+        // Create subscription
+        const guid: string = `${Tools.guid()}-${Tools.guid()}`;
+        const protocolSignature = this._getEntitySignature(protocol);
+        if (protocolSignature instanceof Error) {
+            return protocolSignature;
+        }
+        const eventSignature = typeof event === 'string' ? event : this._getEntitySignature(event);
+        if (eventSignature instanceof Error) {
+            return eventSignature;
+        }
+        (handler as any)[ServerEventHandlerSignature] = guid;
+        // Add protocol
+        this._state.protocols.add(protocol);
+        // Add handler
+        this._state.processors.events.subscribeHandler(protocolSignature, eventSignature, handler);
+    }
+
+    public unsubscribeFromEvent(protocol: any, event?: Protocol.IClass | string, handler?: THandler): void | Error {
+        const protocolSignature = this._getEntitySignature(protocol);
+        if (protocolSignature instanceof Error) {
+            return protocolSignature;
+        }
+        if (event === undefined) {
+            this._state.processors.events.unsubscribeHandler(protocolSignature);
+            return;
+        }
+        const eventSignature = typeof event === 'string' ? event : this._getEntitySignature(event);
+        if (eventSignature instanceof Error) {
+            return eventSignature;
+        }
+        if (handler === undefined) {
+            this._state.processors.events.unsubscribeHandler(protocolSignature, eventSignature);
+            return;
+        }
+        this._state.processors.events.unsubscribeHandler(protocolSignature, eventSignature, handler);
+    }
+
+    public refEventAliases(alias: TAlias): Error | void {
+        return this._state.processors.events.refAlias(alias);
+    }
+
+    public unrefEventAliases(): void {
+        this._state.processors.events.unrefAlias();
+    }
+
+    public emitEvent(protocol: any, event: any, aliases?: TAlias, options?: Protocol.Message.Event.Options): Promise<number> {
+        return new Promise((resolve, reject) => {
+            const protocolSignature = this._getEntitySignature(protocol);
+            if (protocolSignature instanceof Error) {
+                return reject(protocolSignature);
+            }
+            const eventSignature = this._getEntitySignature(event);
+            if (eventSignature instanceof Error) {
+                return reject(eventSignature);
+            }
+            const _aliases: Protocol.KeyValue[] = [];
+            if (typeof aliases !== 'undefined') {
+                try {
+                    if (typeof aliases !== 'object' || aliases === null) {
+                        throw new Error(`As aliases can be provided an object { [key: string]: string }.`);
+                    }
+                    Object.keys(aliases).forEach((key: string) => {
+                        if (typeof aliases[key] !== 'string' || aliases[key].trim() === '') {
+                            throw new Error(`Alias with key = "${key}" is defined incorrectly. It should be not empty {string}.`);
+                        }
+                        _aliases.push(new Protocol.KeyValue({
+                            key: key,
+                            value: aliases[key],
+                        }));
+                    });
+                } catch (error) {
+                    return reject(error);
+                }
+            }
+            // Setup default options
+            if (options === undefined) {
+                options = new Protocol.Message.Event.Options({});
+            }
+            options.scope = options.scope === undefined ? Protocol.Message.Event.Options.Scope.all : options.scope;
+            this._state.processors.events.emitAll(
+                protocolSignature,
+                eventSignature,
+                event.stringify(),
+                options,
+                _aliases.length > 0 ? _aliases : undefined).then((count: number) => {
+                resolve(count);
+            });
         });
     }
 
@@ -366,28 +457,6 @@ export class Server {
                 this._logger.warn(`Fail todo Demand.FromRespondent for connection ${clientId} due error: ${error.message}`);
             });
         }
-    }
-
-    private _onClientDisconnected(clientId: string) {
-        /*
-        if (typeof clientId !== 'string') {
-            return this._logger.error(`Fait to disconnnect client, because clientId is incorrect: ${Tools.inspect(clientId)}`);
-        }
-        const _pending: boolean = this._pending.has(clientId);
-        const _tasks: boolean = this._tasks.count(clientId) > 0;
-        // Remove from storage of pending
-        _pending && this._pending.delete(clientId);
-        // Remove related tasks
-        _tasks && this._tasks.drop(clientId);
-        // Unsubscribe
-        this._subscriptions.removeClient(clientId);
-        // Remove ref
-        this._aliases.unref(clientId);
-        // Remove demands
-        this._demands.removeClient(clientId);
-        if (_pending) {
-            this._logger.env(`Client ${clientId} is disconnected`);
-        }*/
     }
 
     /**

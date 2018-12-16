@@ -40,12 +40,17 @@
             "Request": {
                 "event": "EventDefinition",
                 "token": "string",
-                "aliases?": "array<KeyValue>"
+                "aliases?": "array<KeyValue>",
+                "options?": "Options"
             },
             "Response": {
                 "subscribers": "integer"
             },
-            "Responses" : ["ConnectionError"]
+            "Responses" : ["ConnectionError"],
+            "@Options": {
+                "scope?": "Scope",
+                "Scope": ["local", "hosts", "clients", "all"]
+            }
         },
         "Subscribe": {
             "Request": {

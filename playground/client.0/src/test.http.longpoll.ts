@@ -16,6 +16,7 @@ export default class Test {
     private _client: Transports.HTTPLongpollClient.Client;
     private _greetingMessageTimer: any = -1;
     private _targetMessageTimer: any = -1;
+    private _serverEventTimer: any = -1;
     private _demandClientMessageTimer: any = -1;
     private _demandServerMessageTimer: any = -1;
     private _testDoneHandler: (test: EClientTests) => void;
@@ -37,6 +38,7 @@ export default class Test {
         this._indicators.add('sendClientDemand', 'Demand sent to client');
         this._indicators.add('demandClientResponse', 'Demand response is gotten from client');
         this._indicators.add('sendServerDemand', 'Demand sent to server/host');
+        this._indicators.add('triggerServerEvent', 'Sending server event');
         this._indicators.add('demandServerResponse', 'Demand response is gotten from server');
         this._indicators.add('connection', 'Connection');
     }
@@ -70,6 +72,7 @@ export default class Test {
         this._output.add(`HTTP.Longpoll transport test: Connected`);
         this._sendGreetingMessage();
         this._sendTargetMessage();
+        this._sendServerEvent();
         this._sendClientDemand();
         this._sendServerDemand();
         this._indicators.state('connection', Indicators.States.success);
@@ -164,6 +167,39 @@ export default class Test {
         }
         clearTimeout(this._targetMessageTimer);
         this._targetMessageTimer = -1;
+    }
+
+    private _sendServerEvent(){
+        this._serverEventTimer = setTimeout(() => {
+            const serverEvent = new Protocol.Events.EventToServer({
+                timestamp: new Date(),
+                message: 'Hello server!'
+            });
+            
+            this._client.eventEmit(serverEvent, Protocol)
+                .then((res) => {
+                    this._output.add(`Event sent: ${Tools.inspect(res)}`, { color: 'rgb(200,214,141)'});
+                    this._sendServerEvent();
+                    this._testDoneHandler(EClientTests.triggerServerEvent);
+                    this._indicators.state('triggerServerEvent', Indicators.States.success);
+                    this._indicators.increase('triggerServerEvent');
+                })
+                .catch((e) => {
+                    this._output.add(`Error: ${Tools.inspect(e)}`, { color: 'rgb(255,0,0)'});
+                    this._sendGreetingMessage();
+                    this._testFailHandler(EClientTests.triggerServerEvent);
+                    this._indicators.state('triggerServerEvent', Indicators.States.fail);
+                });
+            
+        }, 2000);
+    }
+
+    private _stopSendServerEvent(){
+        if (this._serverEventTimer === -1){
+            return;
+        }
+        clearTimeout(this._serverEventTimer);
+        this._serverEventTimer = -1;
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////

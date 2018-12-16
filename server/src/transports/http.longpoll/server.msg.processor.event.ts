@@ -23,36 +23,29 @@ export class MessageEventProcessor extends MessageProcessor<Protocol.Message.Eve
                     this._logger.warn(`Fail to close connection ${clientId} due error: ${error.message}`);
                 });
             }
-            let subscribers = this.state.processors.events.getSubscribers(message.event.protocol, message.event.event);
-            // Check aliases
-            if (message.aliases instanceof Array) {
-                const targetClients = this.state.processors.connections.getClientsByAlias(message.aliases);
-                subscribers = subscribers.filter((subscriberId: string) => {
-                    return targetClients.indexOf(subscriberId) !== -1;
-                });
+            // Setup default options
+            if (message.options === undefined) {
+                message.options = new Protocol.Message.Event.Options({});
             }
-            // Add tasks
-            subscribers.forEach((subscriberId: string) => {
-                this.state.processors.connections.addTask(
-                    this.state.processors.events.emit.bind(this,
-                        message.event.protocol,
-                        message.event.event,
-                        message.event.body,
-                        subscriberId,
-                    ),
-                    subscriberId,
-                );
-            });
-            // Execute tasks
-            this.state.processors.connections.proceedTasks();
-            return connection.close((new Protocol.Message.Event.Response({
-                clientId: clientId,
-                subscribers: subscribers.length,
-            })).stringify()).then(() => {
-                this._logger.env(`Emit event from client ${clientId} for event protocol ${message.event.protocol}, event ${message.event.event} is done for ${subscribers.length} subscribers.`);
-                resolveProcess();
-            }).catch((error: Error) => {
-                rejectProcess(error);
+            message.options.scope = message.options.scope === undefined ? Protocol.Message.Event.Options.Scope.all : message.options.scope;
+            // Process event
+            this.state.processors.events.emitAll(
+                message.event.protocol,
+                message.event.event,
+                message.event.body,
+                message.options,
+                message.aliases,
+            ).then((count: number) => {
+                this.state.processors.connections.proceedTasks();
+                return connection.close((new Protocol.Message.Event.Response({
+                    clientId: clientId,
+                    subscribers: count,
+                })).stringify()).then(() => {
+                    this._logger.env(`Emit event from client ${clientId} for event protocol ${message.event.protocol}, event ${message.event.event} is done for ${count} subscribers.`);
+                    resolveProcess();
+                }).catch((error: Error) => {
+                    rejectProcess(error);
+                });
             });
         });
     }

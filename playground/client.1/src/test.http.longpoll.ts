@@ -11,8 +11,10 @@ enum EIndicators {
     disconnected = 'disconnected',
     subscribeBroadcast = 'subscribeBroadcast',
     subscribeTrageted = 'subscribeTrageted',
+    subscribeServerEvent = 'subscribeServerEvent',
     catchBroadcast = 'catchBroadcast',
     catchTargeted = 'catchTargeted',
+    catchServerEvent = 'catchServerEvent',
     getDemand = 'getDemand',
     registerAlias = 'registerAlias',
     registerAsRespondent = 'registerAsRespondent'
@@ -45,8 +47,10 @@ export default class Test {
         this._indicators.add(EIndicators.disconnected, 'Disconnection');
         this._indicators.add(EIndicators.subscribeBroadcast, 'Subscribe to broadcast evennt');
         this._indicators.add(EIndicators.subscribeTrageted, 'Subscribe to targeted event');
+        this._indicators.add(EIndicators.subscribeServerEvent, 'Subscribe to server event');
         this._indicators.add(EIndicators.catchBroadcast, 'Catch broadcast event');
         this._indicators.add(EIndicators.catchTargeted, 'Catch targeted event');
+        this._indicators.add(EIndicators.catchServerEvent, 'Catch server event');
         this._indicators.add(EIndicators.getDemand, 'Get demand');
         this._indicators.add(EIndicators.registerAlias, 'Register aliases of client');
         this._indicators.add(EIndicators.registerAsRespondent, 'Register as respondent');
@@ -80,6 +84,7 @@ export default class Test {
         this._output.add(`HTTP.Longpoll transport test: Connected`);
         this._subscribeTestProtocol();
         this._subscribeTargetedTestProtocol();
+        this._subscribeToServerEvent();
         this._subscribeAsRespondent();
         this._refClient();
         this._testDoneHandler(EClientTests.connection);
@@ -91,6 +96,7 @@ export default class Test {
         this._output.add(`Client is disconnected.`, { color: 'rgb(255,255,0)'});
         this._unsubscribeTestProtocol();
         this._unsubscribeTargetedTestProtocol();
+        this._unsubscribeToServerEvent();
         this._testDoneHandler(EClientTests.disconnection);
         this._indicators.state(EIndicators.disconnected, Indicators.States.success);
         this._indicators.increase(EIndicators.disconnected);
@@ -107,6 +113,7 @@ export default class Test {
     private _bindTestProtocol(){
         this._onTestProtocolGreeting = this._onTestProtocolGreeting.bind(this);
         this._onTargetedTestProtocolGreeting = this._onTargetedTestProtocolGreeting.bind(this);
+        this._onServerEvent = this._onServerEvent.bind(this);
         this._demandOnlineHandler = this._demandOnlineHandler.bind(this);
     }
 
@@ -164,6 +171,33 @@ export default class Test {
             });
     }
 
+    private _subscribeToServerEvent(){
+        this._client.subscribeEvent(Protocol.Events.EventFromServer, Protocol, this._onServerEvent)
+            .then((res) => {
+                this._testDoneHandler(EClientTests.subscribeServerEvent);
+                this._output.add(`Subscription to ${Protocol.Events.EventFromServer.name} was done. Subscription response: ${Tools.inspect(res)}`, { color: 'rgb(200,222,222)'});
+                this._indicators.state(EIndicators.subscribeServerEvent, Indicators.States.success);
+                this._indicators.increase(EIndicators.subscribeServerEvent);
+            })
+            .catch((e) => {
+                this._testFailHandler(EClientTests.subscribeServerEvent);
+                this._output.add(`Error to subscribe to ${Protocol.Events.EventFromServer.name}: ${Tools.inspect(e)}`, { color: 'rgb(255,0,0)'});
+                this._indicators.state(EIndicators.subscribeServerEvent, Indicators.States.fail);
+            });
+    }
+
+    private _unsubscribeToServerEvent(){
+        this._client.unsubscribeEvent(Protocol.Events.EventFromServer, Protocol)
+            .then((res) => {
+                this._testDoneHandler(EClientTests.unsubscribeServerEvent);
+                this._output.add(`Unsubscription from ${Protocol.Events.EventFromServer.name} was done. Unsubscription response: ${Tools.inspect(res)}`, { color: 'rgb(50,50,250)'});
+            })
+            .catch((e) => {
+                this._testFailHandler(EClientTests.unsubscribeServerEvent);
+                this._output.add(`Error to unsubscribe to ${Protocol.Events.EventFromServer.name}: ${Tools.inspect(e)}`, { color: 'rgb(255,0,0)'});
+            });
+    }
+
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Tests protocol: ref to aliases
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -207,6 +241,13 @@ export default class Test {
         this._testDoneHandler(EClientTests.catchTargetedEvent);
         this._indicators.state(EIndicators.catchTargeted, Indicators.States.success);
         this._indicators.increase(EIndicators.catchTargeted);
+    }
+
+    private _onServerEvent(event: Protocol.Events.EventFromServer){
+        this._output.add(`HTTP.Longpoll transport test: get server event: ${Tools.inspect(event)}`, { color: 'rgb(200, 222, 247)'});
+        this._testDoneHandler(EClientTests.catchServerEvent);
+        this._indicators.state(EIndicators.catchServerEvent, Indicators.States.success);
+        this._indicators.increase(EIndicators.catchServerEvent);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////

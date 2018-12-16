@@ -42,10 +42,13 @@ export default class HandlersHolder {
         return true;
     }
 
-    public get(group: string, id: string): THandler | undefined {
+    public get(group: string, id?: string): THandler | Map<string, THandler> | undefined {
         const holder = this._handlers.get(group);
         if (holder === undefined) {
             return void 0;
+        }
+        if (typeof id !== 'string') {
+            return holder;
         }
         return holder.get(id);
     }

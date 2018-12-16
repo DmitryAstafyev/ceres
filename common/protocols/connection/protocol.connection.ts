@@ -1,6 +1,6 @@
 /* tslint:disable */
 /*
-* This file generated automaticaly (Sun Dec 09 2018 22:49:09 GMT+0100 (CET))
+* This file generated automaticaly (Sun Dec 16 2018 01:41:50 GMT+0100 (CET))
 * Do not remove or change this code.
 * Protocol version: 0.0.1
 */
@@ -15,6 +15,7 @@ namespace Protocol {
 		Message.Unsubscribe.Response |
 		Message.Registration.Response |
 		Disconnect |
+		Message.Event.Options |
 		Message |
 		Message.Handshake |
 		Message.Handshake.Response |
@@ -564,6 +565,7 @@ namespace Protocol {
 		ReferencesMap["60658336"] = Message.Unsubscribe.Response;
 		ReferencesMap["66972276"] = Message.Registration.Response;
 		ReferencesMap["71280621"] = Disconnect;
+		ReferencesMap["76052942"] = Message.Event.Options;
 		ReferencesMap["70D1C8A2"] = Message;
 		ReferencesMap["5B342A75"] = Message.Handshake;
 		ReferencesMap["1D8E5E9C"] = Message.Handshake.Response;
@@ -614,7 +616,7 @@ namespace Protocol {
 	* Injection: protocol signature
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 	export function getSignature() {
-		return "77200CCA";
+		return "7EEB445F";
 	}
 
 }
@@ -1144,6 +1146,7 @@ export namespace Message {
 					event: { name: "event", value: EventDefinition, type: Protocol.EEntityType.reference, optional: false }, 
 					token: { name: "token", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
 					aliases: { name: "aliases", value: KeyValue, type: Protocol.EEntityType.repeated, optional: true }, 
+					options: { name: "options", value: Message.Event.Options, type: Protocol.EEntityType.reference, optional: true }, 
 				}
 			}
 			static __signature: string = "15C342AF";
@@ -1163,12 +1166,14 @@ export namespace Message {
 			public event: EventDefinition;
 			public token: string = "";
 			public aliases?: Array<KeyValue> = [];
+			public options?: Message.Event.Options;
 
-			constructor(args: { clientId: string, guid?: string, event: EventDefinition, token: string, aliases?: Array<KeyValue> }) {
+			constructor(args: { clientId: string, guid?: string, event: EventDefinition, token: string, aliases?: Array<KeyValue>, options?: Message.Event.Options }) {
 				super(Object.assign(args, {}));
 				this.event = args.event;
 				this.token = args.token;
 				args.aliases !== void 0 && (this.aliases = args.aliases);
+				args.options !== void 0 && (this.options = args.options);
 				const errors: Error[] = Protocol.validateParams(args, Request);
 				if (errors.length > 0) {
 					throw new Error(`Cannot create class of "Request" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
@@ -1212,6 +1217,46 @@ export namespace Message {
 		}
 		export enum Responses {
 			ConnectionError = 'ConnectionError'
+		}
+		export class Options extends Protocol.Root {
+			static getDescription(): {[key: string]: Protocol.IProperty } {
+				return {
+					scope: { name: "scope", value: Message.Event.Options.Scope, type: Protocol.EEntityType.reference, optional: true }, 
+				}
+			}
+			static __signature: string = "76052942";
+			static getSignature(): string {
+				return Options.__signature;
+			}
+			public __signature: string = Options.__signature;
+			public getSignature(): string {
+				return this.__signature;
+			}
+			static parse(str: string | object): Protocol.TTypes | Error {
+				return Protocol.parse(str, Options);
+			}
+			public stringify(): string {
+				return Protocol.stringify(this, Options) as string;
+			}
+			public scope?: Message.Event.Options.Scope;
+
+			constructor(args: { scope?: Message.Event.Options.Scope }) {
+				super();
+				args.scope !== void 0 && (this.scope = args.scope);
+				const errors: Error[] = Protocol.validateParams(args, Options);
+				if (errors.length > 0) {
+					throw new Error(`Cannot create class of "Options" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+				}
+
+			}
+		}
+		export namespace Options {
+			export enum Scope {
+				local = 'local',
+				hosts = 'hosts',
+				clients = 'clients',
+				all = 'all'
+			}
 		}
 		type TResponses = Response | ConnectionError;
 	}

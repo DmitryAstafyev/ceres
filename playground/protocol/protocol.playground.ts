@@ -1,6 +1,6 @@
 /* tslint:disable */
 /*
-* This file generated automaticaly (Sun Nov 04 2018 20:09:20 GMT+0100 (CET))
+* This file generated automaticaly (Sun Dec 16 2018 23:28:26 GMT+0100 (CET))
 * Do not remove or change this code.
 * Protocol version: 0.0.1
 */
@@ -13,6 +13,8 @@ namespace Protocol {
 		Events |
 		Events.Ping |
 		Events.TargetedPing |
+		Events.EventToServer |
+		Events.EventFromServer |
 		Requests |
 		Requests.IsOnline |
 		Requests.IsOnline.Request |
@@ -520,6 +522,8 @@ namespace Protocol {
 		ReferencesMap["D7E6E2"] = Events;
 		ReferencesMap["18DF1862"] = Events.Ping;
 		ReferencesMap["1A957D8E"] = Events.TargetedPing;
+		ReferencesMap["3734F568"] = Events.EventToServer;
+		ReferencesMap["6C9954D7"] = Events.EventFromServer;
 		ReferencesMap["527E5577"] = Requests;
 		ReferencesMap["8091E02"] = Requests.IsOnline;
 		ReferencesMap["6B919683"] = Requests.IsOnline.Request;
@@ -530,7 +534,7 @@ namespace Protocol {
 	* Injection: protocol signature
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 	export function getSignature() {
-		return "4B9EA81F";
+		return "7A8233D4";
 	}
 
 }
@@ -654,6 +658,78 @@ export namespace Events {
 			const errors: Error[] = Protocol.validateParams(args, TargetedPing);
 			if (errors.length > 0) {
 				throw new Error(`Cannot create class of "TargetedPing" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+			}
+
+		}
+	}
+	export class EventToServer extends Events {
+		static getDescription(): {[key: string]: Protocol.IProperty } {
+			return {
+				guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
+				timestamp: { name: "timestamp", value: "datetime", type: Protocol.EEntityType.primitive, optional: false }, 
+				message: { name: "message", value: "string", type: Protocol.EEntityType.primitive, optional: true }, 
+			}
+		}
+		static __signature: string = "3734F568";
+		static getSignature(): string {
+			return EventToServer.__signature;
+		}
+		public __signature: string = EventToServer.__signature;
+		public getSignature(): string {
+			return this.__signature;
+		}
+		static parse(str: string | object): Protocol.TTypes | Error {
+			return Protocol.parse(str, EventToServer);
+		}
+		public stringify(): string {
+			return Protocol.stringify(this, EventToServer) as string;
+		}
+		public timestamp: Date = new Date();
+		public message?: string = "";
+
+		constructor(args: { guid?: string, timestamp: Date, message?: string }) {
+			super(Object.assign(args, {}));
+			this.timestamp = args.timestamp;
+			args.message !== void 0 && (this.message = args.message);
+			const errors: Error[] = Protocol.validateParams(args, EventToServer);
+			if (errors.length > 0) {
+				throw new Error(`Cannot create class of "EventToServer" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+			}
+
+		}
+	}
+	export class EventFromServer extends Events {
+		static getDescription(): {[key: string]: Protocol.IProperty } {
+			return {
+				guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
+				timestamp: { name: "timestamp", value: "datetime", type: Protocol.EEntityType.primitive, optional: false }, 
+				message: { name: "message", value: "string", type: Protocol.EEntityType.primitive, optional: true }, 
+			}
+		}
+		static __signature: string = "6C9954D7";
+		static getSignature(): string {
+			return EventFromServer.__signature;
+		}
+		public __signature: string = EventFromServer.__signature;
+		public getSignature(): string {
+			return this.__signature;
+		}
+		static parse(str: string | object): Protocol.TTypes | Error {
+			return Protocol.parse(str, EventFromServer);
+		}
+		public stringify(): string {
+			return Protocol.stringify(this, EventFromServer) as string;
+		}
+		public timestamp: Date = new Date();
+		public message?: string = "";
+
+		constructor(args: { guid?: string, timestamp: Date, message?: string }) {
+			super(Object.assign(args, {}));
+			this.timestamp = args.timestamp;
+			args.message !== void 0 && (this.message = args.message);
+			const errors: Error[] = Protocol.validateParams(args, EventFromServer);
+			if (errors.length > 0) {
+				throw new Error(`Cannot create class of "EventFromServer" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
 			}
 
 		}

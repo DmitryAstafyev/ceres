@@ -8,6 +8,14 @@
         "TargetedPing": {
             "timestamp":"datetime",
             "message?": "string"
+        },
+        "EventToServer": {
+            "timestamp":"datetime",
+            "message?": "string"
+        },
+        "EventFromServer": {
+            "timestamp":"datetime",
+            "message?": "string"
         }
     },
     "Requests" : {
