@@ -1064,8 +1064,8 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                     return reject(new Error(this._logger.env(`Implementation demand mismatch with demand name in request. Implemented: "${demandImpl.getSignature()}"; defined in request: ${demand.demand}.`)));
                 }
                 // Get handler
-                const handler: THandler | undefined = this._demands.get(demand.protocol, demand.demand);
-                if (handler === undefined) {
+                const handler: THandler | Map<string, THandler> | undefined = this._demands.get(demand.protocol, demand.demand);
+                if (handler === undefined || handler instanceof Map) {
                     return reject(new Error(this._logger.env(`Cannot find handler for processing demand ${demand.demand} on protocol ${demand.protocol}.`)));
                 }
                 // Try to get results
