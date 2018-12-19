@@ -84,6 +84,7 @@ export default class Test {
         this._output.add(`Client is disconnected.`, { color: 'rgb(255,255,0)'});
         this._stopSendGreetingMessage();
         this._stopSendTargetMessage();
+        this._stopSendServerEvent();
         this._stopSendClientDemand();
         this._stopSendServerDemand();
         this._indicators.state('disconnection', Indicators.States.success);
@@ -212,8 +213,12 @@ export default class Test {
             });
             this._indicators.state('sendClientDemand', Indicators.States.success);
             this._indicators.increase('sendClientDemand');
+            const failtimer = setTimeout(() => {
+                this._indicators.state('sendClientDemand', Indicators.States.fail);
+            }, 5000);
             this._client.demand(Protocol, demand, Protocol.Requests.IsOnline.Response, { type: 'online'}, { pending: true, scope: Transports.HTTPLongpollClient.Client.DemandOptions.scope.clients })
                 .then((response: Protocol.Requests.IsOnline.Response) => {
+                    clearTimeout(failtimer);
                     this._output.add(`On client request has gotten response: ${Tools.inspect(response)}`, { color: 'rgb(100,250,70)'});
                     this._sendClientDemand();
                     this._testDoneHandler(EClientTests.getClientDemandResponse);
@@ -226,7 +231,6 @@ export default class Test {
                     this._testFailHandler(EClientTests.getClientDemandResponse);
                     this._indicators.state('demandClientResponse', Indicators.States.success);
                 });
-            
         }, 1000);
     }
 
@@ -248,8 +252,12 @@ export default class Test {
             });
             this._indicators.state('sendServerDemand', Indicators.States.success);
             this._indicators.increase('sendServerDemand');
+            const failtimer = setTimeout(() => {
+                this._indicators.state('demandServerResponse', Indicators.States.fail);
+            }, 5000);
             this._client.demand(Protocol, demand, Protocol.Requests.IsOnline.Response, { type: 'online'}, { pending: true, scope: Transports.HTTPLongpollClient.Client.DemandOptions.scope.hosts })
                 .then((response: Protocol.Requests.IsOnline.Response) => {
+                    clearTimeout(failtimer);
                     this._output.add(`On server request has gotten response: ${Tools.inspect(response)}`, { color: 'rgb(100,250,250)'});
                     this._sendServerDemand();
                     this._testDoneHandler(EClientTests.getServerDemandResponse);

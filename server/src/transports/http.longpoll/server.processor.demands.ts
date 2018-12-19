@@ -148,15 +148,19 @@ export class ProcessorDemands {
                 ));
             }
             this._logger.env(`Client (${respondentId}) is subscribed as respondent on  "${protocol}/${demand}". Demand will be sent.`);
-            // Register demand
-            this.pendingDemandResults.set(demandGUID, {
-                demand: demand,
-                expectantId: expectantId,
-                expected: expected,
-                protocol: protocol,
-                respondemtId: respondentId,
-                sent: (new Date()).getTime(),
-            });
+            // Remove pending demand info
+            this.pendingDemandRespondent.delete(demandGUID);
+            // Register demand results if expectant still connected
+            if (this.state.processors.connections.isConnected(expectantId)) {
+                this.pendingDemandResults.set(demandGUID, {
+                    demand: demand,
+                    expectantId: expectantId,
+                    expected: expected,
+                    protocol: protocol,
+                    respondemtId: respondentId,
+                    sent: (new Date()).getTime(),
+                });
+            }
             connection.close((new Protocol.Message.Demand.Pending.Response({
                 clientId: respondentId,
                 demand: new Protocol.DemandDefinition({
@@ -365,6 +369,7 @@ export class ProcessorDemands {
             this.pendingDemandRespondent.clear();
             this.pendingDemandResults.clear();
             this.serverDemandsHanlders.clear();
+            resolve();
         });
     }
 

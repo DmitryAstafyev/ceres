@@ -8,10 +8,7 @@ enum ELogLevels {
     VERBOS = 'VERBOS',
     ERROR = 'ERROR',
     ENV = 'ENV',
-    DEVELOP = 'DEVELOP',
 }
-
-type TOutputFunc = (...args: any[]) => any;
 
 /**
  * @class
@@ -75,15 +72,6 @@ export default class Logger {
      */
     public debug(...args: any[]) {
         return this._log(this._getMessage(...args), ELogLevels.DEBUG);
-    }
-
-    /**
-     * Publish develop logs
-     * @param {any} args - Any input for logs
-     * @returns {string} - Formatted log-string
-     */
-    public dev(...args: any[]) {
-        return this._log(this._getMessage(...args), ELogLevels.DEVELOP);
     }
 
     /**

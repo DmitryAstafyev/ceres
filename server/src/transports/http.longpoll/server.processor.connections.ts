@@ -67,6 +67,10 @@ export class ProcessorConnections {
         return this.aliases.get(convertedAliases);
     }
 
+    public isConnected(clientId: string): boolean {
+        return this.hooks.has(clientId);
+    }
+
     public disconnect(clientId: string): Promise<void> {
         return new Promise((resolve, reject) => {
             Promise.all([
