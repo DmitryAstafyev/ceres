@@ -22,7 +22,7 @@ export class ProcessorConnections {
         this.aliases = new Aliases();
         this.hooks = new Connections();
         this.pending = new Connections();
-        this.tasks = new Tools.Queue();
+        this.tasks = new Tools.Queue('ProcessorConnectionsTasks');
     }
 
     public addTask(executer: TExecuter, alias?: string | symbol): symbol | Error {
@@ -101,7 +101,11 @@ export class ProcessorConnections {
         });
     }
 
-    public getInfo(): string {
-        return `pending:\n${this.pending.getInfo()}\n\hooks:${this.hooks.getInfo()}\n\tasks:${this.tasks.getTasksCount()}`;
+    public getInfo(): { pending: number, hooks: number, tasks: number } {
+        return {
+            hooks: this.hooks.getInfo().size,
+            pending: this.pending.getInfo().size,
+            tasks: this.tasks.getTasksCount(),
+        };
     }
 }

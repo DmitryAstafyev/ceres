@@ -79,12 +79,12 @@ export class Connections {
 
     }
 
-    public getInfo(): string {
-        const info: string[] = [];
+    public getInfo(): Map<string, number> {
+        const info: Map<string, number> = new Map();
         this._connections.forEach((connections: Connection[], clientId: string) => {
-            info.push(`\t\tclientId: "${clientId}" has ${connections.length} connections`);
+            info.set(clientId, connections.length);
         });
-        return info.join(';\n');
+        return info;
     }
 
 }

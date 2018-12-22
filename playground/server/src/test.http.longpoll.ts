@@ -12,11 +12,11 @@ export default function test(){
     const HTTPLongpoll = new Transports.HTTPLongpoll.Server(parameters);
     HTTPLongpoll.subscribeToRequest(
         Protocol,
-        Protocol.Requests.IsOnline.Request,
+        Protocol.Requests.IsOnlineServer.Request,
         { type: 'online'},
-        (demand: Protocol.Requests.IsOnline.Request, callback: (error: Error | null, results: Protocol.Requests.IsOnline.Response) => any) => {
+        (demand: Protocol.Requests.IsOnlineServer.Request, callback: (error: Error | null, results: Protocol.Requests.IsOnlineServer.Response) => any) => {
             logger.info(`HTTP.Longpoll transport test: client has gotten a demand: ${Tools.inspect(demand.getSignature())}`);
-            callback(null, new Protocol.Requests.IsOnline.Response({
+            callback(null, new Protocol.Requests.IsOnlineServer.Response({
                 since: new Date(),
                 message: `this server response`
             }));

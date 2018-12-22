@@ -208,16 +208,16 @@ export default class Test {
     //////////////////////////////////////////////////////////////////////////////////////////////
     private _sendClientDemand(){
         this._demandClientMessageTimer = setTimeout(() => {
-            const demand = new Protocol.Requests.IsOnline.Request({
+            const demand = new Protocol.Requests.IsOnlineClient.Request({
                 sent: new Date()
             });
             this._indicators.state('sendClientDemand', Indicators.States.success);
             this._indicators.increase('sendClientDemand');
             const failtimer = setTimeout(() => {
-                this._indicators.state('sendClientDemand', Indicators.States.fail);
+                this._indicators.state('demandClientResponse', Indicators.States.fail);
             }, 5000);
-            this._client.demand(Protocol, demand, Protocol.Requests.IsOnline.Response, { type: 'online'}, { pending: true, scope: Transports.HTTPLongpollClient.Client.DemandOptions.scope.clients })
-                .then((response: Protocol.Requests.IsOnline.Response) => {
+            this._client.demand(Protocol, demand, Protocol.Requests.IsOnlineClient.Response, { type: 'online'}, { pending: true, scope: Transports.HTTPLongpollClient.Client.DemandOptions.scope.clients })
+                .then((response: Protocol.Requests.IsOnlineClient.Response) => {
                     clearTimeout(failtimer);
                     this._output.add(`On client request has gotten response: ${Tools.inspect(response)}`, { color: 'rgb(100,250,70)'});
                     this._sendClientDemand();
@@ -247,7 +247,7 @@ export default class Test {
     //////////////////////////////////////////////////////////////////////////////////////////////
     private _sendServerDemand(){
         this._demandServerMessageTimer = setTimeout(() => {
-            const demand = new Protocol.Requests.IsOnline.Request({
+            const demand = new Protocol.Requests.IsOnlineServer.Request({
                 sent: new Date()
             });
             this._indicators.state('sendServerDemand', Indicators.States.success);
@@ -255,8 +255,8 @@ export default class Test {
             const failtimer = setTimeout(() => {
                 this._indicators.state('demandServerResponse', Indicators.States.fail);
             }, 5000);
-            this._client.demand(Protocol, demand, Protocol.Requests.IsOnline.Response, { type: 'online'}, { pending: true, scope: Transports.HTTPLongpollClient.Client.DemandOptions.scope.hosts })
-                .then((response: Protocol.Requests.IsOnline.Response) => {
+            this._client.demand(Protocol, demand, Protocol.Requests.IsOnlineServer.Response, { type: 'online'}, { pending: true, scope: Transports.HTTPLongpollClient.Client.DemandOptions.scope.hosts })
+                .then((response: Protocol.Requests.IsOnlineServer.Response) => {
                     clearTimeout(failtimer);
                     this._output.add(`On server request has gotten response: ${Tools.inspect(response)}`, { color: 'rgb(100,250,250)'});
                     this._sendServerDemand();

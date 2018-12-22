@@ -209,7 +209,7 @@ export class ProcessorDemands {
                     protocol: protocol,
                 }),
             })).stringify()).then(() => {
-                this._logger.env(`Response on demand to client ${expectantId}: protocol ${protocol}, demand ${demand} was sent.`);
+                this._logger.env(`Response on demand (id=${demandRequestId}) to client ${expectantId}: protocol ${protocol}, demand ${demand} was sent.`);
                 this.pendingDemandRespondent.delete(demandRequestId);
                 this.pendingDemandResults.delete(demandRequestId);
                 resolve();
@@ -342,8 +342,8 @@ export class ProcessorDemands {
         return this.demands.getAll(protocolSignature, demandSignature);
     }
 
-    public getInfo(): string {
-        return `\n\tpending demands: ${this.pendingDemandRespondent.size}\n\tpending demand results: ${this.pendingDemandResults.size}.`;
+    public getInfo(): { demands: number, results: number } {
+        return { demands: this.pendingDemandRespondent.size, results: this.pendingDemandResults.size };
     }
 
     public disconnect(clientId: string): Promise<void> {

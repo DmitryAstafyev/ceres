@@ -87,14 +87,14 @@ export default class SubscriptionsHolder {
         this._subscriptions.clear();
     }
 
-    public getInfo(): string {
-        const info: TClientId[] = [];
+    public getInfo(): Map<string, number> {
+        const info: Map<string, number> = new Map();
         this._subscriptions.forEach((events: TEventsStorage, protocolName: TProtocol) => {
             events.forEach((IDs: TClientIdStorage, storedEvent: TEvent) => {
-                info.push(`\t\t[${protocolName}:${storedEvent}]: ${IDs.length}`);
+                info.set(`${protocolName}:${storedEvent}`, IDs.length);
             });
         });
-        return info.join(';\n');
+        return info;
     }
 
 }

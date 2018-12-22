@@ -475,7 +475,34 @@ export class Server {
     }
 
     private _logState() {
-        this._logger.debug(`\t[server state]: \n${this._state.processors.connections.getInfo()}\n\n\tsubcribers\n ${this._state.processors.events.getInfo()}\n\t${this._state.processors.demands.getInfo()}.`);
+        const i = {
+            c: this._state.processors.connections.getInfo(),
+            d: this._state.processors.demands.getInfo(),
+            e: this._state.processors.events.getInfo(),
+        };
+        const events: any = {};
+        i.e.forEach((count, key) => {
+            events[key] = count;
+        });
+        function filler(pattern: string | number, value: string | number): string {
+            const length = typeof pattern === 'string' ? pattern.length : pattern;
+            const str = `${value}`;
+            const repeat = length - str.length;
+            return `${str}${repeat > 0 ? (' '.repeat(repeat)) : ''}`;
+        }
+        this._logger.debug(`
+┌─────────────────────────┬───────────────────┐
+│ connections             │ demands           │
+├─────────┬───────┬───────┼─────────┬─────────┤
+│ pending │ hooks │ tasks │ demands │ results │
+├─────────┼───────┼───────┼─────────┼─────────┤
+│${filler(' pending ', ' ' + i.c.pending)}│${filler(' hooks ', ' ' + i.c.hooks)}│${filler(' tasks ', ' ' + i.c.tasks)}│${filler(' demands ', ' ' + i.d.demands)}│${filler(' results ', ' ' + i.d.results)}│
+├─────────┴───────┴───────┴─────────┴─────────┤
+│ events                                      │
+${Object.keys(events).map((key) => {
+    return filler(46, `│ ${key}: ${events[key]}`) + '│';
+}).join('\n')}
+└─────────────────────────────────────────────┘`);
         setTimeout(() => {
             this._logState();
         }, 3000);

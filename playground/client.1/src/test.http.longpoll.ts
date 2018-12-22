@@ -254,8 +254,8 @@ export default class Test {
     // Tests protocol: demands
     //////////////////////////////////////////////////////////////////////////////////////////////
     private _subscribeAsRespondent() {
-        this._client.subscribeToRequest(Protocol, Protocol.Requests.IsOnline.Request, { type: 'online'}, this._demandOnlineHandler).then(() => {
-            this._output.add(`HTTP.Longpoll transport test: client is subscribed as respontent to: ${Tools.inspect(Protocol.Requests.IsOnline.Request.getSignature())}`, { color: 'rgb(50,50,250)' });
+        this._client.subscribeToRequest(Protocol, Protocol.Requests.IsOnlineClient.Request, { type: 'online'}, this._demandOnlineHandler).then(() => {
+            this._output.add(`HTTP.Longpoll transport test: client is subscribed as respontent to: ${Tools.inspect(Protocol.Requests.IsOnlineClient.Request.getSignature())}`, { color: 'rgb(50,50,250)' });
             this._testDoneHandler(EClientTests.subscribeAsRespondent);
             this._indicators.state(EIndicators.registerAsRespondent, Indicators.States.success);
             this._indicators.increase(EIndicators.registerAsRespondent);
@@ -266,9 +266,9 @@ export default class Test {
         });
     }
 
-    private _demandOnlineHandler(demand: Protocol.Requests.IsOnline.Request, callback: (error: Error | null, results: Protocol.Requests.IsOnline.Response) => any){
+    private _demandOnlineHandler(demand: Protocol.Requests.IsOnlineClient.Request, callback: (error: Error | null, results: Protocol.Requests.IsOnlineClient.Response) => any){
         this._output.add(`HTTP.Longpoll transport test: client has gotten a demand: ${Tools.inspect(demand.getSignature())}`, { color: 'rgb(50,50,250)' });
-        callback(null, new Protocol.Requests.IsOnline.Response({
+        callback(null, new Protocol.Requests.IsOnlineClient.Response({
             since: new Date(),
             message: `yes, I'm here`
         }));

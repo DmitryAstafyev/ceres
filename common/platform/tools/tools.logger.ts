@@ -10,6 +10,9 @@ enum ELogLevels {
     ENV = 'ENV',
 }
 
+let aliasMaxLength = 0;
+const typeMaxLength = 7;
+
 /**
  * @class
  * Logger
@@ -27,6 +30,9 @@ export default class Logger {
     constructor(signature: string, params?: LoggerParameters) {
         params instanceof LoggerParameters && (this._parameters = params);
         this._signature = signature;
+        if (aliasMaxLength < signature.length) {
+            aliasMaxLength = signature.length;
+        }
     }
 
     /**
@@ -112,7 +118,7 @@ export default class Logger {
     }
 
     private _log(message: string, level: ELogLevels) {
-        message = `[${this._signature}]: ${message}`;
+        message = `[${Date.now()}][${this._signature}${' '.repeat(aliasMaxLength - this._signature.length)}][${level}${' '.repeat(typeMaxLength - level.length)}]: ${message}`;
         this._console(message, level);
         this._output(message);
         return message;

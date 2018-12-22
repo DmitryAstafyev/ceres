@@ -1013,15 +1013,17 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
             // Processing income demand's results
             if (typeof demandReturn.error === 'string' && demandReturn.error.trim() !== '') {
                 // Error handled
+                this._logger.env(`Demand ${demandReturn.protocol}/${demandReturn.demand} id=${demandReturn.id} is rejected due error: ${demandReturn.error}. `);
                 return this._pendingDemands.reject(demandReturn.id, new Error(demandReturn.error));
             }
             // Get instance of protocol
             this._protocols.parse(demandReturn.protocol, demandReturn.body).then((returnImpl: Protocol.IImplementation) => {
                 // Check correction of return
                 if (returnImpl.getSignature() !== demandReturn.expected) {
-                    return this._pendingDemands.reject(demandReturn.id, new Error(`Signatures aren't match: expected demand's return "${demandReturn.expected}", but was gotten "${returnImpl.getSignature()}".`));
+                    return this._pendingDemands.reject(demandReturn.id, new Error(this._logger.env(`Signatures aren't match: expected demand's return "${demandReturn.expected}", but was gotten "${returnImpl.getSignature()}".`)));
                 }
                 // Return success
+                this._logger.env(`Demand ${demandReturn.protocol}/${demandReturn.demand} id=${demandReturn.id} is resolved. `);
                 this._pendingDemands.resolve(demandReturn.id, returnImpl);
             }).catch((errorGettingReturn: Error) => {
                 this._pendingDemands.reject(demandReturn.id, new Error(this._logger.env(`Error during parsing demand's return: ${errorGettingReturn.message}.`)));

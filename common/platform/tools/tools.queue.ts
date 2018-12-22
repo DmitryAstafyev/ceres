@@ -1,7 +1,10 @@
 import * as Types from './tools.primitivetypes';
 
-const DEFAULT_TIMEOUT = 10000;
-const DEFAULT_EXECUTE_LIMIT = 3;
+import Logger from './tools.logger';
+
+const DEFAULT_TIMEOUT = 10000; // ms
+const DEFAULT_EXECUTE_DELAY = 0; // ms
+const DEFAULT_EXECUTE_COUNT_WARN = 50;
 
 export type TExecuter = () => Promise<void>;
 type TResolver = (...args: any[]) => any;
@@ -11,21 +14,25 @@ export interface ITask {
     task: TExecuter;
     alias: string | symbol;
     executed: number;
+    counter: number;
 }
 
 export default class Queue {
-
+    private _logger: Logger;
     private _tasks: Map<symbol, ITask> = new Map();
     private _timeout: number;
     private _working: boolean = false;
     private _repeatFlag: boolean = false;
     private _destroyResolver: TResolver | null = null;
     private _repeatTimer: any = null;
-    private _executeLimit: number;
+    private _executeDelay: number;
+    private _executeCountWarn: number;
 
-    constructor(timeout = DEFAULT_TIMEOUT, executeLimit = DEFAULT_EXECUTE_LIMIT) {
+    constructor(alias: string, timeout = DEFAULT_TIMEOUT, executeDelay = DEFAULT_EXECUTE_DELAY, executeCountWarn = DEFAULT_EXECUTE_COUNT_WARN) {
+        this._logger = new Logger(alias);
         this._timeout = timeout;
-        this._executeLimit = executeLimit;
+        this._executeDelay = executeDelay;
+        this._executeCountWarn = executeCountWarn;
     }
 
     /**
@@ -36,13 +43,14 @@ export default class Queue {
      */
     public add(executer: TExecuter, alias: string | symbol = Symbol()): symbol | Error {
         if (Types.getTypeOf(executer) !== Types.ETypes.function) {
-            return new Error(`Cannot add task, because as task expected function, but was gotten: ${Types.getTypeOf(executer)}.`);
+            return new Error(this._logger.env(`Cannot add task, because as task expected function, but was gotten: ${Types.getTypeOf(executer)}.`));
         }
         if (Types.getTypeOf(alias) === Types.ETypes.undefined) {
-            return new Error(`Cannot add task, because as alias expected string | symbol, but was gotten: ${Types.getTypeOf(alias)}.`);
+            return new Error(this._logger.env(`Cannot add task, because as alias expected string | symbol, but was gotten: ${Types.getTypeOf(alias)}.`));
         }
         const task: ITask = {
             alias: alias,
+            counter: 0,
             executed: 0,
             id: Symbol(),
             task: executer,
@@ -89,23 +97,27 @@ export default class Queue {
             this._repeatFlag = true;
         } else {
             const tasks: Array<Promise<void>> = [];
-            // Stop repeatinng by timer
+            // Stop repeating by timer
             this._stop();
             // Mark as working
             this._working = true;
+            const moment = (new Date()).getTime();
             // Execute tasks
             this._tasks.forEach((task: ITask, taskId: symbol) => {
+                if (task.executed > 0 && moment - task.executed < this._executeDelay) {
+                    return;
+                }
                 tasks.push(task.task()
                     .then(() => {
                         this._tasks.delete(taskId);
                     })
                     .catch((error: Error) => {
-                        task.executed += 1;
-                        if (task.executed >= this._executeLimit) {
-                            this._tasks.delete(taskId);
-                        } else {
-                            this._tasks.set(taskId, task);
+                        task.executed = moment;
+                        task.counter += 1;
+                        if (task.counter >= this._executeCountWarn) {
+                            this._logger.env(`Tasks is executed too much times: ${task.counter}`);
                         }
+                        this._tasks.set(taskId, task);
                     }));
             });
             const resolver = () => {

@@ -19,7 +19,16 @@
         }
     },
     "Requests" : {
-        "IsOnline": {
+        "IsOnlineServer": {
+            "Request": {
+                "sent":"datetime"
+            },
+            "Response": {
+                "since":"datetime",
+                "message?": "string"
+            }
+        },
+        "IsOnlineClient": {
             "Request": {
                 "sent":"datetime"
             },
