@@ -17,7 +17,8 @@ enum EIndicators {
     catchServerEvent = 'catchServerEvent',
     getDemand = 'getDemand',
     registerAlias = 'registerAlias',
-    registerAsRespondent = 'registerAsRespondent'
+    subscribeAsRespondent = 'subscribeAsRespondent',
+    unsubscribeAsRespondent = 'unsubscribeAsRespondent'
 };
 
 export default class Test {
@@ -53,7 +54,8 @@ export default class Test {
         this._indicators.add(EIndicators.catchServerEvent, 'Catch server event');
         this._indicators.add(EIndicators.getDemand, 'Get demand');
         this._indicators.add(EIndicators.registerAlias, 'Register aliases of client');
-        this._indicators.add(EIndicators.registerAsRespondent, 'Register as respondent');
+        this._indicators.add(EIndicators.subscribeAsRespondent, 'Register as respondent');
+        this._indicators.add(EIndicators.unsubscribeAsRespondent, 'Unregister as respondent');
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -97,6 +99,7 @@ export default class Test {
         this._unsubscribeTestProtocol();
         this._unsubscribeTargetedTestProtocol();
         this._unsubscribeToServerEvent();
+        this._unsubscribeAsRespondent();
         this._testDoneHandler(EClientTests.disconnection);
         this._indicators.state(EIndicators.disconnected, Indicators.States.success);
         this._indicators.increase(EIndicators.disconnected);
@@ -257,12 +260,25 @@ export default class Test {
         this._client.subscribeToRequest(Protocol, Protocol.Requests.IsOnlineClient.Request, { type: 'online'}, this._demandOnlineHandler).then(() => {
             this._output.add(`HTTP.Longpoll transport test: client is subscribed as respontent to: ${Tools.inspect(Protocol.Requests.IsOnlineClient.Request.getSignature())}`, { color: 'rgb(50,50,250)' });
             this._testDoneHandler(EClientTests.subscribeAsRespondent);
-            this._indicators.state(EIndicators.registerAsRespondent, Indicators.States.success);
-            this._indicators.increase(EIndicators.registerAsRespondent);
+            this._indicators.state(EIndicators.subscribeAsRespondent, Indicators.States.success);
+            this._indicators.increase(EIndicators.subscribeAsRespondent);
         }).catch((error: Error) => {
             this._output.add(`Error to subscribe as respondent due error: ${error.message}`, { color: 'rgb(255,0,0)'});
             this._testFailHandler(EClientTests.subscribeAsRespondent);
-            this._indicators.state(EIndicators.registerAsRespondent, Indicators.States.fail);
+            this._indicators.state(EIndicators.subscribeAsRespondent, Indicators.States.fail);
+        });
+    }
+
+    private _unsubscribeAsRespondent() {
+        this._client.unsubscribeToRequest(Protocol, Protocol.Requests.IsOnlineClient.Request).then(() => {
+            this._output.add(`HTTP.Longpoll transport test: client is unsubscribed as respontent to: ${Tools.inspect(Protocol.Requests.IsOnlineClient.Request.getSignature())}`, { color: 'rgb(50,50,250)' });
+            this._testDoneHandler(EClientTests.unsubscribeAsRespondent);
+            this._indicators.state(EIndicators.unsubscribeAsRespondent, Indicators.States.success);
+            this._indicators.increase(EIndicators.unsubscribeAsRespondent);
+        }).catch((error: Error) => {
+            this._output.add(`Error to unsubscribe as respondent due error: ${error.message}`, { color: 'rgb(255,0,0)'});
+            this._testFailHandler(EClientTests.unsubscribeAsRespondent);
+            this._indicators.state(EIndicators.unsubscribeAsRespondent, Indicators.States.fail);
         });
     }
 

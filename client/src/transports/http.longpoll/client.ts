@@ -581,11 +581,8 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
      * @param handler {Function} handler to process income request (demand)
      * @returns Promise
      */
-    public unsubscribeToRequest(protocol: Protocol.IClass, demand: Protocol.IImplementation | string): Promise<Protocol.Message.Respondent.Unbind.Response> {
+    public unsubscribeToRequest(protocol: any, demand: Protocol.IClass | string): Promise<Protocol.Message.Respondent.Unbind.Response | null> {
         return new Promise((resolve, reject) => {
-            if (this._state.get() !== EClientStates.connected) {
-                return reject(new Error(`Cannot do operation: client isn't connected.`));
-            }
             const protocolSignature = this._getEntitySignature(protocol);
             if (protocolSignature instanceof Error) {
                 return reject(protocolSignature);
@@ -596,6 +593,13 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
             }
             if (!this._demands.has(protocolSignature, demandSignature)) {
                 return reject(new Error(`Protocol and demand "${protocolSignature}/${demandSignature}" is already unbound with handler.`));
+            }
+            // Remove handler before request to server
+            this._demands.remove(protocolSignature, demandSignature);
+            // Send request only if we are connected (if we are disconnected request is already unsubscribed by server)
+            if (this._state.get() !== EClientStates.connected) {
+                this._logger.verbose(`Client is disconnected no need to send unsubscribe request, because it's unsubscribed by server`);
+                return resolve(null);
             }
             const url = this._getURL();
             this._requests.send(url, (new Protocol.Message.Respondent.Unbind.Request({
@@ -615,10 +619,12 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                     return reject(this._logger.env(`Unbinding client with "${protocolSignature}/${demandSignature}" wasn't done.`));
                 }
                 this._logger.env(`Registration of client has status: ${message.status}.`);
-                // Save handler
-                this._demands.remove(protocolSignature, demandSignature);
                 resolve(message);
             }).catch((error: Error) => {
+                if (this._state.get() !== EClientStates.connected) {
+                    this._logger.verbose(`Client is disconnected no need to send unsubscribe request, because it's unsubscribed by server`);
+                    return resolve(null);
+                }
                 this._setUrlFree(url);
                 this._logger.env(`Error unbinding of client to demand "${protocolSignature}/${demandSignature}": ${error.message}.`);
                 reject(error);

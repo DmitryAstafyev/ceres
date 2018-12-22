@@ -26,7 +26,6 @@ export default class ImpXMLHTTPRequest {
     private _requestPost:       string            = '';
     private _resolved:          boolean           = false;
     private _rejected:          boolean           = false;
-    private _aborted:           boolean           = false;
 
     constructor(
         url: string,
@@ -71,7 +70,6 @@ export default class ImpXMLHTTPRequest {
     }
 
     public close() {
-        this._aborted = true;
         this._httpRequest.abort();
     }
 
@@ -135,9 +133,6 @@ export default class ImpXMLHTTPRequest {
 	 * Promise handlers
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
     private _rejectRequest(error: Error) {
-        if (this._aborted) {
-            return this._logger.env(`Request to url "${this._url}" was aborted. Cannot reject it.`);
-        }
         if (this._rejected || this._resolved) {
             return this._logger.env(`Request to url "${this._url}" is already ${this._rejected ? 'rejected' : 'resolved'}. Cannot reject it.`);
         }
@@ -145,9 +140,6 @@ export default class ImpXMLHTTPRequest {
     }
 
     private _resolveRequest(responseText: string, headers: THeaders) {
-        if (this._aborted) {
-            return this._logger.env(`Request to url "${this._url}" was aborted. Cannot resolve it.`);
-        }
         if (this._rejected || this._resolved) {
             return this._logger.env(`Request to url "${this._url}" is already ${this._rejected ? 'rejected' : 'resolved'}. Cannot resolve it.`);
         }

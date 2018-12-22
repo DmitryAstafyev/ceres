@@ -21,7 +21,8 @@ export enum EClientTests {
     getServerDemandResponse = 'getServerDemandResponse',
     getClientDemandResponse = 'getClientDemandResponse',
     clientSetRef = 'clientSetRef',
-    subscribeAsRespondent = 'subscribeAsRespondent'
+    subscribeAsRespondent = 'subscribeAsRespondent',
+    unsubscribeAsRespondent = 'unsubscribeAsRespondent'
 };
 
 export enum EServerTests {

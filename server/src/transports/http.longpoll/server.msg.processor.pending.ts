@@ -32,12 +32,9 @@ export class MessagePendingProcessor extends MessageProcessor<Protocol.Message.P
     }
 
     @EventHandler() private _disconnected(clientId: string): void {
-        this.state.processors.connections.disconnect(clientId).then(() => {
-            this._logger.env(`client ${clientId} is disconnected.`);
-            this.emit(MessagePendingProcessor.EVENTS.disconnected, clientId);
-        }).catch((error: Error) => {
-            this._logger.error(`error during disconnecting client ${clientId}: ${error.message}`);
-        });
+        // Only hook processor is able to trigger disconect workflow
+        this._logger.env(`Padding connection of client ${clientId} is disconnected.`);
+        this.emit(MessagePendingProcessor.EVENTS.disconnected, clientId);
     }
 
 }
