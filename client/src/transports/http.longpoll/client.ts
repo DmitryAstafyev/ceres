@@ -27,6 +27,10 @@ export enum EClientEvents {
     subscriptionDone = 'subscriptionDone',
     unsubscriptionDone = 'unsubscriptionDone',
     unsubscriptionAllDone = 'unsubscriptionAllDone',
+    referenceAccepted = 'referenceAccepted',
+    subscriptionToRequestDone = 'subscriptionToRequestDone',
+    unsubscriptionToRequestDone = 'unsubscriptionToRequestDone',
+    demandSent = 'demandSent',
     message = 'message',
 }
 
@@ -476,6 +480,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                 }
                 this._logger.env(`Registration of client has status: ${message.status}.`);
                 this._aliases = Object.assign({}, aliases);
+                this.emit(EClientEvents.referenceAccepted, aliases);
                 resolve(message);
             }).catch((error: Error) => {
                 this._setUrlFree(url);
@@ -560,6 +565,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                     this._logger.env(`Registration of client has status: ${message.status}.`);
                     // Save handler
                     this._demands.add(protocolSignature, demandSignature, handler);
+                    this.emit(EClientEvents.subscriptionToRequestDone, message);
                     resolve(message);
                 }).catch((error: Error) => {
                     this._setUrlFree(url);
@@ -619,6 +625,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                     return reject(this._logger.env(`Unbinding client with "${protocolSignature}/${demandSignature}" wasn't done.`));
                 }
                 this._logger.env(`Registration of client has status: ${message.status}.`);
+                this.emit(EClientEvents.unsubscriptionToRequestDone, message);
                 resolve(message);
             }).catch((error: Error) => {
                 if (this._state.get() !== EClientStates.connected) {
@@ -708,6 +715,7 @@ export class Client extends Tools.EventEmitter implements ITransportInterface {
                     this._logger.env(`Demand's request "${protocolSignature}/${demandSignature}" was sent. Server answers: ${message.state}`);
                     // Save resolver & rejector
                     this._pendingDemands.add(message.id, resolve, reject);
+                    this.emit(EClientEvents.demandSent, message);
                 }).catch((error: Error) => {
                     this._setUrlFree(url);
                     this._logger.env(`Error with sending demand's request "${protocolSignature}/${demandSignature}": ${error.message}.`);
