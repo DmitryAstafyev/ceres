@@ -1,7 +1,7 @@
 import {
     TMiddlewareAuthRequestBuilderFunction,
     TMiddlewareAuthResponseParserFunction,
-} from './types';
+} from './consumer.middleware.types';
 
 export interface IMiddleware {
     getAuthRequest?: TMiddlewareAuthRequestBuilderFunction;

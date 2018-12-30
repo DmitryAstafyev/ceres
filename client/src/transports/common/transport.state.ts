@@ -1,7 +1,7 @@
 export enum EClientStates {
     created = 'created',
     connecting = 'connecting',
-    reconnecting = 'reconnecting',
+    disconnected = 'disconnected',
     connected = 'connected',
 }
 

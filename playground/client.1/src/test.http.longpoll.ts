@@ -1,10 +1,12 @@
-import * as Transports from '../../../client/src/transports/index';
 import * as Tools from '../../../common/platform/tools/index';
 import * as Protocol from '../../protocol/protocol.playground';
 import { Output } from '../../client.common/output';
 import { Indicators } from '../../client.common/indicators';
 
 import { TTestStates, EClientTests } from '../../client.common/client.tests.desc';
+import { ConnectionParameters } from '../../../client/src/transports/http.longpoll/transport';
+import LongpollTransport from '../../../client/src/transports/http.longpoll/transport';
+import Consumer from '../../../client/src/consumer';
 
 enum EIndicators {
     connected = 'connected',
@@ -24,11 +26,12 @@ enum EIndicators {
 export default class Test {
 
     private _output: Output = new Output('Client.1');
-    private _parameters: Transports.HTTPLongpollClient.ConnectionParameters = new Transports.HTTPLongpollClient.ConnectionParameters({
+    private _parameters: ConnectionParameters = new ConnectionParameters({
         host: 'http://{sub[1..200]}.localhost',
         port: 3005
     });
-    private _client: Transports.HTTPLongpollClient.Client;
+    private _transport: LongpollTransport;
+    private _consumer: Consumer;
     private _greetingMessageTimer: number = -1;
     private _testDoneHandler: (test: EClientTests) => void;
     private _testFailHandler: (test: EClientTests) => void;
@@ -38,7 +41,8 @@ export default class Test {
         testDoneHandler: (test: EClientTests) => void = (test: EClientTests) => void 0, 
         testFailHandler: (test: EClientTests) => void = (test: EClientTests) => void 0){    
         //Create HTTP Longpoll client
-        this._client = new Transports.HTTPLongpollClient.Client(this._parameters);
+        this._transport = new LongpollTransport(this._parameters);
+        this._consumer = new Consumer(this._transport);
         this._testDoneHandler = testDoneHandler;
         this._testFailHandler = testFailHandler;
         this._bind();
@@ -68,15 +72,15 @@ export default class Test {
     }
 
     private _subsribeTransportEvents(){
-        this._client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.connected, this._onConnected);
-        this._client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.disconnected, this._onDisconnected);
-        this._client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.error, this._onError);
+        this._consumer.subscribe(Consumer.Events.connected, this._onConnected);
+        this._consumer.subscribe(Consumer.Events.disconnected, this._onDisconnected);
+        this._consumer.subscribe(Consumer.Events.error, this._onError);
     }
 
     private _unsubsribeTransportEvents(){
-        this._client.unsubscribe(Transports.HTTPLongpollClient.Client.EVENTS.connected, this._onConnected);
-        this._client.unsubscribe(Transports.HTTPLongpollClient.Client.EVENTS.disconnected, this._onDisconnected);
-        this._client.unsubscribe(Transports.HTTPLongpollClient.Client.EVENTS.error, this._onError);
+        this._consumer.unsubscribe(Consumer.Events.connected, this._onConnected);
+        this._consumer.unsubscribe(Consumer.Events.disconnected, this._onDisconnected);
+        this._consumer.unsubscribe(Consumer.Events.error, this._onError);
     }
     
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -121,7 +125,7 @@ export default class Test {
     }
 
     private _subscribeTestProtocol(){
-        this._client.subscribeEvent(Protocol.Events.Ping, Protocol, this._onTestProtocolGreeting)
+        this._consumer.subscribeEvent(Protocol.Events.Ping, Protocol, this._onTestProtocolGreeting)
             .then((res) => {
                 this._testDoneHandler(EClientTests.subscribeBroadcastEvent);
                 this._output.add(`Subscription to ${Protocol.Events.Ping.name} was done. Subscription response: ${Tools.inspect(res)}`, { color: 'rgb(200,200,200)'});
@@ -136,7 +140,7 @@ export default class Test {
     }
 
     private _unsubscribeTestProtocol(){
-        this._client.unsubscribeEvent(Protocol.Events.Ping, Protocol)
+        this._consumer.unsubscribeEvent(Protocol.Events.Ping, Protocol)
             .then((res) => {
                 this._testDoneHandler(EClientTests.unsubscribeBroadcastEvent);
                 this._output.add(`Unsubscription from ${Protocol.Events.Ping.name} was done. Unsubscription response: ${Tools.inspect(res)}`, { color: 'rgb(50,50,250)'});
@@ -148,7 +152,7 @@ export default class Test {
     }
 
     private _subscribeTargetedTestProtocol(){
-        this._client.subscribeEvent(Protocol.Events.TargetedPing, Protocol, this._onTargetedTestProtocolGreeting)
+        this._consumer.subscribeEvent(Protocol.Events.TargetedPing, Protocol, this._onTargetedTestProtocolGreeting)
             .then((res) => {
                 this._testDoneHandler(EClientTests.subscribeTargetedEvent);
                 this._output.add(`Subscription to ${Protocol.Events.TargetedPing.name} was done. Subscription response: ${Tools.inspect(res)}`, { color: 'rgb(200,200,200)'});
@@ -163,7 +167,7 @@ export default class Test {
     }
 
     private _unsubscribeTargetedTestProtocol(){
-        this._client.unsubscribeEvent(Protocol.Events.TargetedPing, Protocol)
+        this._consumer.unsubscribeEvent(Protocol.Events.TargetedPing, Protocol)
             .then((res) => {
                 this._testDoneHandler(EClientTests.unsubscribeTargetedEvent);
                 this._output.add(`Unsubscription from ${Protocol.Events.TargetedPing.name} was done. Unsubscription response: ${Tools.inspect(res)}`, { color: 'rgb(50,50,250)'});
@@ -175,7 +179,7 @@ export default class Test {
     }
 
     private _subscribeToServerEvent(){
-        this._client.subscribeEvent(Protocol.Events.EventFromServer, Protocol, this._onServerEvent)
+        this._consumer.subscribeEvent(Protocol.Events.EventFromServer, Protocol, this._onServerEvent)
             .then((res) => {
                 this._testDoneHandler(EClientTests.subscribeServerEvent);
                 this._output.add(`Subscription to ${Protocol.Events.EventFromServer.name} was done. Subscription response: ${Tools.inspect(res)}`, { color: 'rgb(200,222,222)'});
@@ -190,7 +194,7 @@ export default class Test {
     }
 
     private _unsubscribeToServerEvent(){
-        this._client.unsubscribeEvent(Protocol.Events.EventFromServer, Protocol)
+        this._consumer.unsubscribeEvent(Protocol.Events.EventFromServer, Protocol)
             .then((res) => {
                 this._testDoneHandler(EClientTests.unsubscribeServerEvent);
                 this._output.add(`Unsubscription from ${Protocol.Events.EventFromServer.name} was done. Unsubscription response: ${Tools.inspect(res)}`, { color: 'rgb(50,50,250)'});
@@ -213,7 +217,7 @@ export default class Test {
             name: nameMatch !== null ? (nameMatch.length === 1 ? nameMatch[0].replace('name=', '') : 'name') : 'name',
             group: groupMatch !== null ? (groupMatch.length === 1 ? groupMatch[0].replace('group=', '') : 'group') : 'group'
         };
-        this._client.ref(aliases)
+        this._consumer.ref(aliases)
             .then((res) => {
                 this._testDoneHandler(EClientTests.clientSetRef);
                 this._output.add(`Ref client to "${aliases.name} / ${aliases.group}" was done. Response: ${Tools.inspect(res)}`, { color: 'rgb(50,50,250)'});
@@ -257,7 +261,7 @@ export default class Test {
     // Tests protocol: demands
     //////////////////////////////////////////////////////////////////////////////////////////////
     private _subscribeAsRespondent() {
-        this._client.subscribeToRequest(Protocol, Protocol.Requests.IsOnlineClient.Request, { type: 'online'}, this._demandOnlineHandler).then(() => {
+        this._consumer.subscribeToRequest(Protocol, Protocol.Requests.IsOnlineClient.Request, { type: 'online'}, this._demandOnlineHandler).then(() => {
             this._output.add(`HTTP.Longpoll transport test: client is subscribed as respontent to: ${Tools.inspect(Protocol.Requests.IsOnlineClient.Request.getSignature())}`, { color: 'rgb(50,50,250)' });
             this._testDoneHandler(EClientTests.subscribeAsRespondent);
             this._indicators.state(EIndicators.subscribeAsRespondent, Indicators.States.success);
@@ -270,7 +274,7 @@ export default class Test {
     }
 
     private _unsubscribeAsRespondent() {
-        this._client.unsubscribeToRequest(Protocol, Protocol.Requests.IsOnlineClient.Request).then(() => {
+        this._consumer.unsubscribeToRequest(Protocol, Protocol.Requests.IsOnlineClient.Request).then(() => {
             this._output.add(`HTTP.Longpoll transport test: client is unsubscribed as respontent to: ${Tools.inspect(Protocol.Requests.IsOnlineClient.Request.getSignature())}`, { color: 'rgb(50,50,250)' });
             this._testDoneHandler(EClientTests.unsubscribeAsRespondent);
             this._indicators.state(EIndicators.unsubscribeAsRespondent, Indicators.States.success);

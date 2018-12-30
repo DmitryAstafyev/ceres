@@ -6,8 +6,8 @@
   "scripts": {
     "build": "./node_modules/.bin/webpack",
     "build:watch": "./node_modules/.bin/webpack --watch",
-    "build-ts": "tsc -p src/",
-    "build-ts:watch": "tsc -p src/ -w",
+    "build-ts": "tsc -p ./tsconfig.json",
+    "build-ts:watch": "tsc -p ./tsconfig.json -w",
     "serve": "lite-server -c=bs-config.json",
     "start": "concurrently \"npm run build:watch\" \"npm run serve\""
   },

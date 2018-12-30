@@ -6,9 +6,10 @@
     "module": "commonjs",
     "target": "es6",
     "lib": ["es5", "es6", "dom"],
-    "strict": true
+    "strict": true,
+    "experimentalDecorators": true
   },
   "files": [
-    "./src/main.ts"
+    "./src/index.ts"
   ]
 }

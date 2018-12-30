@@ -1,8 +1,7 @@
 import * as Tools from '../../platform/tools/index';
 import * as Protocol from '../../protocols/connection/protocol.connection';
-
-import { Pending } from './client.pending.task';
-import { Token } from './client.token';
+import { Token } from '../common/transport.token';
+import { Pending } from './transport.pending.task';
 
 type THandler = (...args: any[]) => any;
 

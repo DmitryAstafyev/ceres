@@ -1,5 +1,5 @@
-import * as Tools from '../../../platform/tools/index';
-import { IConnectionParameters } from './interfaces';
+import * as Tools from '../../platform/tools/index';
+import { IConnectionParameters } from './transport.parameters.interface';
 
 const logger = new Tools.Logger('ConnectionParameters');
 

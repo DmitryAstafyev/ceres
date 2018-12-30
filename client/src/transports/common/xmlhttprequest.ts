@@ -1,5 +1,14 @@
-import { ERequestTypes, TRequestType } from '../../platform/enums/enum.http.request.types';
 import * as Tools from '../../platform/tools/index';
+
+export enum ERequestTypes {
+    get     = 'GET',
+    post    = 'POST',
+    put     = 'PUT',
+    delete  = 'DELETE',
+    option  = 'OPTION',
+}
+
+export type TRequestType = ERequestTypes.post | ERequestTypes.get | ERequestTypes.put | ERequestTypes.option | ERequestTypes.delete;
 
 const HEADERS = {
     ACCEPT          : 'Accept',

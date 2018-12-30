@@ -1,4 +1,3 @@
-import * as Transports from '../../../client/src/transports/index';
 import * as Tools from '../../../common/platform/tools/index';
 import * as Protocol from '../../protocol/protocol.playground';
 import { Output } from '../../client.common/output';
@@ -6,14 +5,19 @@ import { Indicators } from '../../client.common/indicators';
 
 import { TTestStates, EClientTests } from '../../client.common/client.tests.desc';
 
+import { ConnectionParameters } from '../../../client/src/transports/http.longpoll/transport';
+import LongpollTransport from '../../../client/src/transports/http.longpoll/transport';
+import Consumer from '../../../client/src/consumer';
+
 export default class Test {
 
     private _output: Output = new Output('Client.0');
-    private _parameters: Transports.HTTPLongpollClient.ConnectionParameters = new Transports.HTTPLongpollClient.ConnectionParameters({
+    private _parameters: ConnectionParameters = new ConnectionParameters({
         host: 'http://{sub1,sub2,sub3}.localhost',
         port: 3005
     });
-    private _client: Transports.HTTPLongpollClient.Client;
+    private _transport: LongpollTransport;
+    private _consumer: Consumer;
     private _greetingMessageTimer: any = -1;
     private _targetMessageTimer: any = -1;
     private _serverEventTimer: any = -1;
@@ -22,11 +26,13 @@ export default class Test {
     private _testDoneHandler: (test: EClientTests) => void;
     private _testFailHandler: (test: EClientTests) => void;
     private _indicators: Indicators = new Indicators();
+
     constructor(
         testDoneHandler: (test: EClientTests) => void = (test: EClientTests) => void 0, 
         testFailHandler: (test: EClientTests) => void = (test: EClientTests) => void 0){    
         //Create HTTP Longpoll client
-        this._client = new Transports.HTTPLongpollClient.Client(this._parameters);
+        this._transport = new LongpollTransport(this._parameters);
+        this._consumer = new Consumer(this._transport);
         this._testDoneHandler = testDoneHandler;
         this._testFailHandler = testFailHandler;
         this._bind();
@@ -53,15 +59,15 @@ export default class Test {
     }
 
     private _subsribeTransportEvents(){
-        this._client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.connected, this._onConnected);
-        this._client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.disconnected, this._onDisconnected);
-        this._client.subscribe(Transports.HTTPLongpollClient.Client.EVENTS.error, this._onError);
+        this._consumer.subscribe(Consumer.Events.connected, this._onConnected);
+        this._consumer.subscribe(Consumer.Events.disconnected, this._onDisconnected);
+        this._consumer.subscribe(Consumer.Events.error, this._onError);
     }
 
     private _unsubsribeTransportEvents(){
-        this._client.unsubscribe(Transports.HTTPLongpollClient.Client.EVENTS.connected, this._onConnected);
-        this._client.unsubscribe(Transports.HTTPLongpollClient.Client.EVENTS.disconnected, this._onDisconnected);
-        this._client.unsubscribe(Transports.HTTPLongpollClient.Client.EVENTS.error, this._onError);
+        this._consumer.unsubscribe(Consumer.Events.connected, this._onConnected);
+        this._consumer.unsubscribe(Consumer.Events.disconnected, this._onDisconnected);
+        this._consumer.unsubscribe(Consumer.Events.error, this._onError);
     }
     
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -104,7 +110,7 @@ export default class Test {
                 timestamp: new Date()
             });
             
-            this._client.eventEmit(greeting, Protocol)
+            this._consumer.eventEmit(greeting, Protocol)
                 .then((res) => {
                     this._output.add(`Event sent: ${Tools.inspect(res)}`, { color: 'rgb(200,200,200)'});
                     this._sendGreetingMessage();
@@ -144,7 +150,7 @@ export default class Test {
                 message: `This is target message for ${aliases.name} / ${aliases.group}`
             });
             
-            this._client.eventEmit(greeting, Protocol, { name: aliases.name, group: aliases.group})
+            this._consumer.eventEmit(greeting, Protocol, { name: aliases.name, group: aliases.group})
                 .then((res) => {
                     this._output.add(`Event sent for "${aliases.name} / ${aliases.group}": ${Tools.inspect(res)}`, { color: 'rgb(200,200,200)'});
                     this._sendTargetMessage();
@@ -177,7 +183,7 @@ export default class Test {
                 message: 'Hello server!'
             });
             
-            this._client.eventEmit(serverEvent, Protocol)
+            this._consumer.eventEmit(serverEvent, Protocol)
                 .then((res) => {
                     this._output.add(`Event sent: ${Tools.inspect(res)}`, { color: 'rgb(200,214,141)'});
                     this._sendServerEvent();
@@ -216,7 +222,7 @@ export default class Test {
             const failtimer = setTimeout(() => {
                 this._indicators.state('demandClientResponse', Indicators.States.fail);
             }, 5000);
-            this._client.demand(Protocol, demand, Protocol.Requests.IsOnlineClient.Response, { type: 'online'}, { pending: true, scope: Transports.HTTPLongpollClient.Client.DemandOptions.scope.clients })
+            this._consumer.demand(Protocol, demand, Protocol.Requests.IsOnlineClient.Response, { type: 'online'}, { pending: true, scope: Consumer.DemandOptions.scope.clients })
                 .then((response: Protocol.Requests.IsOnlineClient.Response) => {
                     clearTimeout(failtimer);
                     this._output.add(`On client request has gotten response: ${Tools.inspect(response)}`, { color: 'rgb(100,250,70)'});
@@ -255,7 +261,7 @@ export default class Test {
             const failtimer = setTimeout(() => {
                 this._indicators.state('demandServerResponse', Indicators.States.fail);
             }, 5000);
-            this._client.demand(Protocol, demand, Protocol.Requests.IsOnlineServer.Response, { type: 'online'}, { pending: true, scope: Transports.HTTPLongpollClient.Client.DemandOptions.scope.hosts })
+            this._consumer.demand(Protocol, demand, Protocol.Requests.IsOnlineServer.Response, { type: 'online'}, { pending: true, scope: Consumer.DemandOptions.scope.hosts })
                 .then((response: Protocol.Requests.IsOnlineServer.Response) => {
                     clearTimeout(failtimer);
                     this._output.add(`On server request has gotten response: ${Tools.inspect(response)}`, { color: 'rgb(100,250,250)'});

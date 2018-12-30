@@ -1,16 +1,16 @@
-import { TRequestBody } from '../../platform/interfaces/index';
-import * as Tools from '../../platform/tools/index';
+import { TRequestBody } from './consumer.middleware.types';
+import * as Tools from './platform/tools/index';
 
-import { IMiddleware } from './interfaces';
+import { IMiddleware } from './consumer.middleware.interfaces';
 
 import {
     TMiddlewareAuthRequestBuilderFunction,
     TMiddlewareAuthRequestBuilderReturn,
     TMiddlewareAuthResponseParserFunction,
     TMiddlewareAuthResponseParserReturn,
-} from './types';
+} from './consumer.middleware.types';
 
-export class Middleware implements IMiddleware {
+export default class Middleware implements IMiddleware {
 
     constructor(middleware: IMiddleware) {
 
@@ -19,7 +19,7 @@ export class Middleware implements IMiddleware {
             processAuthRequest  : this.processAuthRequest,
         }) as IMiddleware;
 
-        this.getAuthRequest     = middleware.getAuthRequest   as TMiddlewareAuthRequestBuilderFunction;
+        this.getAuthRequest = middleware.getAuthRequest as TMiddlewareAuthRequestBuilderFunction;
         this.processAuthRequest = middleware.processAuthRequest as TMiddlewareAuthResponseParserFunction;
 
     }

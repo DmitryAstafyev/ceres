@@ -1,8 +1,8 @@
 import * as Tools from '../../platform/tools/index';
 import * as Protocol from '../../protocols/connection/protocol.connection';
 
-import { Request } from './client.request.connection';
-import { Token } from './client.token';
+import { Token } from '../common/transport.token';
+import { Request } from './transport.request.connection';
 
 /**
  * @class Hook
@@ -27,22 +27,20 @@ export class Hook {
             });
             this._request = new Request(url, instance.stringify());
             const requestId = this._request.getId();
-            this._request.send()
-                .then((response: string) => {
-                    const message = Protocol.parse(response);
-                    this._request = null;
-                    if (message instanceof Error) {
-                        return reject(message);
-                    }
-                    if (!(message instanceof Protocol.ConnectionError) && !(message instanceof Protocol.Disconnect)) {
-                        return reject(new Error(`Unexpected response: ${message.constructor.name}: ${Tools.inspect(message)}`));
-                    }
-                    resolve(message);
-                })
-                .catch((error: Error) => {
-                    this._request = null;
-                    reject(new Error(`Hook request guid "${requestId}" finished within error: ${error.message}`));
-                });
+            this._request.send().then((response: string) => {
+                const message = Protocol.parse(response);
+                this._request = null;
+                if (message instanceof Error) {
+                    return reject(message);
+                }
+                if (!(message instanceof Protocol.ConnectionError) && !(message instanceof Protocol.Disconnect)) {
+                    return reject(new Error(`Unexpected response: ${message.constructor.name}: ${Tools.inspect(message)}`));
+                }
+                resolve(message);
+            }).catch((error: Error) => {
+                this._request = null;
+                reject(new Error(`Hook request guid "${requestId}" finished within error: ${error.message}`));
+            });
         });
     }
 

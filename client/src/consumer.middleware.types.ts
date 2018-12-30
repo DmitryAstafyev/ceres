@@ -1,8 +1,15 @@
-import { TRequestBody, TResponseBody } from '../../platform/interfaces/index';
-/**
- * Returns of middleware functions
- */
+export type TRequestBody = {[key: string]: any};
+export type TResponseBody = {[key: string]: any};
 
+export interface IResponse {
+    clientGUID: string;
+    response: TResponseBody;
+}
+
+export interface IRequest {
+    clientGUID: string;
+    request: {[key: string]: any };
+}
 /**
  * Function should prepare authorization request to server
  * @returns Promise{TRequestBody}
