@@ -65,7 +65,7 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
             this.state.set(ATransport.STATES.connecting);
             this.send((new TransportProtocol.Message.Handshake.Request({
                 clientId: this._clientGUID,
-            })).stringify()).then((message: Protocol.TProtocolTypes | TransportProtocol.TProtocolTypes) => {
+            })).stringify(), true).then((message: Protocol.TProtocolTypes | TransportProtocol.TProtocolTypes) => {
                 if (!(message instanceof TransportProtocol.Message.Handshake.Response)) {
                     const error: Error = new Error(this._logger.warn(`On this state (${this.state.get()}) expected authorization confirmation, but gotten: ${Tools.inspect(message)}.`));
                     return reject(error);
@@ -98,7 +98,7 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
         });
     }
 
-    public send(data: string): Promise<Protocol.TProtocolTypes | TransportProtocol.TProtocolTypes> {
+    public send(data: string, connecting: boolean = false): Promise<Protocol.TProtocolTypes | TransportProtocol.TProtocolTypes> {
         return new Promise((resolve, reject) => {
             const url = this._getURL();
             // Create request
@@ -107,15 +107,33 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
             this._requests.set(request.getId(), request);
             // Send request
             request.send().then((response: string) => {
-                this._requests.delete(request.getId());
-                this._setUrlFree(url);
-                const message = TransportProtocol.parseFrom(response, [TransportProtocol, Protocol]);
-                if (message instanceof Error) {
-                    this._logger.warn(`Request guid: ${request.getId()} is finished due error: ${message.message}. Request body: ${Tools.inspect(response)}`);
-                    return reject(message);
-                }
-                this._logger.env(`Request guid: ${request.getId()} is finished successfuly. Message: ${message.getSignature()}`);
-                resolve(message);
+                const next = new Promise((resolveNext, rejectNext) => {
+                    if (connecting) {
+                        (this.middleware as Middleware).connecting(request.getXMLHttpRequest(), response).then(() => {
+                            resolveNext();
+                        }).catch((middlewareError: Error) => {
+                            this._logger.error(`Connecting request was rejected on middleware level due error: ${middlewareError.message}`);
+                            rejectNext(middlewareError);
+                        });
+                    } else {
+                        resolveNext();
+                    }
+                });
+                next.then(() => {
+                    this._requests.delete(request.getId());
+                    this._setUrlFree(url);
+                    const message = TransportProtocol.parseFrom(response, [TransportProtocol, Protocol]);
+                    if (message instanceof Error) {
+                        this._logger.warn(`Request guid: ${request.getId()} is finished due error: ${message.message}. Request body: ${Tools.inspect(response)}`);
+                        return reject(message);
+                    }
+                    this._logger.env(`Request guid: ${request.getId()} is finished successfuly. Message: ${message.getSignature()}`);
+                    resolve(message);
+                }).catch((error: Error) => {
+                    this._requests.delete(request.getId());
+                    this._setUrlFree(url);
+                    reject(error);
+                });
             }).catch((error: Error) => {
                 this._requests.delete(request.getId());
                 this._setUrlFree(url);

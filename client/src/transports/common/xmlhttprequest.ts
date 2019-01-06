@@ -86,6 +86,10 @@ export default class ImpXMLHTTPRequest {
         return this._url;
     }
 
+    public getXMLHttpRequest(): XMLHttpRequest {
+        return this._httpRequest;
+    }
+
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Private
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */

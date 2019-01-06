@@ -1,9 +1,4 @@
-import {
-    TMiddlewareAuthRequestBuilderFunction,
-    TMiddlewareAuthResponseParserFunction,
-} from './consumer.middleware.types';
-
+export type TConnectingMethod = (response: XMLHttpRequest, message: any) => Promise<boolean>;
 export interface IMiddleware {
-    getAuthRequest?: TMiddlewareAuthRequestBuilderFunction;
-    processAuthRequest?: TMiddlewareAuthResponseParserFunction;
+    connecting?: TConnectingMethod;
 }

@@ -29,6 +29,10 @@ export class Request {
 		return this._id;
 	}
 
+	public getXMLHttpRequest(): XMLHttpRequest {
+		return this._request.getXMLHttpRequest();
+	}
+
 	public close() {
 		this._destroy();
 	}
