@@ -4,7 +4,6 @@ import { Output } from '../../client.common/output';
 import { Indicators } from '../../client.common/indicators';
 
 import { TTestStates, EClientTests } from '../../client.common/client.tests.desc';
-import { ConnectionParameters } from '../../../client/src/transports/http.longpoll/transport';
 import LongpollTransport from '../../../client/src/transports/http.longpoll/transport';
 import Consumer from '../../../client/src/consumer';
 
@@ -26,7 +25,7 @@ enum EIndicators {
 export default class Test {
 
     private _output: Output = new Output('Client.1');
-    private _parameters: ConnectionParameters = new ConnectionParameters({
+    private _parameters = new LongpollTransport.Parameters({
         host: 'http://{sub[1..200]}.localhost',
         port: 3005
     });

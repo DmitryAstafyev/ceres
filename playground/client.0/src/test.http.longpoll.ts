@@ -5,14 +5,13 @@ import { Indicators } from '../../client.common/indicators';
 
 import { TTestStates, EClientTests } from '../../client.common/client.tests.desc';
 
-import { ConnectionParameters } from '../../../client/src/transports/http.longpoll/transport';
 import LongpollTransport from '../../../client/src/transports/http.longpoll/transport';
 import Consumer from '../../../client/src/consumer';
 
 export default class Test {
 
     private _output: Output = new Output('Client.0');
-    private _parameters: ConnectionParameters = new ConnectionParameters({
+    private _parameters = new LongpollTransport.Parameters({
         host: 'http://{sub1,sub2,sub3}.localhost',
         port: 3005
     });

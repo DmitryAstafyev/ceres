@@ -1,24 +1,24 @@
-import * as Tools from '../../platform/tools/index';
-import * as Protocol from '../../protocols/connection/protocol.connection';
-import { Connection } from './server.connection';
-import { MessageProcessor } from './server.msg.processor';
-import { ServerState } from './server.state';
+import * as Tools from './platform/tools/index';
+import * as Protocol from './protocols/connection/protocol.connection';
+import { MessageProcessor } from './provider.msg.processor';
+import { ProviderState } from './provider.state';
+import { TSender } from './transports/transport.abstract';
 
 export class MessageSubscribeProcessor extends MessageProcessor<Protocol.Message.Subscribe.Request> {
 
-    constructor(state: ServerState) {
+    constructor(state: ProviderState) {
         super('Subscribe', state);
     }
 
-    public process(connection: Connection, message: Protocol.Message.Subscribe.Request): Promise<void> {
+    public process(sender: TSender, message: Protocol.Message.Subscribe.Request): Promise<void> {
         return new Promise((resolveProcess, rejectProcess) => {
             const clientId = message.clientId;
-            const status: boolean | Error = this.state.processors.events.subscribe(
+            const status: boolean | Error = this.state.events.subscribe(
                 clientId,
                 message.subscription.protocol as string,
                 message.subscription.event as string,
             );
-            return connection.close((new Protocol.Message.Subscribe.Response({
+            return sender((new Protocol.Message.Subscribe.Response({
                 clientId: clientId,
                 error: status instanceof Error ? status.message : undefined,
                 status: status instanceof Error ? false : status,

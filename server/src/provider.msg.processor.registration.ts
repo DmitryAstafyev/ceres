@@ -1,23 +1,23 @@
-import * as Tools from '../../platform/tools/index';
-import * as Protocol from '../../protocols/connection/protocol.connection';
-import { TAlias } from './server.aliases';
-import { Connection } from './server.connection';
-import { MessageProcessor } from './server.msg.processor';
-import { ServerState } from './server.state';
+import * as Tools from './platform/tools/index';
+import * as Protocol from './protocols/connection/protocol.connection';
+import { TAlias } from './provider.aliases';
+import { MessageProcessor } from './provider.msg.processor';
+import { ProviderState } from './provider.state';
+import { TSender } from './transports/transport.abstract';
 
 export class MessageRegistrationProcessor extends MessageProcessor<Protocol.Message.Registration.Request> {
 
-    constructor(state: ServerState) {
+    constructor(state: ProviderState) {
         super('Registration', state);
     }
 
-    public process(connection: Connection, message: Protocol.Message.Registration.Request): Promise<void> {
+    public process(sender: TSender, message: Protocol.Message.Registration.Request): Promise<void> {
         return new Promise((resolveProcess, rejectProcess) => {
             const clientId = message.clientId;
             let status: boolean = false;
             if (message.aliases instanceof Array) {
                 if (message.aliases.length === 0) {
-                    this.state.processors.connections.unrefAlias(clientId);
+                    this.state.unrefAlias(clientId);
                     status = true;
                 } else {
                     const aliases: TAlias = {};
@@ -33,12 +33,12 @@ export class MessageRegistrationProcessor extends MessageProcessor<Protocol.Mess
                         }
                     });
                     if (valid) {
-                        this.state.processors.connections.refAlias(clientId, aliases);
+                        this.state.refAlias(clientId, aliases);
                         status = true;
                     }
                 }
             }
-            return connection.close((new Protocol.Message.Registration.Response({
+            return sender((new Protocol.Message.Registration.Response({
                 clientId: clientId,
                 status: status,
             })).stringify()).then(() => {

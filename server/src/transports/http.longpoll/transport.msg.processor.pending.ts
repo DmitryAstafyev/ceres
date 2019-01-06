@@ -1,26 +1,25 @@
-import * as Tools from '../../platform/tools/index';
 import { EventHandler } from '../../platform/tools/index';
-import * as Protocol from '../../protocols/connection/protocol.connection';
-import { Connection } from './server.connection';
-import { MessageProcessor } from './server.msg.processor';
-import { ServerState } from './server.state';
+import * as TransportProtocol from '../../protocols/connection/protocol.transport.longpoll';
+import LongpollTransport from './transport';
+import { Connection } from './transport.connection';
+import { TransportMessageProcessor } from './transport.msg.processor';
 
-export class MessagePendingProcessor extends MessageProcessor<Protocol.Message.Pending.Request> {
+export class MessagePendingProcessor extends TransportMessageProcessor<TransportProtocol.Message.Pending.Request> {
 
     public static EVENTS = {
         disconnected: Symbol(),
     };
 
-    constructor(state: ServerState) {
-        super('Pending', state);
+    constructor(transport: LongpollTransport) {
+        super('Pending', transport);
     }
 
-    public process(connection: Connection, message: Protocol.Message.Pending.Request): Promise<void> {
+    public process(connection: Connection, message: TransportProtocol.Message.Pending.Request): Promise<void> {
         return new Promise((resolveProcess) => {
             const clientId = message.clientId;
             connection.setClientGUID(clientId);
             connection.subscribe(Connection.EVENTS.onAborted, this._disconnected.bind(this, clientId));
-            this.state.processors.connections.addPending(clientId, connection);
+            this.transport.connections.addPending(clientId, connection);
             resolveProcess();
         });
     }

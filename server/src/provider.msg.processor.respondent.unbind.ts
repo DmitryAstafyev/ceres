@@ -1,20 +1,20 @@
-import * as Tools from '../../platform/tools/index';
-import * as Protocol from '../../protocols/connection/protocol.connection';
-import { Connection } from './server.connection';
-import { MessageProcessor } from './server.msg.processor';
-import { ServerState } from './server.state';
+import * as Tools from './platform/tools/index';
+import * as Protocol from './protocols/connection/protocol.connection';
+import { MessageProcessor } from './provider.msg.processor';
+import { ProviderState } from './provider.state';
+import { TSender } from './transports/transport.abstract';
 
 export class MessageRespondentUnbindProcessor extends MessageProcessor<Protocol.Message.Respondent.Unbind.Request> {
 
-    constructor(state: ServerState) {
+    constructor(state: ProviderState) {
         super('Respondent.Unbind', state);
     }
 
-    public process(connection: Connection, message: Protocol.Message.Respondent.Unbind.Request): Promise<void> {
+    public process(sender: TSender, message: Protocol.Message.Respondent.Unbind.Request): Promise<void> {
         return new Promise((resolveProcess, rejectProcess) => {
             const clientId = message.clientId;
-            const status: boolean = this.state.processors.demands.unsubscribe(clientId, message.protocol, message.demand);
-            return connection.close((new Protocol.Message.Respondent.Unbind.Response({
+            const status: boolean = this.state.demands.unsubscribe(clientId, message.protocol, message.demand);
+            return sender((new Protocol.Message.Respondent.Unbind.Response({
                 clientId: clientId,
                 status: status,
             })).stringify()).then(() => {

@@ -1,5 +1,6 @@
 import * as Tools from '../../platform/tools/index';
 import * as Protocol from '../../protocols/connection/protocol.connection';
+import * as TransportProtocol from '../../protocols/connection/protocol.transport.longpoll';
 
 import { Token } from '../common/transport.token';
 import { Request } from './transport.request.connection';
@@ -16,24 +17,24 @@ export class Hook {
      * Create hook request. This request never finish.
      * @returns {Promise<Error>}
      */
-    public create(url: string, clientGUID: string, token: Token): Promise<Protocol.ConnectionError | Protocol.Disconnect> {
+    public create(url: string, clientGUID: string, token: Token): Promise<TransportProtocol.ConnectionError | TransportProtocol.Disconnect> {
         return new Promise((resolve, reject) => {
             if (this._request !== null) {
                 return reject(new Error(`Attempt to create hook, even hook is already created.`));
             }
-            const instance = new Protocol.Message.Hook.Request({
+            const instance = new TransportProtocol.Message.Hook.Request({
                 clientId: clientGUID,
                 token: token.get(),
             });
             this._request = new Request(url, instance.stringify());
             const requestId = this._request.getId();
             this._request.send().then((response: string) => {
-                const message = Protocol.parse(response);
+                const message = TransportProtocol.parseFrom(response, [TransportProtocol, Protocol]);
                 this._request = null;
                 if (message instanceof Error) {
                     return reject(message);
                 }
-                if (!(message instanceof Protocol.ConnectionError) && !(message instanceof Protocol.Disconnect)) {
+                if (!(message instanceof TransportProtocol.ConnectionError) && !(message instanceof TransportProtocol.Disconnect)) {
                     return reject(new Error(`Unexpected response: ${message.constructor.name}: ${Tools.inspect(message)}`));
                 }
                 resolve(message);

@@ -1,26 +1,25 @@
-import * as Tools from '../../platform/tools/index';
 import { EventHandler } from '../../platform/tools/index';
-import * as Protocol from '../../protocols/connection/protocol.connection';
-import { Connection } from './server.connection';
-import { MessageProcessor } from './server.msg.processor';
-import { ServerState } from './server.state';
+import * as TransportProtocol from '../../protocols/connection/protocol.transport.longpoll';
+import LongpollTransport from './transport';
+import { Connection } from './transport.connection';
+import { TransportMessageProcessor } from './transport.msg.processor';
 
-export class MessageHookProcessor extends MessageProcessor<Protocol.Message.Hook.Request> {
+export class MessageHookProcessor extends TransportMessageProcessor<TransportProtocol.Message.Hook.Request> {
 
     public static EVENTS = {
         disconnected: Symbol(),
     };
 
-    constructor(state: ServerState) {
-        super('Hook', state);
+    constructor(transport: LongpollTransport) {
+        super('Hook', transport);
     }
 
-    public process(connection: Connection, message: Protocol.Message.Hook.Request): Promise<void> {
+    public process(connection: Connection, message: TransportProtocol.Message.Hook.Request): Promise<void> {
         return new Promise((resolveProcess) => {
             const clientId = message.clientId;
             connection.setClientGUID(clientId);
             connection.subscribe(Connection.EVENTS.onAborted, this._disconnected.bind(this, clientId));
-            this.state.processors.connections.addHook(clientId, connection);
+            this.transport.connections.addHook(clientId, connection);
             resolveProcess();
         });
     }
@@ -32,7 +31,7 @@ export class MessageHookProcessor extends MessageProcessor<Protocol.Message.Hook
     }
 
     @EventHandler() private _disconnected(clientId: string): void {
-        this.state.processors.connections.disconnect(clientId).then(() => {
+        this.transport.connections.disconnect(clientId).then(() => {
             this._logger.env(`client ${clientId} is disconnected.`);
             this.emit(MessageHookProcessor.EVENTS.disconnected, clientId);
         }).catch((error: Error) => {

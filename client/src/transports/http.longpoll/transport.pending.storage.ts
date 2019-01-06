@@ -1,5 +1,5 @@
 import * as Tools from '../../platform/tools/index';
-import * as Protocol from '../../protocols/connection/protocol.connection';
+import * as TransportProtocol from '../../protocols/connection/protocol.transport.longpoll';
 import { Token } from '../common/transport.token';
 import { Pending } from './transport.pending.task';
 
@@ -50,9 +50,9 @@ export class PendingTasks extends Tools.EventEmitter {
         const guid = pending.getGUID();
         const url = this._urlGet();
         pending.create(url, this._clientGUID, this._token)
-            .then((response: Protocol.Message.Pending.Response | Protocol.Disconnect) => {
+            .then((response: TransportProtocol.Message.Pending.Response | TransportProtocol.Disconnect) => {
                 (this._urlFree as THandler)(url);
-                if (response instanceof Protocol.Disconnect) {
+                if (response instanceof TransportProtocol.Disconnect) {
                     return this.emit(PendingTasks.EVENTS.onDisconnect, response);
                 }
                 // Remove current

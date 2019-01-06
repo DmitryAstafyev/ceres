@@ -1,7 +1,7 @@
-import { Connection } from './server.connection';
+import { Connection } from './transport.connection';
 
 import * as Tools from '../../platform/tools/index';
-import * as Protocol from '../../protocols/connection/protocol.connection';
+import * as TransportProtocol from '../../protocols/connection/protocol.transport.longpoll';
 
 export class Connections {
 
@@ -44,9 +44,9 @@ export class Connections {
             const tasks: Array<Promise<void>> = [];
             this._connections.forEach((connections: Connection[], clientId: string) => {
                 tasks.push(...connections.map((connection: Connection) => {
-                    return connection.close((new Protocol.Disconnect({
+                    return connection.close((new TransportProtocol.Disconnect({
                         message: 'Closing all pending requests.',
-                        reason: Protocol.Disconnect.Reasons.SHUTDOWN,
+                        reason: TransportProtocol.Disconnect.Reasons.SHUTDOWN,
                     })).stringify());
                 }));
             });

@@ -1,8 +1,8 @@
-import * as Tools from '../../platform/tools/index';
-import * as Protocol from '../../protocols/connection/protocol.connection';
-import { isInclude as isAliasInclude, TAlias } from './server.aliases';
-import { THandler } from './server.processor.demands';
-import { ServerState } from './server.state';
+import * as Tools from './platform/tools/index';
+import * as Protocol from './protocols/connection/protocol.connection';
+import { isInclude as isAliasInclude, TAlias } from './provider.aliases';
+import { THandler } from './provider.processor.demands';
+import { ProviderState } from './provider.state';
 
 type TProtocol = string;
 
@@ -13,10 +13,10 @@ export class ProcessorEvents {
     private subscriptions: Tools.SubscriptionsHolder = new Tools.SubscriptionsHolder();
     private handlers: Map<TProtocol, Tools.HandlersHolder> = new Map();
     private alias: TAlias = {};
-    private state: ServerState;
+    private state: ProviderState;
     private _logger: Tools.Logger = new Tools.Logger(`ProcessorEvents`);
 
-    constructor(state: ServerState) {
+    constructor(state: ProviderState) {
         this.state = state;
     }
 
@@ -46,14 +46,13 @@ export class ProcessorEvents {
         clientId: string,
     ): Promise<void> {
         return new Promise((resolve, reject) => {
-            const connection = this.state.processors.connections.getPending(clientId);
-            if (connection === null) {
+            if (!this.state.transport.isAvailable(clientId)) {
                 return reject(new Error(
                     this._logger.env(`Client (${clientId}) is subscribed on "${protocol}/${event}", but active connection wasn't found. Task will stay in a queue.`),
                 ));
             }
             this._logger.env(`Client (${clientId}) is subscribed on "${protocol}/${event}". Event will be sent.`);
-            connection.close((new Protocol.Message.Pending.Response({
+            this.state.transport.send(clientId, (new Protocol.Message.ToConsumer({
                 clientId: clientId,
                 event: new Protocol.EventDefinition({
                     body: body,
@@ -173,18 +172,18 @@ export class ProcessorEvents {
     }
 
     private _emitClients(protocolSignature: string, eventSignature: string, body: string, options: Protocol.Message.Event.Options, aliases?: Protocol.KeyValue[]): Promise<number> {
-        return new Promise((resolve, reject) => {
-            let subscribers = this.state.processors.events.getSubscribers(protocolSignature, eventSignature);
+        return new Promise((resolve) => {
+            let subscribers = this.state.events.getSubscribers(protocolSignature, eventSignature);
             // Check aliases
             if (aliases instanceof Array) {
-                const targetClients = this.state.processors.connections.getClientsByAlias(aliases);
+                const targetClients = this.state.getClientsByAlias(aliases);
                 subscribers = subscribers.filter((subscriberId: string) => {
                     return targetClients.indexOf(subscriberId) !== -1;
                 });
             }
             // Add tasks
             subscribers.forEach((subscriberId: string) => {
-                this.state.processors.connections.addTask(
+                this.state.tasks.add(
                     this.emit.bind(this,
                         protocolSignature,
                         eventSignature,
@@ -195,7 +194,7 @@ export class ProcessorEvents {
                 );
             });
             // Execute tasks
-            this.state.processors.connections.proceedTasks();
+            this.state.tasks.proceed();
             resolve(subscribers.length);
         });
     }

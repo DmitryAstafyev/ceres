@@ -1,4 +1,4 @@
-import * as Protocol from '../../protocols/connection/protocol.connection';
+import * as Protocol from './protocols/connection/protocol.connection';
 
 export type TAlias = { [key: string]: string };
 
@@ -53,6 +53,10 @@ export class Aliases {
             }
         });
         return clients;
+    }
+
+    public clear() {
+        this._clients.clear();
     }
 
 }

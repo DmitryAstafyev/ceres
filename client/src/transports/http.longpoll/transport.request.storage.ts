@@ -1,4 +1,5 @@
 import * as Protocol from '../../protocols/connection/protocol.connection';
+import * as TransportProtocol from '../../protocols/connection/protocol.transport.longpoll';
 
 import { Request } from './transport.request.connection';
 
@@ -6,14 +7,14 @@ export class Requests {
 
     private _requests: Map<string, Request> = new Map();
 
-    public send(url: string, body: string): Promise<Protocol.TProtocolTypes> {
+    public send(url: string, body: string): Promise<TransportProtocol.TProtocolTypes> {
         return new Promise((resolve, reject) => {
             const request = new Request(url, body);
             this._requests.set(request.getId(), request);
             request.send()
                 .then((response: string) => {
                     this._requests.delete(request.getId());
-                    const message = Protocol.parse(response);
+                    const message = TransportProtocol.parseFrom(response, [TransportProtocol, Protocol]);
                     if (message instanceof Error) {
                         return reject(message);
                     }

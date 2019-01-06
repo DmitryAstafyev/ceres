@@ -1,6 +1,6 @@
-import { IConnectionParameters } from './interfaces';
+import { IConnectionParameters } from './transport.parameters.interfaces';
 
-import * as Tools from '../../../platform/tools/index';
+import * as Tools from '../../platform/tools/index';
 
 const DEFAULTS = {
     CORS: true,

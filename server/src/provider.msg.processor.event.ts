@@ -1,20 +1,20 @@
-import * as Protocol from '../../protocols/connection/protocol.connection';
-import { Connection } from './server.connection';
-import { MessageProcessor } from './server.msg.processor';
-import { ServerState } from './server.state';
+import * as Protocol from './protocols/connection/protocol.connection';
+import { MessageProcessor } from './provider.msg.processor';
+import { ProviderState } from './provider.state';
+import { TSender } from './transports/transport.abstract';
 
 export class MessageEventProcessor extends MessageProcessor<Protocol.Message.Event.Request> {
 
-    constructor(state: ServerState) {
+    constructor(state: ProviderState) {
         super('Event', state);
     }
 
-    public process(connection: Connection, message: Protocol.Message.Event.Request): Promise<void> {
+    public process(sender: TSender, message: Protocol.Message.Event.Request): Promise<void> {
         return new Promise((resolveProcess, rejectProcess) => {
             const clientId = message.clientId;
             if (typeof message.event.protocol !== 'string' || message.event.protocol.trim() === '' ||
                 typeof message.event.event !== 'string' || message.event.event.trim() === '') {
-                return connection.close((new Protocol.ConnectionError({
+                return sender((new Protocol.ConnectionError({
                     message: `Expecting defined fields: protocol {string}; event {string}`,
                     reason: Protocol.ConnectionError.Reasons.NO_DATA_PROVIDED,
                 })).stringify()).then(() => {
@@ -29,15 +29,15 @@ export class MessageEventProcessor extends MessageProcessor<Protocol.Message.Eve
             }
             message.options.scope = message.options.scope === undefined ? Protocol.Message.Event.Options.Scope.all : message.options.scope;
             // Process event
-            this.state.processors.events.emitAll(
+            this.state.events.emitAll(
                 message.event.protocol,
                 message.event.event,
                 message.event.body,
                 message.options,
                 message.aliases,
             ).then((count: number) => {
-                this.state.processors.connections.proceedTasks();
-                return connection.close((new Protocol.Message.Event.Response({
+                this.state.tasks.proceed();
+                return sender((new Protocol.Message.Event.Response({
                     clientId: clientId,
                     subscribers: count,
                 })).stringify()).then(() => {

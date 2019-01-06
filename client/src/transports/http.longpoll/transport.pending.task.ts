@@ -1,8 +1,10 @@
 import * as Tools from '../../platform/tools/index';
 import * as Protocol from '../../protocols/connection/protocol.connection';
+import * as TransportProtocol from '../../protocols/connection/protocol.transport.longpoll';
 import { Token } from '../common/transport.token';
 import { Request } from './transport.request.connection';
 
+type TMessage = TransportProtocol.TProtocolTypes | Protocol.TProtocolTypes;
 /**
  * @class Pending
  * @desc Connection which pending command from server
@@ -15,15 +17,15 @@ export class Pending {
 
     /**
      * Create pending connection
-     * @returns {Promise<Protocol.Message.Pending.Response>}
+     * @returns {Promise<TransportProtocol.Message.Pending.Response>}
      */
-    public create(url: string, clientGUID: string, token: Token): Promise<Protocol.Message.Pending.Response | Protocol.Disconnect> {
+    public create(url: string, clientGUID: string, token: Token): Promise<TransportProtocol.Message.Pending.Response | TransportProtocol.Disconnect> {
         this._url = url;
         return new Promise((resolve, reject) => {
             if (this._request !== null) {
                 return reject(new Error(`Attempt to create pending connection, even is already created.`));
             }
-            const instance = new Protocol.Message.Pending.Request({
+            const instance = new TransportProtocol.Message.Pending.Request({
                 clientId: clientGUID,
                 token: token.get(),
             });
@@ -32,11 +34,11 @@ export class Pending {
             this._request.send()
                 .then((response: string) => {
                     this._request = null;
-                    const message = Protocol.Message.Pending.Response.parse(response);
+                    const message: TMessage = TransportProtocol.parseFrom(response, [TransportProtocol, Protocol]) as TMessage;
                     if (message instanceof Error) {
                         return reject(message);
                     }
-                    if (!(message instanceof Protocol.Message.Pending.Response) && !(message instanceof Protocol.Disconnect)) {
+                    if (!(message instanceof Protocol.Message.ToConsumer) && !(message instanceof TransportProtocol.Message.Pending.Response) && !(message instanceof TransportProtocol.Disconnect)) {
                         return reject(new Error(`Unexpected response: ${message.constructor.name}: ${Tools.inspect(message)}`));
                     }
                     resolve(message);

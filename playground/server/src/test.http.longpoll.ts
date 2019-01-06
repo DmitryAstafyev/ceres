@@ -1,15 +1,17 @@
-import * as Transports from '../../../server/src/transports/index';
+import LongpollTransport from '../../../server/src/transports/http.longpoll/transport';
+import Provider from '../../../server/src/provider';
 import * as Tools from '../../../common/platform/tools/index';
 import * as Protocol from '../../protocol/protocol.playground';
 
 export default function test(){
     const logger = new Tools.Logger('HTTPLongpollServerTest');
     logger.info(`Create parameters for test.`)
-    const parameters = new Transports.HTTPLongpoll.ConnectionParameters({
+    const parameters = new LongpollTransport.Parameters({
         port: 3005
     });
+    const transport = new LongpollTransport(parameters);
     logger.info(`Creating server with:`, parameters);
-    const HTTPLongpoll = new Transports.HTTPLongpoll.Server(parameters);
+    const HTTPLongpoll = new Provider(transport);
     HTTPLongpoll.subscribeToRequest(
         Protocol,
         Protocol.Requests.IsOnlineServer.Request,

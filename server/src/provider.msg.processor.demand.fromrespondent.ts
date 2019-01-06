@@ -1,24 +1,23 @@
-import * as Tools from '../../platform/tools/index';
-import * as Protocol from '../../protocols/connection/protocol.connection';
-import { Connection } from './server.connection';
-import { MessageProcessor } from './server.msg.processor';
-import { TPendingDemand } from './server.processor.demands';
-import { ServerState } from './server.state';
+import * as Protocol from './protocols/connection/protocol.connection';
+import { MessageProcessor } from './provider.msg.processor';
+import { TPendingDemand } from './provider.processor.demands';
+import { ProviderState } from './provider.state';
+import { TSender } from './transports/transport.abstract';
 
 export class MessageDemandFromRespondentProcessor extends MessageProcessor<Protocol.Message.Demand.FromRespondent.Request> {
 
-    constructor(state: ServerState) {
+    constructor(state: ProviderState) {
         super('Demand.FromRespondent', state);
     }
 
-    public process(connection: Connection, message: Protocol.Message.Demand.FromRespondent.Request): Promise<void> {
+    public process(sender: TSender, message: Protocol.Message.Demand.FromRespondent.Request): Promise<void> {
         return new Promise((resolveProcess, rejectProcess) => {
             const clientId = message.clientId;
             // Try to find data in pending tasks
-            const pendingDemand: TPendingDemand | undefined = this.state.processors.demands.getPendingResults(message.id);
+            const pendingDemand: TPendingDemand | undefined = this.state.demands.getPendingResults(message.id);
             if (typeof pendingDemand === 'undefined') {
                 // Already nobody expects an answer
-                return connection.close((new Protocol.Message.Demand.FromRespondent.Response({
+                return sender((new Protocol.Message.Demand.FromRespondent.Response({
                     clientId: clientId,
                     error: `No expectants are found`,
                     status: false,
@@ -32,8 +31,8 @@ export class MessageDemandFromRespondentProcessor extends MessageProcessor<Proto
             if (message.error !== void 0 && message.error !== '') {
                 // Some error during proccessing demand
                 // Create task for sending demand's error
-                this.state.processors.connections.addTask(
-                    this.state.processors.demands.sendDemandResponse.bind(this,
+                this.state.tasks.add(
+                    this.state.demands.sendDemandResponse.bind(this,
                         pendingDemand.protocol,
                         pendingDemand.demand,
                         '',
@@ -48,9 +47,9 @@ export class MessageDemandFromRespondentProcessor extends MessageProcessor<Proto
             if (message.error === '' && message.demand !== void 0) {
                 // Demand proccessed successfully
                 // Create task for sending demand's response
-                this.state.processors.connections.addTask(
+                this.state.tasks.add(
                     () => {
-                        return this.state.processors.demands.sendDemandResponse(
+                        return this.state.demands.sendDemandResponse(
                             (message.demand as Protocol.DemandDefinition).protocol,
                             (message.demand as Protocol.DemandDefinition).demand,
                             (message.demand as Protocol.DemandDefinition).body,
@@ -63,7 +62,7 @@ export class MessageDemandFromRespondentProcessor extends MessageProcessor<Proto
                     pendingDemand.expectantId,
                 );
             }
-            return connection.close((new Protocol.Message.Demand.FromRespondent.Response({
+            return sender((new Protocol.Message.Demand.FromRespondent.Response({
                 clientId: clientId,
                 status: true,
             })).stringify()).then(() => {

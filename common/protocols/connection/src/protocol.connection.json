@@ -2,14 +2,6 @@
     "Message": {
         "clientId"  : "string",
         "guid?"     : "guid",
-        "Handshake": {
-            "Response": {
-                "token?"    : "string",
-                "reason?"   : "Reasons",
-                "error?"    : "string",
-                "Reasons"   : ["FAIL_AUTH", "NO_TOKEN_FOUND", "NO_CLIENT_ID_FOUND"]
-            }
-        },
         "Reconnection": {
             "Request" : {
                 "token": "string"
@@ -18,23 +10,6 @@
                 "allowed": "boolean"
             },
             "Responses": ["ConnectionError"]
-        },
-        "Hook": {
-            "Request" : {
-                "token": "string"
-            },
-            "Responses": ["ConnectionError", "Disconnect"]
-        },
-        "Pending": {
-            "Request" : {
-                "token": "string"
-            },
-            "Response": {
-                "event?": "EventDefinition",
-                "demand?": "DemandDefinition",
-                "return?": "DemandDefinition"
-            },
-            "Responses": ["Disconnect"]
         },
         "Event": {
             "Request": {
@@ -155,6 +130,11 @@
                 },
                 "Responses" : ["ConnectionError"]
             }
+        },
+        "ToConsumer": {
+            "event?": "EventDefinition",
+            "demand?": "DemandDefinition",
+            "return?": "DemandDefinition"
         }
     },
     "EventDefinition": {

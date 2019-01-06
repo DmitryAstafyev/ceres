@@ -1,24 +1,24 @@
-import * as Protocol from '../../protocols/connection/protocol.connection';
-import { Connection } from './server.connection';
-import { MessageProcessor } from './server.msg.processor';
-import { ServerState } from './server.state';
+import * as Protocol from './protocols/connection/protocol.connection';
+import { MessageProcessor } from './provider.msg.processor';
+import { ProviderState } from './provider.state';
+import { TSender } from './transports/transport.abstract';
 
 export class MessageRespondentBindProcessor extends MessageProcessor<Protocol.Message.Respondent.Bind.Request> {
 
-    constructor(state: ServerState) {
+    constructor(state: ProviderState) {
         super('Respondent.Bind', state);
     }
 
-    public process(connection: Connection, message: Protocol.Message.Respondent.Bind.Request): Promise<void> {
+    public process(sender: TSender, message: Protocol.Message.Respondent.Bind.Request): Promise<void> {
         return new Promise((resolveProcess, rejectProcess) => {
             const clientId = message.clientId;
             let status: boolean | Error = false;
             if (message.query instanceof Array) {
                 if (message.query.length > 0) {
-                    status = this.state.processors.demands.subscribe(message.protocol, message.demand, clientId, message.query);
+                    status = this.state.demands.subscribe(message.protocol, message.demand, clientId, message.query);
                 }
             }
-            return connection.close((new Protocol.Message.Respondent.Bind.Response({
+            return sender((new Protocol.Message.Respondent.Bind.Response({
                 clientId: clientId,
                 error: status instanceof Error ? status.message : undefined,
                 status: status instanceof Error ? false : true,
@@ -26,7 +26,7 @@ export class MessageRespondentBindProcessor extends MessageProcessor<Protocol.Me
                 this._logger.env(`Binding client ${clientId} with demand "${message.protocol}/${message.demand}" with query as "${message.query.map((alias: Protocol.KeyValue) => {
                     return `${alias.key}: ${alias.value}`;
                 }).join(', ')}" is done.`);
-                this.state.processors.demands.checkPendingRespondent();
+                this.state.demands.checkPendingRespondent();
                 resolveProcess();
             }).catch((error: Error) => {
                 rejectProcess(error);

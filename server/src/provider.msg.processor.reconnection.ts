@@ -1,18 +1,18 @@
-import * as Protocol from '../../protocols/connection/protocol.connection';
-import { Connection } from './server.connection';
-import { MessageProcessor } from './server.msg.processor';
-import { ServerState } from './server.state';
+import * as Protocol from './protocols/connection/protocol.connection';
+import { MessageProcessor } from './provider.msg.processor';
+import { ProviderState } from './provider.state';
+import { TSender } from './transports/transport.abstract';
 
 export class MessageReconnectionProcessor extends MessageProcessor<Protocol.Message.Reconnection.Request> {
 
-    constructor(state: ServerState) {
+    constructor(state: ProviderState) {
         super('Reconnection', state);
     }
 
-    public process(connection: Connection, message: Protocol.Message.Reconnection.Request): Promise<void> {
+    public process(sender: TSender, message: Protocol.Message.Reconnection.Request): Promise<void> {
         return new Promise((resolveProcess, rejectProcess) => {
             const clientId = message.clientId;
-            return connection.close((new Protocol.Message.Reconnection.Response({
+            return sender((new Protocol.Message.Reconnection.Response({
                 allowed: true,
                 clientId: clientId,
             })).stringify()).then(() => {

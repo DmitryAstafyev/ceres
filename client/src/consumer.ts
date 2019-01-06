@@ -1,4 +1,3 @@
-import Middleware from './consumer.middleware.implementation';
 import * as Tools from './platform/tools/index';
 import * as Protocol from './protocols/connection/protocol.connection';
 import ATransport from './transports/transport.abstract';
@@ -45,23 +44,11 @@ export default class Consumer extends Tools.EventEmitter {
     private _aliases:           TClientAlias            = {};
     private _demands:           Tools.HandlersHolder    = new Tools.HandlersHolder();
     private _pendingDemands:    Tools.PromisesHolder    = new Tools.PromisesHolder();
-    private _middleware:        Middleware;
-    private _transport:         ATransport<any>;
+    private _transport:         ATransport<any, any>;
 
-    constructor(
-        transport: ATransport<any>,
-        middleware?: Middleware,
-    ) {
+    constructor(transport: ATransport<any, any>) {
         super();
         this._transport = transport;
-        if (middleware !== undefined) {
-            if (!(middleware instanceof Middleware)) {
-                throw new Error(this._logger.warn(`Get wrong parameters of connection. Expected <Middleware>. Gotten: `, middleware));
-            }
-        } else {
-            middleware = new Middleware({});
-        }
-        this._middleware = middleware;
         // Subscribe
         this._onError = this._onError.bind(this);
         this._onMessage = this._onMessage.bind(this);
@@ -653,7 +640,7 @@ export default class Consumer extends Tools.EventEmitter {
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Income messages
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-    @Tools.EventHandler() private _onMessage(message: Protocol.Message.Pending.Response) {
+    @Tools.EventHandler() private _onMessage(message: Protocol.Message.ToConsumer) {
         if (message.event instanceof Protocol.EventDefinition) {
             // Processing income event
             return this._emitIncomeEvent(message.event);

@@ -1,5 +1,5 @@
+import * as Tools from '../../platform/tools/index';
 import { TRequestBody } from './consumer.middleware.types';
-import * as Tools from './platform/tools/index';
 
 import { IMiddleware } from './consumer.middleware.interfaces';
 

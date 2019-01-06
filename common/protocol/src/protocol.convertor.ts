@@ -212,6 +212,7 @@ export class Convertor {
                     '* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */\n';
         output += 'export type TProtocolTypes = Protocol.TTypes;\n';
         output += 'export const parse = Protocol.parse;\n';
+        output += 'export const parseFrom = Protocol.parseFrom;\n';
         output += 'export const stringify = Protocol.stringify;\n';
         output += 'export const getSignature = Protocol.getSignature;\n';
         output += 'export interface IClass { getSignature: () => string; parse: (str: string | object) => any; }\n';

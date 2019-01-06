@@ -1,7 +1,9 @@
 import ATransport from '../transport.abstract';
+import Middleware from './consumer.middleware.implementation';
 
 import * as Tools from '../../platform/tools/index';
 import * as Protocol from '../../protocols/connection/protocol.connection';
+import * as TransportProtocol from '../../protocols/connection/protocol.transport.longpoll';
 
 import { SubdomainsController               } from '../common/subdomains';
 import { Token                              } from '../common/transport.token';
@@ -10,10 +12,9 @@ import { ConnectionParameters               } from './transport.parameters.imple
 import { PendingTasks                       } from './transport.pending.storage';
 import { Request                            } from './transport.request.connection';
 
-export { ConnectionParameters } from './transport.parameters.implementation';
-export { IConnectionParameters } from './transport.parameters.interface';
-
-export default class LongpollTransport extends ATransport<ConnectionParameters> {
+export default class LongpollTransport extends ATransport<ConnectionParameters, Middleware> {
+    public static Middleware = Middleware;
+    public static Parameters = ConnectionParameters;
 
     private _logger:        Tools.Logger            = new Tools.Logger('Http.LongpollTransport');
     private _subdomains:    SubdomainsController | null;
@@ -23,8 +24,16 @@ export default class LongpollTransport extends ATransport<ConnectionParameters> 
     private _tasks:         PendingTasks            = new PendingTasks();
     private _requests:      Map<string, Request>    = new Map();
 
-    constructor(parameters: ConnectionParameters) {
+    constructor(parameters: ConnectionParameters, middleware?: Middleware) {
         super(parameters);
+        if (middleware !== undefined) {
+            if (!(middleware instanceof Middleware)) {
+                throw new Error(this._logger.warn(`Get wrong parameters of connection. Expected <Middleware>. Gotten: `, middleware));
+            }
+        } else {
+            middleware = new Middleware({});
+        }
+        this.middleware = middleware;
         // Check subdomain settings
         const mask = SubdomainsController.getMask(this.parameters.getURL());
         if (mask instanceof Error) {
@@ -54,10 +63,10 @@ export default class LongpollTransport extends ATransport<ConnectionParameters> 
     public connect(): Promise<any> {
         return new Promise((resolve, reject) => {
             this.state.set(ATransport.STATES.connecting);
-            this.send((new Protocol.Message.Handshake.Request({
+            this.send((new TransportProtocol.Message.Handshake.Request({
                 clientId: this._clientGUID,
-            })).stringify()).then((message: Protocol.TProtocolTypes) => {
-                if (!(message instanceof Protocol.Message.Handshake.Response)) {
+            })).stringify()).then((message: Protocol.TProtocolTypes | TransportProtocol.TProtocolTypes) => {
+                if (!(message instanceof TransportProtocol.Message.Handshake.Response)) {
                     const error: Error = new Error(this._logger.warn(`On this state (${this.state.get()}) expected authorization confirmation, but gotten: ${Tools.inspect(message)}.`));
                     return reject(error);
                 }
@@ -89,7 +98,7 @@ export default class LongpollTransport extends ATransport<ConnectionParameters> 
         });
     }
 
-    public send(data: string): Promise<Protocol.TProtocolTypes> {
+    public send(data: string): Promise<Protocol.TProtocolTypes | TransportProtocol.TProtocolTypes> {
         return new Promise((resolve, reject) => {
             const url = this._getURL();
             // Create request
@@ -100,7 +109,7 @@ export default class LongpollTransport extends ATransport<ConnectionParameters> 
             request.send().then((response: string) => {
                 this._requests.delete(request.getId());
                 this._setUrlFree(url);
-                const message = Protocol.parse(response);
+                const message = TransportProtocol.parseFrom(response, [TransportProtocol, Protocol]);
                 if (message instanceof Error) {
                     this._logger.warn(`Request guid: ${request.getId()} is finished due error: ${message.message}. Request body: ${Tools.inspect(response)}`);
                     return reject(message);
@@ -194,7 +203,7 @@ export default class LongpollTransport extends ATransport<ConnectionParameters> 
         this._tasks.start(this._getURL, this._setUrlFree, this._clientGUID, this._token);
     }
 
-    private _onTask(message: Protocol.Message.Pending.Response) {
+    private _onTask(message: TransportProtocol.Message.Pending.Response) {
         this.emit(ATransport.EVENTS.message, message);
     }
 

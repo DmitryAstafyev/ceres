@@ -1,6 +1,6 @@
-import * as Tools from '../../platform/tools/index';
-import * as Protocol from '../../protocols/connection/protocol.connection';
-import { ServerState } from './server.state';
+import * as Tools from './platform/tools/index';
+import * as Protocol from './protocols/connection/protocol.connection';
+import { ProviderState } from './provider.state';
 
 export type TPendingDemand = {
     body?: string;
@@ -28,14 +28,14 @@ export type THandler = (...args: any[]) => any;
 
 export class ProcessorDemands {
 
-    private state: ServerState;
+    private state: ProviderState;
     private demands: Tools.DemandsHolder;
     private pendingDemandRespondent: Map<string, TPendingDemand>;
     private pendingDemandResults: Map<string, TPendingDemand>;
     private serverDemandsHanlders: Map<string, THandler>;
     private _logger: Tools.Logger = new Tools.Logger(`ProcessorDemands`);
 
-    constructor(state: ServerState) {
+    constructor(state: ProviderState) {
         this.state = state;
         this.demands = new Tools.DemandsHolder();
         this.pendingDemandRespondent = new Map();
@@ -76,7 +76,7 @@ export class ProcessorDemands {
                 });
             } else {
                 // Create task for sending demand
-                this.state.processors.connections.addTask(
+                this.state.tasks.add(
                     this.sendDemand.bind(this,
                         pending.protocol,
                         pending.demand,
@@ -141,8 +141,7 @@ export class ProcessorDemands {
         demandGUID: string,
     ): Promise<void> {
         return new Promise((resolve, reject) => {
-            const connection = this.state.processors.connections.getPending(respondentId);
-            if (connection === null) {
+            if (!this.state.transport.isAvailable(respondentId)) {
                 return reject(new Error(
                     this._logger.env(`Client (${respondentId}) is subscribed as respondent on "${protocol}/${demand}", but active connection wasn't found. Task will stay in a queue.`),
                 ));
@@ -151,7 +150,7 @@ export class ProcessorDemands {
             // Remove pending demand info
             this.pendingDemandRespondent.delete(demandGUID);
             // Register demand results if expectant still connected
-            if (this.state.processors.connections.isConnected(expectantId)) {
+            if (this.state.transport.isConnected(expectantId)) {
                 this.pendingDemandResults.set(demandGUID, {
                     demand: demand,
                     expectantId: expectantId,
@@ -161,7 +160,7 @@ export class ProcessorDemands {
                     sent: (new Date()).getTime(),
                 });
             }
-            connection.close((new Protocol.Message.Demand.Pending.Response({
+            this.state.transport.send(respondentId, (new Protocol.Message.ToConsumer({
                 clientId: respondentId,
                 demand: new Protocol.DemandDefinition({
                     body: body,
@@ -191,14 +190,13 @@ export class ProcessorDemands {
         demandRequestId: string,
     ): Promise<void> {
         return new Promise((resolve, reject) => {
-            const connection = this.state.processors.connections.getPending(expectantId);
-            if (connection === null) {
+            if (!this.state.transport.isAvailable(expectantId)) {
                 return reject(new Error(
                     this._logger.env(`Client (${expectantId}) is waiting for response on "${protocol}/${demand}", but active connection wasn't found. Task will stay in a queue.`),
                 ));
             }
             this._logger.env(`Client (${expectantId}) is waiting for response on  "${protocol}/${demand}". Response will be sent.`);
-            connection.close((new Protocol.Message.Pending.Response({
+            this.state.transport.send(expectantId, (new Protocol.Message.ToConsumer({
                 clientId: expectantId,
                 return: new Protocol.DemandDefinition({
                     body: body,
@@ -275,7 +273,7 @@ export class ProcessorDemands {
                 expected,
                 respondentId,
             ).then((response: string) => {
-                this.state.processors.connections.addTask(
+                this.state.tasks.add(
                     this.sendDemandResponse.bind(this,
                         protocol,
                         demand,
@@ -289,7 +287,7 @@ export class ProcessorDemands {
                 );
                 resolve();
             }).catch((processingError: Error) => {
-                this.state.processors.connections.addTask(
+                this.state.tasks.add(
                     this.sendDemandResponse.bind(this,
                         protocol,
                         demand,

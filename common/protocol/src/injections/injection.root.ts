@@ -258,6 +258,35 @@ export function parse(str: string | object, target?: any): TTypes | Error {
     return result;
 }
 
+export function parseFrom(str: string | object, protocols: any | any[]): any {
+    let json: any;
+    if (typeof str === 'string') {
+        json = getJSONFromStr(str);
+        if (json instanceof Error) {
+            return json;
+        }
+    } else if (typeof str !== 'object' || str === null) {
+        return new Error(`Expecting string or object.`);
+    } else {
+        json = str;
+    }
+    protocols = protocols instanceof Array ? protocols : [protocols];
+    let result: any;
+    protocols.forEach((protocol: any, i: number) => {
+        if (result !== undefined) {
+            return;
+        }
+        if (protocol === undefined || protocol === null || typeof protocol.parse !== 'function') {
+            result = new Error(`Incorrect ref to protocol is provided`);
+        }
+        result = protocol.parse(json);
+        if (result instanceof Error && i !== protocols.length - 1) {
+            result = undefined;
+        }
+    });
+    return result;
+}
+
 export function typeOf(smth: any): string {
     switch (typeof smth) {
         case 'object':
