@@ -5,8 +5,8 @@ import * as Tools from '../../platform/tools/index';
 import * as Protocol from '../../protocols/connection/protocol.connection';
 import * as TransportProtocol from '../../protocols/connection/protocol.transport.longpoll';
 
-import { SubdomainsController               } from '../common/subdomains';
 import { Token                              } from '../common/transport.token';
+import { SubdomainsController               } from './subdomains';
 import { Hook                               } from './transport.hook';
 import { ConnectionParameters               } from './transport.parameters.implementation';
 import { PendingTasks                       } from './transport.pending.storage';

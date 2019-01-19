@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
-    "outDir": "./build/",
+    "declaration":true,
+    "outDir": "./dist/",
     "sourceMap": true,
     "noImplicitAny": true,
     "module": "commonjs",

@@ -1,5 +1,5 @@
 import * as Tools from '../../platform/tools/index';
-import ImpXMLHTTPRequest from '../common/xmlhttprequest';
+import ImpXMLHTTPRequest from './xmlhttprequest';
 
 const SETTINGS = {
 	DEFAULT_TIMEOUT: 30000, // 30sec
