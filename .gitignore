@@ -7,5 +7,6 @@
 **/.DS_store
 **/server/src/platform
 **/client/src/platform
+**/dist
 .vscode
 !webpack.config.js
