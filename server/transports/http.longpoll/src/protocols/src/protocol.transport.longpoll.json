@@ -1,0 +1,56 @@
+{
+    "Message": {
+        "clientId"  : "string",
+        "guid?"     : "guid",
+        "Handshake": {
+            "Response": {
+                "token?"    : "string",
+                "reason?"   : "Reasons",
+                "error?"    : "string",
+                "Reasons"   : ["FAIL_AUTH", "NO_TOKEN_FOUND", "NO_CLIENT_ID_FOUND"]
+            }
+        },
+        "Hook": {
+            "Request" : {
+                "token": "string"
+            },
+            "Responses": ["ConnectionError", "Disconnect"]
+        },
+        "Pending": {
+            "Request" : {
+                "token": "string"
+            },
+            "Response": {
+                "event?": "EventDefinition",
+                "demand?": "DemandDefinition",
+                "return?": "DemandDefinition"
+            },
+            "Responses": ["Disconnect"]
+        }
+    },
+    "EventDefinition": {
+        "protocol": "string",
+        "event": "string",
+        "body": "string"
+    },
+    "DemandDefinition": {
+        "id": "string",
+        "protocol": "string",
+        "demand": "string",
+        "body": "string",
+        "expected": "string",
+        "error?": "string",
+        "pending?": "boolean"
+    },
+    "ConnectionError": {
+        "reason": "Reasons",
+        "message": "string",
+        "Reasons": ["FAIL_AUTH", "NO_TOKEN_FOUND", "NO_CLIENT_ID_FOUND", "NO_TOKEN_PROVIDED", "TOKEN_IS_WRONG", "UNEXPECTED_REQUEST", "NO_DATA_PROVIDED"]
+    },
+    "Disconnect": {
+        "reason": "Reasons",
+        "message?": "string",
+        "Reasons": ["SHUTDOWN"]
+    },
+    "version": "0.0.1"
+}
