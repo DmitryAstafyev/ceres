@@ -1,8 +1,8 @@
 module.exports = {
-    entry: "./src/main.ts",
+    entry: "./src/consumer.ts",
     output: {
-        filename: "bundle.js",
-        path: __dirname + "/build"
+        filename: "consumer.js",
+        path: __dirname + "/dist"
     },
 
     // Enable sourcemaps for debugging webpack's output.
