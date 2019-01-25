@@ -2,19 +2,19 @@ import * as Types from './tools.primitivetypes';
 
 import inspect from './tools.inspect';
 
-type TId = string;
-type TResolve = (...args: any[]) => any;
-type TReject = (error: Error) => any;
-type THolder = {
+export type TId = string;
+export type TResolve = (...args: any[]) => any;
+export type TReject = (error: Error) => any;
+export type THolder = {
     resolve: TResolve,
     reject: TReject,
     created: number,
 };
 
-type TStorage = Map<TId, THolder>;
+export type TStorage = Map<TId, THolder>;
 
 export default class PromissesHolder {
-
+    // TODO: here should be clean up by timer
     private _promises: TStorage  = new Map();
 
     public add(id: string, resolve: TResolve, reject: TReject): boolean | Error {

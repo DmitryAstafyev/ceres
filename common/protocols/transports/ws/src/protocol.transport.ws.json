@@ -10,12 +10,6 @@
                 "Reasons"   : ["FAIL_AUTH", "NO_TOKEN_FOUND", "NO_CLIENT_ID_FOUND"]
             }
         },
-        "Hook": {
-            "Request" : {
-                "token": "string"
-            },
-            "Responses": ["ConnectionError", "Disconnect"]
-        },
         "Pending": {
             "Request" : {
                 "token": "string"

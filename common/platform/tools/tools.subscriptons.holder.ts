@@ -1,9 +1,9 @@
-type TProtocol = string;
-type TEvent = string;
-type TClientId = string;
-type TClientIdStorage = TClientId[];
-type TEventsStorage = Map<TEvent, TClientIdStorage>;
-type TProtocolsStorage = Map<TProtocol, TEventsStorage>;
+export type TProtocol = string;
+export type TEvent = string;
+export type TClientId = string;
+export type TClientIdStorage = TClientId[];
+export type TEventsStorage = Map<TEvent, TClientIdStorage>;
+export type TProtocolsStorage = Map<TProtocol, TEventsStorage>;
 
 export default class SubscriptionsHolder {
 

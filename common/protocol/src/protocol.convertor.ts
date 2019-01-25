@@ -95,7 +95,7 @@ export class Convertor {
                 greeting += `* Protocol version: ${this._version}\n`;
                 greeting += `*/\n\n`;
                 let protocolNamespace: string = '';
-                protocolNamespace += `namespace Protocol {\n`;
+                protocolNamespace += `export namespace Protocol {\n`;
                 protocolNamespace += this._getTypes() + '\n';
                 protocolNamespace += injectStr + '\n';
                 protocolNamespace += this._getMap() + '\n';

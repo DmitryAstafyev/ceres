@@ -59,6 +59,7 @@ export class ProcessorEvents {
                     event: event,
                     protocol: protocol,
                 }),
+                guid: Tools.guid(),
             })).stringify()).then(() => {
                 this._logger.env(`Emit event for client ${clientId}: protocol ${protocol}, event ${event} is done.`);
                 resolve();

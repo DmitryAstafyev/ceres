@@ -2,14 +2,14 @@ import * as Types from './tools.primitivetypes';
 
 import inspect from './tools.inspect';
 
-type TGroup = string;
-type TId = string;
-type THandler = (...args: any[]) => any;
-type THolder = Map<TId, THandler>;
-type TStorage = Map<TGroup, THolder>;
+export type TGroup = string;
+export type TId = string;
+export type THandler = (...args: any[]) => any;
+export type THolder = Map<TId, THandler>;
+export type TStorage = Map<TGroup, THolder>;
 
 export default class HandlersHolder {
-
+    // TODO: here should be clean up by timer
     private _handlers: TStorage  = new Map();
 
     public add(group: string, id: string, handler: THandler): boolean | Error {

@@ -35,7 +35,6 @@ export class ProcessorConnections extends Tools.EventEmitter {
         this.pending.add(clientId, connection);
         // Execute tasks
         this.emit(ProcessorConnections.EVENTS.pending, clientId);
-        // this.tasks.proceed();
     }
 
     public addHook(clientId: string, connection: Connection) {
@@ -49,8 +48,6 @@ export class ProcessorConnections extends Tools.EventEmitter {
                 this.pending.delete(clientId),
             ]).then(() => {
                 this.emit(ProcessorConnections.EVENTS.disconnected, clientId);
-                // this.tasks.drop(clientId);
-                // this.aliases.unref(clientId);
                 resolve();
             }).catch((error: Error) => {
                 reject(error);

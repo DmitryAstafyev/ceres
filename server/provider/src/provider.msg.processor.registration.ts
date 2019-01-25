@@ -40,6 +40,7 @@ export class MessageRegistrationProcessor extends MessageProcessor<Protocol.Mess
             }
             return sender((new Protocol.Message.Registration.Response({
                 clientId: clientId,
+                guid: message.guid,
                 status: status,
             })).stringify()).then(() => {
                 this._logger.env(`Registration of aliases for client ${clientId} as "${message.aliases.map((alias: Protocol.KeyValue) => {

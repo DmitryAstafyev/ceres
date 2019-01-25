@@ -1,7 +1,7 @@
 import inspect from './tools.inspect';
 import { LoggerParameters } from './tools.logger.parameters';
 
-enum ELogLevels {
+export enum ELogLevels {
     INFO = 'INFO',
     DEBUG = 'DEBUG',
     WARNING = 'WARNING',

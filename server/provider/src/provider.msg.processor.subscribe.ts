@@ -21,6 +21,7 @@ export class MessageSubscribeProcessor extends MessageProcessor<Protocol.Message
             return sender((new Protocol.Message.Subscribe.Response({
                 clientId: clientId,
                 error: status instanceof Error ? status.message : undefined,
+                guid: message.guid,
                 status: status instanceof Error ? false : status,
             })).stringify()).then(() => {
                 this._logger.env(`Subscription for client ${clientId} to protocol ${message.subscription.protocol}, event ${message.subscription.event} is done.`);

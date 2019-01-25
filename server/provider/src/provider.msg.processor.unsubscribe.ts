@@ -21,6 +21,7 @@ export class MessageUnsubscribeProcessor extends MessageProcessor<Protocol.Messa
             return sender((new Protocol.Message.Unsubscribe.Response({
                 clientId: clientId,
                 error: status instanceof Error ? status.message : undefined,
+                guid: message.guid,
                 status: status instanceof Error ? false : status,
             })).stringify()).then(() => {
                 this._logger.env(`Unsubscription for client ${clientId} to protocol ${message.subscription.protocol}, event ${message.subscription.event} is done.`);

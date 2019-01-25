@@ -1,11 +1,11 @@
 /* tslint:disable */
 /*
-* This file generated automaticaly (Sun Jan 06 2019 03:35:42 GMT+0100 (CET))
+* This file generated automaticaly (Sat Jan 26 2019 00:01:20 GMT+0100 (CET))
 * Do not remove or change this code.
 * Protocol version: 0.0.1
 */
 
-namespace Protocol {
+export namespace Protocol {
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	* Injection: map of types
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -16,9 +16,6 @@ namespace Protocol {
 		Message.Handshake |
 		Message.Handshake.Response |
 		Message.Handshake.Request |
-		Message.Hook |
-		Message.Hook.Request |
-		Message.Hook.Response |
 		Message.Pending |
 		Message.Pending.Response |
 		EventDefinition |
@@ -559,9 +556,6 @@ namespace Protocol {
 		ReferencesMap["5B342A75"] = Message.Handshake;
 		ReferencesMap["1D8E5E9C"] = Message.Handshake.Response;
 		ReferencesMap["6A4CB50C"] = Message.Handshake.Request;
-		ReferencesMap["35D910F1"] = Message.Hook;
-		ReferencesMap["26C80A90"] = Message.Hook.Request;
-		ReferencesMap["4A9F03A0"] = Message.Hook.Response;
 		ReferencesMap["3ED7382B"] = Message.Pending;
 		ReferencesMap["2FFB32C4"] = Message.Pending.Response;
 		ReferencesMap["282376D8"] = EventDefinition;
@@ -573,7 +567,7 @@ namespace Protocol {
 	* Injection: protocol signature
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 	export function getSignature() {
-		return "48249A68";
+		return "2B638BA";
 	}
 
 }
@@ -581,9 +575,9 @@ namespace Protocol {
 * Primitive type injections
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 function guid() {
-            const lengths = [4, 4, 4, 8];
-            let resultGuid = '';
-            for (let i = lengths.length - 1; i >= 0; i -= 1) {
+            var lengths = [4, 4, 4, 8];
+            var resultGuid = '';
+            for (var i = lengths.length - 1; i >= 0; i -= 1) {
                 resultGuid += (Math.round(Math.random() * Math.random() * Math.pow(10, lengths[i] * 2))
                     .toString(16)
                     .substr(0, lengths[i])
@@ -743,109 +737,6 @@ export namespace Message {
 			}
 		}
 		type TResponses = Response;
-	}
-	export class Hook extends Message {
-		static getDescription(): {[key: string]: Protocol.IProperty } {
-			return {
-				clientId: { name: "clientId", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
-				guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
-			}
-		}
-		static __signature: string = "35D910F1";
-		static getSignature(): string {
-			return Hook.__signature;
-		}
-		public __signature: string = Hook.__signature;
-		public getSignature(): string {
-			return this.__signature;
-		}
-		static parse(str: string | object): Protocol.TTypes | Error {
-			return Protocol.parse(str, Hook);
-		}
-		public stringify(): string {
-			return Protocol.stringify(this, Hook) as string;
-		}
-
-		constructor(args: { clientId: string, guid?: string }) {
-			super(Object.assign(args, {}));
-			const errors: Error[] = Protocol.validateParams(args, Hook);
-			if (errors.length > 0) {
-				throw new Error(`Cannot create class of "Hook" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
-			}
-
-		}
-	}
-	export namespace Hook {
-		export class Request extends Hook {
-			static getDescription(): {[key: string]: Protocol.IProperty } {
-				return {
-					clientId: { name: "clientId", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
-					guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
-					token: { name: "token", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
-				}
-			}
-			static __signature: string = "26C80A90";
-			static getSignature(): string {
-				return Request.__signature;
-			}
-			public __signature: string = Request.__signature;
-			public getSignature(): string {
-				return this.__signature;
-			}
-			static parse(str: string | object): Protocol.TTypes | Error {
-				return Protocol.parse(str, Request);
-			}
-			public stringify(): string {
-				return Protocol.stringify(this, Request) as string;
-			}
-			public token: string = "";
-
-			constructor(args: { clientId: string, guid?: string, token: string }) {
-				super(Object.assign(args, {}));
-				this.token = args.token;
-				const errors: Error[] = Protocol.validateParams(args, Request);
-				if (errors.length > 0) {
-					throw new Error(`Cannot create class of "Request" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
-				}
-
-			}
-		}
-		export enum Responses {
-			ConnectionError = 'ConnectionError',
-			Disconnect = 'Disconnect'
-		}
-		export class Response extends Hook {
-			static getDescription(): {[key: string]: Protocol.IProperty } {
-				return {
-					clientId: { name: "clientId", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
-					guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
-				}
-			}
-			static __signature: string = "4A9F03A0";
-			static getSignature(): string {
-				return Response.__signature;
-			}
-			public __signature: string = Response.__signature;
-			public getSignature(): string {
-				return this.__signature;
-			}
-			static parse(str: string | object): Protocol.TTypes | Error {
-				return Protocol.parse(str, Response);
-			}
-			public stringify(): string {
-				return Protocol.stringify(this, Response) as string;
-			}
-
-			constructor(args: { clientId: string, guid?: string }) {
-				super(Object.assign(args, {}));
-				const errors: Error[] = Protocol.validateParams(args, Response);
-				if (errors.length > 0) {
-					throw new Error(`Cannot create class of "Response" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
-				}
-
-			}
-		}
-		type TResponses = Response | ConnectionError | Disconnect;
 	}
 	export class Pending extends Message {
 		static getDescription(): {[key: string]: Protocol.IProperty } {

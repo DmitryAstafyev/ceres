@@ -26,6 +26,7 @@ export class MessageDemandFromExpectantProcessor extends MessageProcessor<Protoc
                 return sender((new Protocol.Message.Demand.FromExpectant.Response({
                     clientId: clientId,
                     error: respondents.message,
+                    guid: message.guid,
                     id: demandGUID,
                     state: Protocol.Message.Demand.State.ERROR,
                 })).stringify()).then(() => {
@@ -41,6 +42,7 @@ export class MessageDemandFromExpectantProcessor extends MessageProcessor<Protoc
                     // Request isn't pending and no any respondents
                     return sender((new Protocol.Message.Demand.FromExpectant.Response({
                         clientId: clientId,
+                        guid: message.guid,
                         id: demandGUID,
                         state: Protocol.Message.Demand.State.NO_RESPONDENTS,
                     })).stringify()).then(() => {
@@ -53,6 +55,7 @@ export class MessageDemandFromExpectantProcessor extends MessageProcessor<Protoc
                 // Send confirmation
                 return sender((new Protocol.Message.Demand.FromExpectant.Response({
                     clientId: clientId,
+                    guid: message.guid,
                     id: demandGUID,
                     state: Protocol.Message.Demand.State.PENDING,
                 })).stringify()).then(() => {
@@ -77,6 +80,7 @@ export class MessageDemandFromExpectantProcessor extends MessageProcessor<Protoc
             // Send confirmation
             return sender((new Protocol.Message.Demand.FromExpectant.Response({
                 clientId: clientId,
+                guid: message.guid,
                 id: demandGUID,
                 state: Protocol.Message.Demand.State.DEMAND_SENT,
             })).stringify()).then(() => {

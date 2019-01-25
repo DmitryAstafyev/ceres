@@ -1,15 +1,16 @@
-import LongpollTransport from '../../../server/src/transports/http.longpoll/transport';
-import Provider from '../../../server/src/provider';
+import Transport from 'ceres.server.transport.ws';
+import { ConnectionParameters } from 'ceres.server.transport.ws';
+import Provider from 'ceres.server.provider';
 import * as Tools from '../../../common/platform/tools/index';
 import * as Protocol from '../../protocol/protocol.playground';
 
 export default function test(){
     const logger = new Tools.Logger('HTTPLongpollServerTest');
     logger.info(`Create parameters for test.`)
-    const parameters = new LongpollTransport.Parameters({
+    const parameters = new ConnectionParameters({
         port: 3005
     });
-    const transport = new LongpollTransport(parameters);
+    const transport = new Transport(parameters);
     logger.info(`Creating server with:`, parameters);
     const HTTPLongpoll = new Provider(transport);
     HTTPLongpoll.subscribeToRequest(

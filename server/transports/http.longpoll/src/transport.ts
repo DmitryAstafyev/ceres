@@ -36,6 +36,8 @@ type TTransportRequests =
 
 type TRequests = TClientRequests | TTransportRequests;
 
+export { Middleware, ConnectionParameters };
+
 export default class LongpollTransport extends ATransport<ConnectionParameters, Middleware<Connection>> {
     public static Middleware = Middleware;
     public static Parameters = ConnectionParameters;

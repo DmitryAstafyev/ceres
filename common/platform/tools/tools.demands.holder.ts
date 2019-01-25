@@ -1,18 +1,18 @@
 import inspect from './tools.inspect';
 
-interface IKeyValue {
+export interface IKeyValue {
     key: string;
     value: string;
 }
 
-type TProtocol = string;
-type TDemand = string;
-type TClientId = string;
-type TQuery = { [key: string ]: string };
-type TQueryArray = IKeyValue[];
-type TQuerysStorage = Map<TClientId, TQuery>;
-type TDemandsStorage = Map<TDemand, TQuerysStorage>;
-type TProtocolsStorage = Map<TProtocol, TDemandsStorage>;
+export type TProtocol = string;
+export type TDemand = string;
+export type TClientId = string;
+export type TQuery = { [key: string ]: string };
+export type TQueryArray = IKeyValue[];
+export type TQuerysStorage = Map<TClientId, TQuery>;
+export type TDemandsStorage = Map<TDemand, TQuerysStorage>;
+export type TProtocolsStorage = Map<TProtocol, TDemandsStorage>;
 
 export default class DemandsHolder {
 

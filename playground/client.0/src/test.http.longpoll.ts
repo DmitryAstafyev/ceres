@@ -5,17 +5,21 @@ import { Indicators } from '../../client.common/indicators';
 
 import { TTestStates, EClientTests } from '../../client.common/client.tests.desc';
 
-import LongpollTransport from '../../../client/src/transports/http.longpoll/transport';
-import Consumer from '../../../client/src/consumer';
+import Transport from 'ceres.client.transport.ws';
+import { ConnectionParameters } from 'ceres.client.transport.ws';
+import Consumer from 'ceres.client.consumer';
 
 export default class Test {
 
     private _output: Output = new Output('Client.0');
-    private _parameters = new LongpollTransport.Parameters({
+    private _parameters = new ConnectionParameters({
         host: 'http://{sub1,sub2,sub3}.localhost',
-        port: 3005
+        port: 3005,
+        wsHost: 'ws://localhost',
+        wsPort: 3005,
+        wsPackageMaxSize: 200
     });
-    private _transport: LongpollTransport;
+    private _transport: Transport;
     private _consumer: Consumer;
     private _greetingMessageTimer: any = -1;
     private _targetMessageTimer: any = -1;
@@ -30,7 +34,7 @@ export default class Test {
         testDoneHandler: (test: EClientTests) => void = (test: EClientTests) => void 0, 
         testFailHandler: (test: EClientTests) => void = (test: EClientTests) => void 0){    
         //Create HTTP Longpoll client
-        this._transport = new LongpollTransport(this._parameters);
+        this._transport = new Transport(this._parameters);
         this._consumer = new Consumer(this._transport);
         this._testDoneHandler = testDoneHandler;
         this._testFailHandler = testFailHandler;

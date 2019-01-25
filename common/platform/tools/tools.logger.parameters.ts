@@ -7,7 +7,7 @@ const DEFAUT_ALLOWED_CONSOLE = {
     WARNING: true,
 };
 
-type TOutputFunc = (...args: any[]) => any;
+export type TOutputFunc = (...args: any[]) => any;
 
 /**
  * @class

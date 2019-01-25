@@ -12,8 +12,8 @@ const SETTINGS = {
     RECONNECTION_TIMEOUT: 3000, // ms
 };
 
-type TQuery             = { [key: string]: string};
-type THandler           = (...args: any[]) => any;
+export type TQuery = { [key: string]: string};
+export type THandler = (...args: any[]) => any;
 
 export interface IDemandOptions {
     pending?: boolean;
@@ -125,6 +125,7 @@ export default class Consumer extends Tools.EventEmitter {
                     event: eventSignature,
                     protocol: protocolSignature,
                 }),
+                guid: Tools.guid(),
                 token: this._transport.getClientToken(),
             })).stringify()).then((message: Protocol.TProtocolTypes) => {
                 if (message instanceof Protocol.ConnectionError) {
@@ -174,6 +175,7 @@ export default class Consumer extends Tools.EventEmitter {
                     }
                     this._transport.send((new Protocol.Message.Subscribe.Request({
                         clientId: this._transport.getClientId(),
+                        guid: Tools.guid(),
                         subscription: new Protocol.Subscription({
                             event: eventSignature,
                             protocol: protocolSignature,
@@ -228,6 +230,7 @@ export default class Consumer extends Tools.EventEmitter {
             }
             this._transport.send((new Protocol.Message.Unsubscribe.Request({
                 clientId: this._transport.getClientId(),
+                guid: Tools.guid(),
                 subscription: new Protocol.Subscription({
                     event: eventSignature,
                     protocol: protocolSignature,
@@ -270,6 +273,7 @@ export default class Consumer extends Tools.EventEmitter {
             }
             this._transport.send((new Protocol.Message.UnsubscribeAll.Request({
                 clientId: this._transport.getClientId(),
+                guid: Tools.guid(),
                 subscription: new Protocol.Subscription({
                     protocol: protocolSignature,
                 }),
@@ -325,6 +329,7 @@ export default class Consumer extends Tools.EventEmitter {
             this._transport.send((new Protocol.Message.Registration.Request({
                 aliases: _aliases,
                 clientId: this._transport.getClientId(),
+                guid: Tools.guid(),
                 token: this._transport.getClientToken(),
             })).stringify()).then((message: Protocol.TProtocolTypes) => {
                 if (message instanceof Protocol.ConnectionError) {
@@ -404,6 +409,7 @@ export default class Consumer extends Tools.EventEmitter {
                 this._transport.send((new Protocol.Message.Respondent.Bind.Request({
                     clientId: this._transport.getClientId(),
                     demand: demandSignature,
+                    guid: Tools.guid(),
                     protocol: protocolSignature,
                     query: queryArray,
                     token: this._transport.getClientToken(),
@@ -464,6 +470,7 @@ export default class Consumer extends Tools.EventEmitter {
             this._transport.send((new Protocol.Message.Respondent.Unbind.Request({
                 clientId: this._transport.getClientId(),
                 demand: demandSignature,
+                guid: Tools.guid(),
                 protocol: protocolSignature,
                 token: this._transport.getClientToken(),
             })).stringify()).then((message: Protocol.TProtocolTypes) => {
@@ -548,6 +555,7 @@ export default class Consumer extends Tools.EventEmitter {
                         pending: typeof options.pending === 'boolean' ? options.pending : false,
                         protocol: protocolSignature,
                     })),
+                    guid: Tools.guid(),
                     options: new Protocol.Message.Demand.Options(options),
                     query: queryArray,
                     token: this._transport.getClientToken(),
@@ -663,6 +671,7 @@ export default class Consumer extends Tools.EventEmitter {
                         id: demand.id,
                         protocol: demand.protocol,
                     }),
+                    guid: Tools.guid(),
                     id: demand.id,
                     token: this._transport.getClientToken(),
                 })).stringify()).then((messageResResponse: Protocol.TProtocolTypes) => {
@@ -684,6 +693,7 @@ export default class Consumer extends Tools.EventEmitter {
                 this._transport.send((new Protocol.Message.Demand.FromRespondent.Request({
                     clientId: this._transport.getClientId(),
                     error: error.message,
+                    guid: Tools.guid(),
                     id: demand.id,
                     token: this._transport.getClientToken(),
                 })).stringify()).then((messageErrResponse: Protocol.TProtocolTypes) => {

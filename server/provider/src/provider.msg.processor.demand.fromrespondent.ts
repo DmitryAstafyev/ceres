@@ -20,6 +20,7 @@ export class MessageDemandFromRespondentProcessor extends MessageProcessor<Proto
                 return sender((new Protocol.Message.Demand.FromRespondent.Response({
                     clientId: clientId,
                     error: `No expectants are found`,
+                    guid: message.guid,
                     status: false,
                 })).stringify()).then(() => {
                     this._logger.env(`No expectants for demand are found. Responend ${clientId}. Response was sent.`);
@@ -64,6 +65,7 @@ export class MessageDemandFromRespondentProcessor extends MessageProcessor<Proto
             }
             return sender((new Protocol.Message.Demand.FromRespondent.Response({
                 clientId: clientId,
+                guid: message.guid,
                 status: true,
             })).stringify()).then(() => {
                 this._logger.env(`Confirmation of sending demand's response sent Responend ${clientId}.`);

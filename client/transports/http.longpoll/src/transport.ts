@@ -9,6 +9,8 @@ import { ConnectionParameters               } from './transport.parameters.imple
 import { PendingTasks                       } from './transport.pending.storage';
 import { Request                            } from './transport.request.connection';
 
+export { ConnectionParameters, Middleware };
+
 export default class LongpollTransport extends ATransport<ConnectionParameters, Middleware> {
     public static Middleware = Middleware;
     public static Parameters = ConnectionParameters;

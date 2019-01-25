@@ -169,6 +169,7 @@ export class ProcessorDemands {
                     id: demandGUID,
                     protocol: protocol,
                 }),
+                guid: Tools.guid(),
             })).stringify()).then(() => {
                 this._logger.env(`Demand to client ${respondentId}: protocol ${protocol}, demand ${demand} was sent.`);
                 resolve();
@@ -198,6 +199,7 @@ export class ProcessorDemands {
             this._logger.env(`Client (${expectantId}) is waiting for response on  "${protocol}/${demand}". Response will be sent.`);
             this.state.transport.send(expectantId, (new Protocol.Message.ToConsumer({
                 clientId: expectantId,
+                guid: Tools.guid(),
                 return: new Protocol.DemandDefinition({
                     body: body,
                     demand: demand,

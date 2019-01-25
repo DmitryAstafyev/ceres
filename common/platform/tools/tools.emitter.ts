@@ -2,12 +2,12 @@ import GUID from './tools.guid';
 import Logger from './tools.logger';
 
 // Types
-type THandler = (...args: any[]) => any;
-type TEmitterHandlers = THandler[];
-type TEmitterSignature = symbol | string;
+export type THandler = (...args: any[]) => any;
+export type TEmitterHandlers = THandler[];
+export type TEmitterSignature = symbol | string;
 
 // Interfaces
-interface IEmitterOptions {
+export interface IEmitterOptions {
     strict?: boolean;
     maxSubscribersCount?: number;
 }

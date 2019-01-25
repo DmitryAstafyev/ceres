@@ -1,11 +1,11 @@
 /* tslint:disable */
 /*
-* This file generated automaticaly (Sun Jan 06 2019 03:35:42 GMT+0100 (CET))
+* This file generated automaticaly (Sat Jan 26 2019 00:01:21 GMT+0100 (CET))
 * Do not remove or change this code.
 * Protocol version: 0.0.1
 */
 
-namespace Protocol {
+export namespace Protocol {
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	* Injection: map of types
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -581,9 +581,9 @@ namespace Protocol {
 * Primitive type injections
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 function guid() {
-            const lengths = [4, 4, 4, 8];
-            let resultGuid = '';
-            for (let i = lengths.length - 1; i >= 0; i -= 1) {
+            var lengths = [4, 4, 4, 8];
+            var resultGuid = '';
+            for (var i = lengths.length - 1; i >= 0; i -= 1) {
                 resultGuid += (Math.round(Math.random() * Math.random() * Math.pow(10, lengths[i] * 2))
                     .toString(16)
                     .substr(0, lengths[i])

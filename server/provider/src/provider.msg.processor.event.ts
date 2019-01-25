@@ -15,6 +15,7 @@ export class MessageEventProcessor extends MessageProcessor<Protocol.Message.Eve
             if (typeof message.event.protocol !== 'string' || message.event.protocol.trim() === '' ||
                 typeof message.event.event !== 'string' || message.event.event.trim() === '') {
                 return sender((new Protocol.ConnectionError({
+                    guid: message.guid,
                     message: `Expecting defined fields: protocol {string}; event {string}`,
                     reason: Protocol.ConnectionError.Reasons.NO_DATA_PROVIDED,
                 })).stringify()).then(() => {
@@ -39,6 +40,7 @@ export class MessageEventProcessor extends MessageProcessor<Protocol.Message.Eve
                 this.state.tasks.proceed();
                 return sender((new Protocol.Message.Event.Response({
                     clientId: clientId,
+                    guid: message.guid,
                     subscribers: count,
                 })).stringify()).then(() => {
                     this._logger.env(`Emit event from client ${clientId} for event protocol ${message.event.protocol}, event ${message.event.event} is done for ${count} subscribers.`);

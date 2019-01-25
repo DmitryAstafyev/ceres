@@ -1,11 +1,11 @@
 /* tslint:disable */
 /*
-* This file generated automaticaly (Sun Jan 06 2019 03:35:40 GMT+0100 (CET))
+* This file generated automaticaly (Sat Jan 26 2019 00:01:19 GMT+0100 (CET))
 * Do not remove or change this code.
 * Protocol version: 0.0.1
 */
 
-namespace Protocol {
+export namespace Protocol {
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	* Injection: map of types
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -637,9 +637,9 @@ namespace Protocol {
 * Primitive type injections
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 function guid() {
-            const lengths = [4, 4, 4, 8];
-            let resultGuid = '';
-            for (let i = lengths.length - 1; i >= 0; i -= 1) {
+            var lengths = [4, 4, 4, 8];
+            var resultGuid = '';
+            for (var i = lengths.length - 1; i >= 0; i -= 1) {
                 resultGuid += (Math.round(Math.random() * Math.random() * Math.pow(10, lengths[i] * 2))
                     .toString(16)
                     .substr(0, lengths[i])
@@ -2136,6 +2136,7 @@ export class Subscription extends Protocol.Root {
 export class ConnectionError extends Protocol.Root {
 	static getDescription(): {[key: string]: Protocol.IProperty } {
 		return {
+			guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
 			reason: { name: "reason", value: ConnectionError.Reasons, type: Protocol.EEntityType.reference, optional: false }, 
 			message: { name: "message", value: "string", type: Protocol.EEntityType.primitive, optional: false }, 
 		}
@@ -2154,11 +2155,13 @@ export class ConnectionError extends Protocol.Root {
 	public stringify(): string {
 		return Protocol.stringify(this, ConnectionError) as string;
 	}
+	public guid?: string = guid();
 	public reason: ConnectionError.Reasons;
 	public message: string = "";
 
-	constructor(args: { reason: ConnectionError.Reasons, message: string }) {
+	constructor(args: { guid?: string, reason: ConnectionError.Reasons, message: string }) {
 		super();
+		args.guid !== void 0 && (this.guid = args.guid);
 		this.reason = args.reason;
 		this.message = args.message;
 		const errors: Error[] = Protocol.validateParams(args, ConnectionError);

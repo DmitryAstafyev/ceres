@@ -3,7 +3,7 @@ import * as Types from './tools.primitivetypes';
 import EventEmitter from './tools.emitter';
 import inspect from './tools.inspect';
 
-type THandler = (...args: any[]) => any;
+export type THandler = (...args: any[]) => any;
 
 export default class EventHandlers {
 

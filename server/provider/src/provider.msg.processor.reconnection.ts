@@ -15,6 +15,7 @@ export class MessageReconnectionProcessor extends MessageProcessor<Protocol.Mess
             return sender((new Protocol.Message.Reconnection.Response({
                 allowed: true,
                 clientId: clientId,
+                guid: message.guid,
             })).stringify()).then(() => {
                 this._logger.env(`Reconnection for client ${clientId} is allowed.`);
                 resolveProcess();
