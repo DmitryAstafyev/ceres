@@ -16,6 +16,7 @@ export type TStorage = Map<TId, THolder>;
 export default class PromissesHolder {
     // TODO: here should be clean up by timer
     private _promises: TStorage  = new Map();
+    private _alreadyRequested: { [key: string]: boolean } = {};
 
     public add(id: string, resolve: TResolve, reject: TReject): boolean | Error {
         const error = this._validate(id);
@@ -36,6 +37,9 @@ export default class PromissesHolder {
             reject: reject,
             resolve: resolve,
         });
+        if (this._alreadyRequested[id] !== void 0) {
+            this.resolve(id);
+        }
         return true;
     }
 
@@ -47,10 +51,13 @@ export default class PromissesHolder {
     public resolve(id: string, ...args: any[]) {
         const holder = this._promises.get(id);
         if (holder === undefined) {
+            this._alreadyRequested[id] = true;
             return false;
+        } else {
+            delete this._alreadyRequested[id];
         }
-        holder.resolve(...args);
         this._promises.delete(id);
+        holder.resolve(...args);
         return true;
     }
 
@@ -59,8 +66,8 @@ export default class PromissesHolder {
         if (holder === undefined) {
             return false;
         }
-        holder.reject(error);
         this._promises.delete(id);
+        holder.reject(error);
         return true;
     }
 

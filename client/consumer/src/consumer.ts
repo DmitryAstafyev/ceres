@@ -544,6 +544,7 @@ export default class Consumer extends Tools.EventEmitter {
             }
             // Register protocol implementation
             this._protocols.add(protocol).then(() => {
+                const guid = Tools.guid();
                 // Send demand's request to server
                 this._transport.send((new Protocol.Message.Demand.FromExpectant.Request({
                     clientId: this._transport.getClientId(),
@@ -555,7 +556,7 @@ export default class Consumer extends Tools.EventEmitter {
                         pending: typeof options.pending === 'boolean' ? options.pending : false,
                         protocol: protocolSignature,
                     })),
-                    guid: Tools.guid(),
+                    guid: guid,
                     options: new Protocol.Message.Demand.Options(options),
                     query: queryArray,
                     token: this._transport.getClientToken(),
@@ -726,8 +727,12 @@ export default class Consumer extends Tools.EventEmitter {
                 if (returnImpl.getSignature() !== demandReturn.expected) {
                     return this._pendingDemands.reject(demandReturn.id, new Error(this._logger.env(`Signatures aren't match: expected demand's return "${demandReturn.expected}", but was gotten "${returnImpl.getSignature()}".`)));
                 }
+                if (!this._pendingDemands.has(demandReturn.id)) {
+                    this._logger.warn(`Demand ${demandReturn.protocol}/${demandReturn.demand} id=${demandReturn.id} doesn't have resolver yet. It will be resolved after resolver will be added.`);
+                } else {
+                    this._logger.env(`Demand ${demandReturn.protocol}/${demandReturn.demand} id=${demandReturn.id} is resolved. `);
+                }
                 // Return success
-                this._logger.env(`Demand ${demandReturn.protocol}/${demandReturn.demand} id=${demandReturn.id} is resolved. `);
                 this._pendingDemands.resolve(demandReturn.id, returnImpl);
             }).catch((errorGettingReturn: Error) => {
                 this._pendingDemands.reject(demandReturn.id, new Error(this._logger.env(`Error during parsing demand's return: ${errorGettingReturn.message}.`)));
