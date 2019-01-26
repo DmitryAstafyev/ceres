@@ -11,7 +11,8 @@ export class MessageHandshakeProcessor extends TransportMessageProcessor<Transpo
 
     public process(connection: Connection, message: TransportProtocol.Message.Handshake.Request): Promise<void> {
         return new Promise((resolveProcess, rejectProcess) => {
-            const clientId = message.clientId;
+            // Always generate new client guid.
+            const clientId = this.transport.generateClientGuid();
             return (this.transport.middleware as any).auth(clientId, connection).then(() => {
                 // Connection is accepted
                 connection.close((new TransportProtocol.Message.Handshake.Response({

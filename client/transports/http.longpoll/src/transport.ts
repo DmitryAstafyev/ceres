@@ -73,6 +73,8 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
                     const error: Error = new Error(this._logger.warn(`Fail to authorize request due reason: ${message.reason} ${message.error !== void 0 ? `(${message.error})` : ''}`));
                     return reject(error);
                 }
+                // Update client Id
+                this._clientGUID = message.clientId;
                 // Set token
                 this._token.set(message.token as string);
                 // Create hook

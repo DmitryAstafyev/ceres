@@ -147,6 +147,10 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
         return this._tokens.set(clientId);
     }
 
+    public generateClientGuid(): string {
+        return this._tokens.generateClientGuid();
+    }
+
     private _onRequest(httpRequest: HTTP.IncomingMessage, httpResponse: HTTP.ServerResponse) {
         const connection = new Connection(httpRequest, httpResponse, this.parameters.getMaxSize(), this.parameters.getCORS());
         connection.getRequest().then((request: string) => {

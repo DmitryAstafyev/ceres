@@ -28,6 +28,24 @@ export class Tokens {
         return token.token;
     }
 
+    public generateClientGuid(): string {
+        let guid: string;
+        do {
+            guid = Tools.guid();
+        } while (this.getClientId(guid) !== null);
+        return guid;
+    }
+
+    public getClientId(token: string): string | null {
+        let clientId: string | null = null;
+        this._tokens.forEach((storedToken: Token, key: string) => {
+            if (storedToken.token === token) {
+                clientId = key;
+            }
+        });
+        return clientId;
+    }
+
     public isActual(clientId: string): boolean {
         const token: Token | undefined = this._tokens.get(clientId);
         if (token === undefined) {
