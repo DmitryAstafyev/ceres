@@ -107,7 +107,9 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
 
     public disconnect(): Promise<any> {
         return new Promise((resolve) => {
-            resolve();
+            this._drop().then(() => {
+                resolve();
+            });
         });
     }
 
@@ -132,7 +134,7 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
     }
 
     private _drop(): Promise<void> {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             if (this._socket) {
                 this._socket.close();
                 this._socket.removeEventListener('message', this._onWSMessage);

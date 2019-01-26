@@ -49,6 +49,7 @@ export default class Consumer extends Tools.EventEmitter {
     private _demands:           Tools.HandlersHolder    = new Tools.HandlersHolder();
     private _pendingDemands:    Tools.PromisesHolder    = new Tools.PromisesHolder();
     private _transport:         ATransport<any, any>;
+    private _destroyed:         boolean                 = false;
 
     constructor(transport: ATransport<any, any>) {
         super();
@@ -71,6 +72,7 @@ export default class Consumer extends Tools.EventEmitter {
      * @returns {Promise<void>}
      */
     public destroy(): Promise<void> {
+        this._destroyed = true;
         return new Promise((resolve) => {
             this._drop().then(() => {
                 this._clear().then(resolve);
@@ -594,6 +596,9 @@ export default class Consumer extends Tools.EventEmitter {
      * @returns {void}
      */
     private _connect(): void {
+        if (this._destroyed) {
+            return;
+        }
         this._transport.connect().catch((error: Error) => {
             this._logger.warn(`Error of connection on start due error: ${error.message}`);
             this.emit(Consumer.Events.error, error);
@@ -602,6 +607,9 @@ export default class Consumer extends Tools.EventEmitter {
     }
 
     private _reconnect(): void {
+        if (this._destroyed) {
+            return;
+        }
         this._drop().then(() => {
             this._clear().then(() => {
                 setTimeout(() => {
