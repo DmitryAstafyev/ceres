@@ -33,15 +33,17 @@ export class MessageDemandFromRespondentProcessor extends MessageProcessor<Proto
                 // Some error during proccessing demand
                 // Create task for sending demand's error
                 this.state.tasks.add(
-                    this.state.demands.sendDemandResponse.bind(this.state.demands,
-                        pendingDemand.protocol,
-                        pendingDemand.demand,
-                        '',
-                        pendingDemand.expected,
-                        pendingDemand.expectantId,
-                        message.error,
-                        message.id,
-                    ),
+                    () => {
+                        return this.state.demands.sendDemandResponse(
+                            pendingDemand.protocol,
+                            pendingDemand.demand,
+                            '',
+                            pendingDemand.expected,
+                            pendingDemand.expectantId,
+                            message.error as string,
+                            message.id,
+                        );
+                    },
                     pendingDemand.expectantId,
                 );
             }

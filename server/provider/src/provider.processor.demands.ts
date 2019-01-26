@@ -73,15 +73,17 @@ export class ProcessorDemands {
             } else {
                 // Create task for sending demand
                 this.state.tasks.add(
-                    this.sendDemand.bind(this,
-                        pending.protocol,
-                        pending.demand,
-                        pending.body as string,
-                        pending.expected,
-                        pending.expectantId,
-                        respondents.target,
-                        demandGUID,
-                    ),
+                    () => {
+                        return this.sendDemand(
+                            pending.protocol,
+                            pending.demand,
+                            pending.body as string,
+                            pending.expected,
+                            pending.expectantId,
+                            respondents.target as string,
+                            demandGUID,
+                        );
+                    },
                     respondents.target,
                 );
             }
@@ -272,29 +274,33 @@ export class ProcessorDemands {
                 respondentId,
             ).then((response: string) => {
                 this.state.tasks.add(
-                    this.sendDemandResponse.bind(this,
-                        protocol,
-                        demand,
-                        response,
-                        expected,
-                        expectantId,
-                        '',
-                        demandGUID,
-                    ),
+                    () => {
+                        return this.sendDemandResponse(
+                            protocol,
+                            demand,
+                            response,
+                            expected,
+                            expectantId,
+                            '',
+                            demandGUID,
+                        );
+                    },
                     respondentId,
                 );
                 resolve();
             }).catch((processingError: Error) => {
                 this.state.tasks.add(
-                    this.sendDemandResponse.bind(this,
-                        protocol,
-                        demand,
-                        '',
-                        expected,
-                        expectantId,
-                        processingError.message,
-                        demandGUID,
-                    ),
+                    () => {
+                        return this.sendDemandResponse(
+                            protocol,
+                            demand,
+                            '',
+                            expected,
+                            expectantId,
+                            processingError.message,
+                            demandGUID,
+                        );
+                    },
                     respondentId,
                 );
                 resolve();

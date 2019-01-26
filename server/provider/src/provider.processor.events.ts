@@ -185,12 +185,14 @@ export class ProcessorEvents {
             // Add tasks
             subscribers.forEach((subscriberId: string) => {
                 this.state.tasks.add(
-                    this.emit.bind(this,
-                        protocolSignature,
-                        eventSignature,
-                        body,
-                        subscriberId,
-                    ),
+                    () => {
+                        return this.emit(
+                            protocolSignature,
+                            eventSignature,
+                            body,
+                            subscriberId,
+                        );
+                    },
                     subscriberId,
                 );
             });
