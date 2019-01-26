@@ -29,18 +29,14 @@ export type THandler = (...args: any[]) => any;
 export class ProcessorDemands {
 
     private state: ProviderState;
-    private demands: Tools.DemandsHolder;
-    private pendingDemandRespondent: Map<string, TPendingDemand>;
-    private pendingDemandResults: Map<string, TPendingDemand>;
-    private serverDemandsHanlders: Map<string, THandler>;
+    private demands: Tools.DemandsHolder = new Tools.DemandsHolder();
+    private pendingDemandRespondent: Map<string, TPendingDemand> = new Map();
+    private pendingDemandResults: Map<string, TPendingDemand> = new Map();
+    private serverDemandsHanlders: Map<string, THandler> = new Map();
     private _logger: Tools.Logger = new Tools.Logger(`ProcessorDemands`);
 
     constructor(state: ProviderState) {
         this.state = state;
-        this.demands = new Tools.DemandsHolder();
-        this.pendingDemandRespondent = new Map();
-        this.pendingDemandResults = new Map();
-        this.serverDemandsHanlders = new Map();
     }
 
     public checkPendingRespondent(): void {

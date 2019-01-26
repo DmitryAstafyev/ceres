@@ -58,4 +58,8 @@ export class Tokens {
         return true;
     }
 
+    public drop(clientId: string) {
+        this._tokens.delete(clientId);
+    }
+
 }

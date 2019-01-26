@@ -2,9 +2,10 @@ import * as Types from './tools.primitivetypes';
 
 import Logger from './tools.logger';
 
-const DEFAULT_TIMEOUT = 10000; // ms
-const DEFAULT_EXECUTE_DELAY = 0; // ms
+const DEFAULT_TIMEOUT = 1000 * 10; // ms
+const DEFAULT_EXECUTE_DELAY = 100; // ms
 const DEFAULT_EXECUTE_COUNT_WARN = 50;
+const DEFAULT_DROP_COUNT = 100;
 
 export type TExecuter = () => Promise<void>;
 type TResolver = (...args: any[]) => any;
@@ -27,12 +28,19 @@ export default class Queue {
     private _repeatTimer: any = null;
     private _executeDelay: number;
     private _executeCountWarn: number;
+    private _executeDropCount: number;
 
-    constructor(alias: string, timeout = DEFAULT_TIMEOUT, executeDelay = DEFAULT_EXECUTE_DELAY, executeCountWarn = DEFAULT_EXECUTE_COUNT_WARN) {
+    constructor(
+        alias: string,
+        timeout = DEFAULT_TIMEOUT,
+        executeDelay = DEFAULT_EXECUTE_DELAY,
+        executeCountWarn = DEFAULT_EXECUTE_COUNT_WARN,
+        executeDropCount = DEFAULT_DROP_COUNT) {
         this._logger = new Logger(alias);
         this._timeout = timeout;
         this._executeDelay = executeDelay;
         this._executeCountWarn = executeCountWarn;
+        this._executeDropCount = executeDropCount;
     }
 
     /**
@@ -116,6 +124,11 @@ export default class Queue {
                         task.counter += 1;
                         if (task.counter >= this._executeCountWarn) {
                             this._logger.env(`Tasks is executed too much times: ${task.counter}`);
+                        }
+                        if (task.counter >= this._executeDropCount) {
+                            this._logger.env(`Task was executed ${task.counter} times and will be removed.`);
+                            this._tasks.delete(taskId);
+                            return;
                         }
                         this._tasks.set(taskId, task);
                     }));

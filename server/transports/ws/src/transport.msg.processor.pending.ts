@@ -1,6 +1,6 @@
 import { Tools } from 'ceres.server.provider';
 import * as TransportProtocol from './protocols/protocol.transport.ws';
-import LongpollTransport from './transport';
+import Transport from './transport';
 import { Connection } from './transport.connection';
 import { TransportMessageProcessor } from './transport.msg.processor';
 
@@ -10,7 +10,7 @@ export class MessagePendingProcessor extends TransportMessageProcessor<Transport
         disconnected: Symbol(),
     };
 
-    constructor(transport: LongpollTransport) {
+    constructor(transport: Transport) {
         super('Pending', transport);
     }
 

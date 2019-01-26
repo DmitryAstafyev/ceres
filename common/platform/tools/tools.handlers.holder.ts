@@ -31,7 +31,7 @@ export default class HandlersHolder {
 
     public remove(group: string, id?: string): boolean | Error {
         const holder = this._handlers.get(group);
-        if (holder === undefined) {
+        if (!holder) {
             return false;
         }
         if (id === undefined) {

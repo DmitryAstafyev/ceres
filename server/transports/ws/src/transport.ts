@@ -273,6 +273,13 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
                     this._logger.env(`Pending connection for ${message.clientId} is accepted.`);
                 });
             }
+            // If it isn't Handshake or Pending, WS connection already should be
+            if (!this.isAvailable(message.clientId)) {
+                this._logger.error(`Client ${message.clientId} is sending requests (XMLHTTP), but doesn't have WS connection. Client will be disconnected / dropped.`);
+                this._connections.dropClient(message.clientId);
+                this.emit(ATransport.EVENTS.disconnected, message.clientId);
+                return;
+            }
             // Process message
             this.emit(ATransport.EVENTS.message, message as TClientRequests, connection.close.bind(connection));
         }).catch((error: Error) => {
@@ -341,6 +348,7 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
     }
 
     private _onClientDisconnected(clientId: string): void {
+        this._tokens.drop(clientId);
         this.emit(ATransport.EVENTS.disconnected, clientId);
     }
 

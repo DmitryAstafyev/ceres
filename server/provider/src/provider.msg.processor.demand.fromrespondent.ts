@@ -33,7 +33,7 @@ export class MessageDemandFromRespondentProcessor extends MessageProcessor<Proto
                 // Some error during proccessing demand
                 // Create task for sending demand's error
                 this.state.tasks.add(
-                    this.state.demands.sendDemandResponse.bind(this,
+                    this.state.demands.sendDemandResponse.bind(this.state.demands,
                         pendingDemand.protocol,
                         pendingDemand.demand,
                         '',

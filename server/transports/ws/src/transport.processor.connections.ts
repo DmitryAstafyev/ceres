@@ -23,7 +23,7 @@ export class ProcessorConnections extends Tools.EventEmitter {
     };
 
     public sockets: Map<string, ISocketInfo> = new Map();
-    public pending: Connections;
+    public pending: Connections = new Connections();
 
     private _logger: Tools.Logger = new Tools.Logger(`ProcessorConnections`);
     private _paramters: ConnectionParameters;
@@ -32,7 +32,6 @@ export class ProcessorConnections extends Tools.EventEmitter {
         super();
         this._paramters = parameters;
         this._heartbeat();
-        this.pending = new Connections();
     }
 
     public send(clientId: string, data: string): Promise<void> {
@@ -89,6 +88,16 @@ export class ProcessorConnections extends Tools.EventEmitter {
         });
     }
 
+    public dropClient(clientId: string) {
+        this._removePending(clientId);
+        const info: ISocketInfo | undefined = this.sockets.get(clientId);
+        if (!info) {
+            return;
+        }
+        this.sockets.delete(clientId);
+        info.socket.close(0, `Server disconned this connection`);
+    }
+
     public drop(): Promise<void> {
         return new Promise((resolve) => {
             this.sockets.forEach((info: ISocketInfo) => {
@@ -104,6 +113,15 @@ export class ProcessorConnections extends Tools.EventEmitter {
             connections: this.sockets.size,
             pending: this.pending.getInfo().size,
         };
+    }
+
+    private _removePending(clientId: string) {
+        const pending: Connection | null = this.pending.get(clientId);
+        if (!pending) {
+            return;
+        }
+        pending.close('Force closing connection');
+        this.pending.delete(clientId);
     }
 
     private _sendViaHTTP(clientId: string, data: string): Promise<void> {
@@ -132,13 +150,13 @@ export class ProcessorConnections extends Tools.EventEmitter {
     }
 
     private _disconnect(clientId: string): Error | undefined {
-        this.pending.delete(clientId);
+        this._removePending(clientId);
         const info: ISocketInfo | undefined = this.sockets.get(clientId);
-        if (info === undefined) {
+        if (!info) {
             return new Error(this._logger.error(`Cannot find socket for client ${clientId}. Disconnection is failed.`));
         }
-        info.socket.close(0, `Server disconned this connection`);
         this.sockets.delete(clientId);
+        info.socket.close(0, `Server disconned this connection`);
     }
 
     private _heartbeat() {
