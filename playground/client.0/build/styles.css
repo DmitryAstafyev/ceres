@@ -73,3 +73,22 @@ p{
     display: inline-block;
     min-width: 15rem;
 }
+
+.switcher{
+    position: fixed;
+    z-index: 100;
+    top:3px;
+    left: 3px;
+    background: rgba(0,0,0,0.8);
+    white-space: nowrap;
+}
+
+div.button {
+    position: relative;
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    margin: 0.25rem;
+    background: rgb(200,200,200);
+    color: rgb(0,0,0);
+    font-size: 0.85rem;
+}
