@@ -1,0 +1,21 @@
+{
+  "name": "protocol.convertor",
+  "version": "1.0.0",
+  "description": "Convertor to binary for network protocol based JSON format. Coverting JSON description to TS classes",
+  "main": "./src/convertor.ts",
+  "scripts": {
+    "build": "tsc -p ./tsconfig.json",
+    "build:watch": "tsc -p ./tsconfig.json -w",
+    "test": "./node_modules/.bin/jasmine-ts ./spec/protocol.spec.ts"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/jasmine": "^2.8.9",
+    "jasmine": "^3.3.0",
+    "jasmine-core": "^3.3.0",
+    "jasmine-ts": "^0.3.0",
+    "typescript": "^3.1.3"
+  },
+  "dependencies": {},
+  "author": "Dmitry Astafyev (D.Astafyev@outlook.com)"
+}
