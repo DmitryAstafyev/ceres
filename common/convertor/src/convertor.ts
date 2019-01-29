@@ -43,6 +43,9 @@ class Convertor {
                     case Scheme.Types.asciiString:
                         propValue.push(...Impls.Uint8.fromAsciiStr(value));
                         break;
+                    case Scheme.Types.utf8String:
+                        propValue.push(...Impls.Uint8.fromUtf8Str(value));
+                        break;
                 }
                 // Save data
                 const data: number[] = [];
@@ -105,10 +108,16 @@ class Convertor {
                     buffer = buffer.slice(offset + Scheme.TypesSizes[propType], buffer.length);
                     break;
                 case Scheme.Types.asciiString:
-                    const valueLength = Impls.Uint32.fromUint8(buffer.slice(offset, offset + 4));
-                    const valueBytes = buffer.slice(offset + 4, offset + 4 + valueLength);
-                    paket[propName] = Impls.Uint8.toAsciiStr(valueBytes);
-                    buffer = buffer.slice(offset + 4 + valueLength, buffer.length);
+                    const asciiStringLength = Impls.Uint32.fromUint8(buffer.slice(offset, offset + 4));
+                    const asciiStringBytes = buffer.slice(offset + 4, offset + 4 + asciiStringLength);
+                    paket[propName] = Impls.Uint8.toAsciiStr(asciiStringBytes);
+                    buffer = buffer.slice(offset + 4 + asciiStringLength, buffer.length);
+                    break;
+                case Scheme.Types.utf8String:
+                    const utf8StringLength = Impls.Uint32.fromUint8(buffer.slice(offset, offset + 4));
+                    const utf8StringBytes = buffer.slice(offset + 4, offset + 4 + utf8StringLength);
+                    paket[propName] = Impls.Uint8.toUtf8Str(utf8StringBytes);
+                    buffer = buffer.slice(offset + 4 + utf8StringLength, buffer.length);
                     break;
                 default:
                     throw new Error(`Was detected unknown type of data or some errors during parsing. Found type of data: ${propType}.`);
@@ -144,6 +153,7 @@ const EXAMPLE = {
     float64: 0.0001,
     bool1: true,
     bool2: false,
+    utf8: `Это проверка UTF8 строки\nЭто проверка UTF8 строки\nЭто проверка UTF8 строки\nЭто проверка UTF8 строки`,
 };
 
 const EXAMPLE_SCHEME = {
@@ -167,12 +177,13 @@ const EXAMPLE_SCHEME = {
     float64: Scheme.Types.float64,
     bool1: Scheme.Types.boolean,
     bool2: Scheme.Types.boolean,
+    utf8: Scheme.Types.utf8String,
 };
 
 const converted = Convertor.encode(EXAMPLE, EXAMPLE_SCHEME);
 const json = JSON.stringify(EXAMPLE);
 console.log(`Converted: ${converted.join(' ')} / size: ${converted.length}`);
-console.log(`JSON: ${json.length}`);
+console.log(`JSON: ${json.length} / ${Impls.Uint8.fromUtf8Str(json).length}`);
 
 const decoded = Convertor.decode(converted);
 console.log(decoded);
