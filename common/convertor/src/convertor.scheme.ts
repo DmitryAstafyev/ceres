@@ -18,6 +18,7 @@ export const Types = {
     utf8String: 10,
     // Complex types
     object: 100,
+    array: 101,
 };
 
 export const TypesNames = {

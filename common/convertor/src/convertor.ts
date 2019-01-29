@@ -18,34 +18,11 @@ class Convertor {
             if (type === null || type === undefined) {
                 throw new Error(`Incorrect type provided in scheme: ${typeof type}.`);
             }
-            if (typeof type !== 'object') {
+            if (typeof type !== 'object' && !(type instanceof Array)) {
                 // Primitives
-                const propValue: number[] = [];
-                // Get value of property
-                switch (type) {
-                    case Scheme.Types.uint8:
-                    case Scheme.Types.uint16:
-                    case Scheme.Types.uint32:
-                    case Scheme.Types.int8:
-                    case Scheme.Types.int16:
-                    case Scheme.Types.int32:
-                    case Scheme.Types.float32:
-                    case Scheme.Types.float64:
-                    case Scheme.Types.boolean:
-                        if (validation) {
-                            const validationError: Error | undefined = Scheme.TypesProviders[type].validate(value);
-                            if (validationError) {
-                                throw new Error(`Property "${key}" has invalid value = ${value}. Declared type is: ${Scheme.TypesNames[type]}. Checks finished with error: ${validationError.message}.`);
-                            }
-                        }
-                        propValue.push(...Scheme.TypesProviders[type].toUint8(value));
-                        break;
-                    case Scheme.Types.asciiString:
-                        propValue.push(...Impls.Uint8.fromAsciiStr(value));
-                        break;
-                    case Scheme.Types.utf8String:
-                        propValue.push(...Impls.Uint8.fromUtf8Str(value));
-                        break;
+                const propValue: number[] | Error = this._encodePrimitive(value, type, validation);
+                if (propValue instanceof Error) {
+                    throw new Error(`Fail to encode property "${key}" due error: ${propValue.message}.`);
                 }
                 // Save data
                 const data: number[] = [];
@@ -56,6 +33,36 @@ class Convertor {
                     data.push(...Scheme.LengthConvertor[type](propValue.length));
                 }
                 data.push(...propValue);
+                paket.push(...data);
+            } else if (type instanceof Array) {
+                if (type.length !== 1) {
+                    throw new Error(`Array declaration should have one (only) type definition. Property: ${propName}.`);
+                }
+                if (!(value instanceof Array)) {
+                    throw new Error(`Type of value isn't an array. Property: ${propName}.`);
+                }
+                // We have an array
+                const itemType = type[0];
+                const items: number[] = [];
+                if (this._isPrimitive(itemType)) {
+                    value.forEach((item: any, index: number) => {
+                        const propValue: number[] | Error = this._encodePrimitive(item, itemType, validation);
+                        if (propValue instanceof Error) {
+                            throw new Error(`Fail to encode property "${key}" due error: ${propValue.message}.`);
+                        }
+                        items.push(...propValue);
+                    });
+                } else {
+                    // TODO
+                }
+                // Save data
+                const data: number[] = [];
+                data.push(propName.length);
+                data.push(...propName);
+                data.push(Scheme.Types.array);
+                data.push(itemType);
+                data.push(...Impls.Uint32.toUint8(items.length));
+                data.push(...items);
                 paket.push(...data);
             } else {
                 // Nested
@@ -95,6 +102,22 @@ class Convertor {
                     paket[propName] = this.decode(objValueBytes);
                     buffer = buffer.slice(offset + 4 + objValueLength, buffer.length);
                     break;
+                case Scheme.Types.array:
+                    const itemType = Impls.Uint8.fromUint8(buffer.slice(offset, offset + 1));
+                    const arrayLength = Impls.Uint32.fromUint8(buffer.slice(offset + 1, offset + 4 + 1));
+                    let arrayBytes = buffer.slice(offset + 4 + 1, offset + 4 + 1 + arrayLength);
+                    const items: any[] = [];
+                    if (this._isPrimitive(itemType)) {
+                        do {
+                            items.push(Scheme.TypesProviders[itemType].fromUint8(arrayBytes.slice(0, Scheme.TypesSizes[itemType])));
+                            arrayBytes = arrayBytes.slice(Scheme.TypesSizes[itemType], arrayBytes.length);
+                        } while (arrayBytes.length > 0);
+                    } else {
+                        // TODO
+                    }
+                    paket[propName] = items;
+                    buffer = buffer.slice(offset + 4 + 1 + arrayLength, buffer.length);
+                    break;
                 case Scheme.Types.uint8:
                 case Scheme.Types.uint16:
                 case Scheme.Types.uint32:
@@ -130,9 +153,57 @@ class Convertor {
         return paket;
     }
 
+    private static _encodePrimitive(value: any, type: number, validation: boolean): number[] | Error {
+        const encoded: number[] = [];
+        // Get value of property
+        switch (type) {
+            case Scheme.Types.uint8:
+            case Scheme.Types.uint16:
+            case Scheme.Types.uint32:
+            case Scheme.Types.int8:
+            case Scheme.Types.int16:
+            case Scheme.Types.int32:
+            case Scheme.Types.float32:
+            case Scheme.Types.float64:
+            case Scheme.Types.boolean:
+                if (validation) {
+                    const validationError: Error | undefined = Scheme.TypesProviders[type].validate(value);
+                    if (validationError) {
+                        return new Error(`Invalid value = ${value}. Declared type is: ${Scheme.TypesNames[type]}. Checks finished with error: ${validationError.message}.`);
+                    }
+                }
+                encoded.push(...Scheme.TypesProviders[type].toUint8(value));
+                break;
+            case Scheme.Types.asciiString:
+                encoded.push(...Impls.Uint8.fromAsciiStr(value));
+                break;
+            case Scheme.Types.utf8String:
+                encoded.push(...Impls.Uint8.fromUtf8Str(value));
+                break;
+        }
+        return encoded;
+    }
+
+    private static _isPrimitive(type: number): boolean {
+        switch (type) {
+            case Scheme.Types.uint8:
+            case Scheme.Types.uint16:
+            case Scheme.Types.uint32:
+            case Scheme.Types.int8:
+            case Scheme.Types.int16:
+            case Scheme.Types.int32:
+            case Scheme.Types.float32:
+            case Scheme.Types.float64:
+            case Scheme.Types.boolean:
+                return true;
+            default:
+                return false;
+        }
+    }
 }
 
 const EXAMPLE = {
+    arr0: [1, 2, 3, 4, 5, 6, 7, 8],
     a: 100,
     b: 200,
     a1: 10000,
@@ -140,6 +211,7 @@ const EXAMPLE = {
     nested: {
         a2: 10000,
         b2: 20000,
+        arr1: [-1000, -2000, -3000, -4000, -5000],
     },
     name: 'this is name (ascii)',
     a3: 12000,
@@ -157,6 +229,7 @@ const EXAMPLE = {
 };
 
 const EXAMPLE_SCHEME = {
+    arr0: [Scheme.Types.uint8],
     a: Scheme.Types.uint8,
     b: Scheme.Types.uint8,
     a1: Scheme.Types.uint16,
@@ -164,6 +237,7 @@ const EXAMPLE_SCHEME = {
     nested: {
         a2: Scheme.Types.uint16,
         b2: Scheme.Types.uint16,
+        arr1: [Scheme.Types.int16],
     },
     name: Scheme.Types.asciiString,
     a3: Scheme.Types.uint16,
