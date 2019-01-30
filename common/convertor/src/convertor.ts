@@ -45,15 +45,28 @@ class Convertor {
                 const itemType = type[0];
                 const items: number[] = [];
                 if (this._isPrimitive(itemType)) {
-                    value.forEach((item: any, index: number) => {
-                        const propValue: number[] | Error = this._encodePrimitive(item, itemType, validation);
-                        if (propValue instanceof Error) {
-                            throw new Error(`Fail to encode property "${key}" due error: ${propValue.message}.`);
-                        }
-                        items.push(...propValue);
-                    });
-                } else {
+                    if ([Scheme.Types.asciiString, Scheme.Types.utf8String].indexOf(itemType) !== -1) {
+                        value.forEach((item: any, index: number) => {
+                            const propValue: number[] | Error = this._encodePrimitive(item, itemType, validation);
+                            if (propValue instanceof Error) {
+                                throw new Error(`Fail to encode property "${key}" due error: ${propValue.message}.`);
+                            }
+                            items.push(...Scheme.LengthConvertor[itemType](propValue.length));
+                            items.push(...propValue);
+                        });
+                    } else {
+                        value.forEach((item: any, index: number) => {
+                            const propValue: number[] | Error = this._encodePrimitive(item, itemType, validation);
+                            if (propValue instanceof Error) {
+                                throw new Error(`Fail to encode property "${key}" due error: ${propValue.message}.`);
+                            }
+                            items.push(...propValue);
+                        });
+                    }
+                } else if (typeof itemType === 'object' && itemType !== null && !(itemType instanceof Array)) {
                     // TODO
+                } else {
+                    throw new Error(`Incorrect declaration of array type: ${typeof itemType}`);
                 }
                 // Save data
                 const data: number[] = [];
@@ -108,10 +121,28 @@ class Convertor {
                     let arrayBytes = buffer.slice(offset + 4 + 1, offset + 4 + 1 + arrayLength);
                     const items: any[] = [];
                     if (this._isPrimitive(itemType)) {
-                        do {
-                            items.push(Scheme.TypesProviders[itemType].fromUint8(arrayBytes.slice(0, Scheme.TypesSizes[itemType])));
-                            arrayBytes = arrayBytes.slice(Scheme.TypesSizes[itemType], arrayBytes.length);
-                        } while (arrayBytes.length > 0);
+                        if ([Scheme.Types.asciiString, Scheme.Types.utf8String].indexOf(itemType) !== -1) {
+                            let strLength;
+                            let strValue;
+                            do {
+                                strLength = Impls.Uint32.fromUint8(arrayBytes.slice(0, 4));
+                                strValue = arrayBytes.slice(4, 4 + strLength);
+                                switch (itemType) {
+                                    case Scheme.Types.asciiString:
+                                        items.push(Impls.Uint8.toAsciiStr(strValue));
+                                        break;
+                                    case Scheme.Types.utf8String:
+                                        items.push(Impls.Uint8.toUtf8Str(strValue));
+                                        break;
+                                }
+                                arrayBytes = arrayBytes.slice(4 + strLength, arrayBytes.length);
+                            } while (arrayBytes.length > 0);
+                        } else {
+                            do {
+                                items.push(Scheme.TypesProviders[itemType].fromUint8(arrayBytes.slice(0, Scheme.TypesSizes[itemType])));
+                                arrayBytes = arrayBytes.slice(Scheme.TypesSizes[itemType], arrayBytes.length);
+                            } while (arrayBytes.length > 0);
+                        }
                     } else {
                         // TODO
                     }
@@ -195,6 +226,8 @@ class Convertor {
             case Scheme.Types.float32:
             case Scheme.Types.float64:
             case Scheme.Types.boolean:
+            case Scheme.Types.asciiString:
+            case Scheme.Types.utf8String:
                 return true;
             default:
                 return false;
@@ -204,6 +237,8 @@ class Convertor {
 
 const EXAMPLE = {
     arr0: [1, 2, 3, 4, 5, 6, 7, 8],
+    arrSa: ['1', '2', '3', '4', '5'],
+    arrSutf8: ['1фффф', '2фффф', '3фффф', '4фффф', '5фффф'],
     a: 100,
     b: 200,
     a1: 10000,
@@ -230,6 +265,8 @@ const EXAMPLE = {
 
 const EXAMPLE_SCHEME = {
     arr0: [Scheme.Types.uint8],
+    arrSa: [Scheme.Types.asciiString],
+    arrSutf8: [Scheme.Types.utf8String],
     a: Scheme.Types.uint8,
     b: Scheme.Types.uint8,
     a1: Scheme.Types.uint16,
