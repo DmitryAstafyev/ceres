@@ -1,3 +1,5 @@
+// tslint:disable
+
 /// <reference path="../node_modules/@types/jasmine/index.d.ts" />
 /// <reference path="../node_modules/@types/node/index.d.ts" />
 
@@ -115,12 +117,33 @@ describe('[Test][platform][protocol]', () => {
                                 });
                                 expect(DataWriteRequest instanceof proto.Data.Write.Request).toBe(true);
                                 console.log(`DataWriteRequest created.`);
-                                const strDataWriteRequest: string = DataWriteRequest.stringify();
+                                let strDataWriteRequest: string = DataWriteRequest.stringify();
                                 expect(typeof strDataWriteRequest).toBe('string');
                                 console.log(`DataWriteRequest converted to string.`);
-                                const parsedDataWriteRequest: any = proto.Data.Write.Request.parse(strDataWriteRequest);
+                                let parsedDataWriteRequest: any = proto.Data.Write.Request.parse(strDataWriteRequest);
+                                if (parsedDataWriteRequest instanceof Array) {
+                                    parsedDataWriteRequest.forEach((error: Error) => {
+                                        console.error(error.message);
+                                    });
+                                }
                                 expect(parsedDataWriteRequest instanceof proto.Data.Write.Request).toBe(true);
                                 console.log(`DataWriteRequest created from string.`);
+                                console.log(`Production mode is ok. Checking debug mode`);
+                                
+                                proto.Protocol.state.debug(true);
+                                strDataWriteRequest = DataWriteRequest.stringify();
+                                expect(typeof strDataWriteRequest).toBe('string');
+                                console.log(`[DEBUG]: DataWriteRequest converted to string.`);
+                                parsedDataWriteRequest = proto.Data.Write.Request.parse(strDataWriteRequest);
+                                if (parsedDataWriteRequest instanceof Array) {
+                                    parsedDataWriteRequest.forEach((error: Error) => {
+                                        console.error(error.message);
+                                    });
+                                }
+                                expect(parsedDataWriteRequest instanceof proto.Data.Write.Request).toBe(true);
+                                console.log(`[DEBUG]: DataWriteRequest created from string.`);
+                                console.log(`Debug mode is ok.`);
+
                                 const DataWriteResponse: any = new proto.Data.Write.Response({
                                     clientId: 'xxx-xxx-xxxx',
                                     status: new proto.Data.Write.Status({

@@ -1,6 +1,6 @@
 /* tslint:disable */
 /*
-* This file generated automaticaly (Sun Jan 27 2019 00:54:37 GMT+0100 (CET))
+* This file generated automaticaly (Wed Jan 30 2019 23:20:43 GMT+0100 (CET))
 * Do not remove or change this code.
 * Protocol version: 0.0.1
 */
@@ -53,149 +53,485 @@ export namespace Protocol {
 		ConnectionError |
 		KeyValue;
 
-	export const AdvancedTypes: {[key: string]: any} = {};
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	* Injection: injection.types.primitive.ts
+	* Injection: map of types
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-	
-	export interface IPrimitiveType<T> {
-	    tsType: string;
-	    init: string;
-	    parse: (value: string | number | T) => T;
-	    serialize: (value: T) => string | number | boolean | T;
-	    validate: (value: string | number | T) => boolean;
-	    implementation?: () => {};
-	}
-	
-	export const PrimitiveTypes:  { [key: string]: IPrimitiveType<any> } = {
-	
-	    string      : {
-	        init        : '""',
-	        parse       : (value: string) => value,
-	        serialize   : (value: string) => value,
-	        tsType      : 'string',
-	        validate    : (value: string) => {
-	            if (typeof value !== 'string') {
-	                return false;
-	            }
-	            return true;
-	        },
-	    } as IPrimitiveType<string>,
-	
-	    integer     : {
-	        init        : '-1',
-	        parse       : (value: number) => value,
-	        serialize   : (value: number) => value,
-	        tsType      : 'number',
-	        validate    : (value: number) => {
-	            if (typeof value !== 'number') {
-	                return false;
-	            }
-	            if (isNaN(value)) {
-	                return false;
-	            }
-	            if (!Number.isInteger(value)) {
-	                return false;
-	            }
-	            return true;
-	        },
-	    } as IPrimitiveType<number>,
-	
-	    float     : {
-	        init        : '-1',
-	        parse       : (value: number) => value,
-	        serialize   : (value: number) => value,
-	        tsType      : 'number',
-	        validate    : (value: number) => {
-	            if (typeof value !== 'number') {
-	                return false;
-	            }
-	            if (isNaN(value)) {
-	                return false;
-	            }
-	            return true;
-	        },
-	    } as IPrimitiveType<number>,
-	
-	    boolean     : {
-	        init        : 'false',
-	        parse       : (value: boolean) => value,
-	        serialize   : (value: boolean) => value,
-	        tsType      : 'boolean',
-	        validate    : (value: boolean) => {
-	            if (typeof value !== 'boolean') {
-	                return false;
-	            }
-	            return true;
-	        },
-	    } as IPrimitiveType<boolean>,
-	
-	    datetime    : {
-	        init        : 'new Date()',
-	        parse       : (value: number) => {
-	            return new Date(value);
-	        },
-	        serialize   : (value: Date) => value.getTime(),
-	        tsType      : 'Date',
-	        validate    : (value: number | Date) => {
-	            if (value instanceof Date) {
-	                return true;
-	            }
-	            if (typeof value !== 'number') {
-	                return false;
-	            }
-	            if (isNaN(value)) {
-	                return false;
-	            }
-	            if (!Number.isInteger(value)) {
-	                return false;
-	            }
-	            const date = new Date(value);
-	            if (!(date instanceof Date)) {
-	                return false;
-	            }
-	            if (date.toString().toLowerCase().indexOf('invalid date') !== -1) {
-	                return false;
-	            }
-	            return !isNaN(date.getTime());
-	        },
-	    } as IPrimitiveType<Date>,
-	
-	    guid     : {
-	        implementation  : function guid() {
-	            const lengths = [4, 4, 4, 8];
-	            let resultGuid = '';
-	            for (let i = lengths.length - 1; i >= 0; i -= 1) {
-	                resultGuid += (Math.round(Math.random() * Math.random() * Math.pow(10, lengths[i] * 2))
-	                            .toString(16)
-	                            .substr(0, lengths[i])
-	                            .toUpperCase() + '-');
-	            }
-	            resultGuid += ((new Date()).getTime() * (Math.random() * 100))
-	                        .toString(16)
-	                        .substr(0, 12)
-	                        .toUpperCase();
-	            return resultGuid;
-	        },
-	        init            : 'guid()',
-	        parse           : (value: string) => value,
-	        serialize       : (value: string) => value,
-	        tsType          : 'string',
-	        validate        : (value: string) => {
-	            return typeof value === 'string' ? (value.trim() !== '' ? true : false) : false;
-	        },
-	
-	    } as IPrimitiveType<string>,
-	
+	export const KeysMapLeft: {[key: string]: any} = {
+		"36550583": {
+			clientId: "a",
+			guid: "b",
+			subscription: "c",
+			token: "d",
+		},
+		"60658336": {
+			clientId: "a",
+			guid: "b",
+			status: "c",
+			error: "d",
+		},
+		"66972276": {
+			clientId: "a",
+			guid: "b",
+			status: "c",
+			error: "d",
+		},
+		"71280621": {
+			reason: "a",
+			message: "b",
+		},
+		"76052942": {
+			scope: "a",
+		},
+		"70D1C8A2": {
+			clientId: "a",
+			guid: "b",
+		},
+		"411DF73D": {
+			clientId: "a",
+			guid: "b",
+		},
+		"7E8304BE": {
+			clientId: "a",
+			guid: "b",
+			token: "c",
+		},
+		"550547F2": {
+			clientId: "a",
+			guid: "b",
+			allowed: "c",
+		},
+		"7A8FB62E": {
+			clientId: "a",
+			guid: "b",
+		},
+		"15C342AF": {
+			clientId: "a",
+			guid: "b",
+			event: "c",
+			token: "d",
+			aliases: "e",
+			options: "f",
+		},
+		"5A3337DF": {
+			clientId: "a",
+			guid: "b",
+			subscribers: "c",
+		},
+		"40BAC922": {
+			clientId: "a",
+			guid: "b",
+		},
+		"3FAECA1": {
+			clientId: "a",
+			guid: "b",
+			subscription: "c",
+			token: "d",
+		},
+		"783AF28F": {
+			clientId: "a",
+			guid: "b",
+			status: "c",
+			error: "d",
+		},
+		"C96909B": {
+			clientId: "a",
+			guid: "b",
+		},
+		"B782B1A": {
+			clientId: "a",
+			guid: "b",
+			subscription: "c",
+			token: "d",
+		},
+		"1A9B1BFC": {
+			clientId: "a",
+			guid: "b",
+		},
+		"6EDC0A13": {
+			clientId: "a",
+			guid: "b",
+			status: "c",
+			error: "d",
+		},
+		"C78C95B": {
+			clientId: "a",
+			guid: "b",
+		},
+		"34F5A3DA": {
+			clientId: "a",
+			guid: "b",
+			aliases: "c",
+			token: "d",
+		},
+		"2B39E6C9": {
+			clientId: "a",
+			guid: "b",
+		},
+		"9BE21CD": {
+			clientId: "a",
+			guid: "b",
+		},
+		"47D79F4E": {
+			clientId: "a",
+			guid: "b",
+			demand: "c",
+			token: "d",
+			query: "e",
+			options: "f",
+		},
+		"49BC009E": {
+			clientId: "a",
+			guid: "b",
+			id: "c",
+			state: "d",
+			error: "e",
+		},
+		"265B8137": {
+			clientId: "a",
+			guid: "b",
+		},
+		"40FBF4B8": {
+			clientId: "a",
+			guid: "b",
+			id: "c",
+			token: "d",
+			error: "e",
+			demand: "f",
+		},
+		"1E55A8C8": {
+			clientId: "a",
+			guid: "b",
+			status: "c",
+			error: "d",
+		},
+		"479DF39": {
+			scope: "a",
+		},
+		"4C521D22": {
+			clientId: "a",
+			guid: "b",
+		},
+		"502499A9": {
+			clientId: "a",
+			guid: "b",
+		},
+		"2A67B2A": {
+			clientId: "a",
+			guid: "b",
+			demand: "c",
+			protocol: "d",
+			token: "e",
+			query: "f",
+		},
+		"55509F06": {
+			clientId: "a",
+			guid: "b",
+			status: "c",
+			error: "d",
+		},
+		"5EDF73E": {
+			clientId: "a",
+			guid: "b",
+		},
+		"699C3EBD": {
+			clientId: "a",
+			guid: "b",
+			demand: "c",
+			protocol: "d",
+			token: "e",
+		},
+		"393C1C0D": {
+			clientId: "a",
+			guid: "b",
+			status: "c",
+		},
+		"4F0C247D": {
+			clientId: "a",
+			guid: "b",
+			event: "c",
+			demand: "d",
+			return: "e",
+		},
+		"282376D8": {
+			protocol: "a",
+			event: "b",
+			body: "c",
+		},
+		"61578FC3": {
+			id: "a",
+			protocol: "b",
+			demand: "c",
+			body: "d",
+			expected: "e",
+			error: "f",
+			pending: "g",
+		},
+		"2DEBB962": {
+			protocol: "a",
+			event: "b",
+		},
+		"583DFB65": {
+			guid: "a",
+			reason: "b",
+			message: "c",
+		},
+		"1DB68EE9": {
+			key: "a",
+			value: "b",
+		},
 	};
-	
+	export const KeysMapRight: {[key: string]: any} = {
+		"36550583": {
+			a: "clientId",
+			b: "guid",
+			c: "subscription",
+			d: "token",
+		},
+		"60658336": {
+			a: "clientId",
+			b: "guid",
+			c: "status",
+			d: "error",
+		},
+		"66972276": {
+			a: "clientId",
+			b: "guid",
+			c: "status",
+			d: "error",
+		},
+		"71280621": {
+			a: "reason",
+			b: "message",
+		},
+		"76052942": {
+			a: "scope",
+		},
+		"70D1C8A2": {
+			a: "clientId",
+			b: "guid",
+		},
+		"411DF73D": {
+			a: "clientId",
+			b: "guid",
+		},
+		"7E8304BE": {
+			a: "clientId",
+			b: "guid",
+			c: "token",
+		},
+		"550547F2": {
+			a: "clientId",
+			b: "guid",
+			c: "allowed",
+		},
+		"7A8FB62E": {
+			a: "clientId",
+			b: "guid",
+		},
+		"15C342AF": {
+			a: "clientId",
+			b: "guid",
+			c: "event",
+			d: "token",
+			e: "aliases",
+			f: "options",
+		},
+		"5A3337DF": {
+			a: "clientId",
+			b: "guid",
+			c: "subscribers",
+		},
+		"40BAC922": {
+			a: "clientId",
+			b: "guid",
+		},
+		"3FAECA1": {
+			a: "clientId",
+			b: "guid",
+			c: "subscription",
+			d: "token",
+		},
+		"783AF28F": {
+			a: "clientId",
+			b: "guid",
+			c: "status",
+			d: "error",
+		},
+		"C96909B": {
+			a: "clientId",
+			b: "guid",
+		},
+		"B782B1A": {
+			a: "clientId",
+			b: "guid",
+			c: "subscription",
+			d: "token",
+		},
+		"1A9B1BFC": {
+			a: "clientId",
+			b: "guid",
+		},
+		"6EDC0A13": {
+			a: "clientId",
+			b: "guid",
+			c: "status",
+			d: "error",
+		},
+		"C78C95B": {
+			a: "clientId",
+			b: "guid",
+		},
+		"34F5A3DA": {
+			a: "clientId",
+			b: "guid",
+			c: "aliases",
+			d: "token",
+		},
+		"2B39E6C9": {
+			a: "clientId",
+			b: "guid",
+		},
+		"9BE21CD": {
+			a: "clientId",
+			b: "guid",
+		},
+		"47D79F4E": {
+			a: "clientId",
+			b: "guid",
+			c: "demand",
+			d: "token",
+			e: "query",
+			f: "options",
+		},
+		"49BC009E": {
+			a: "clientId",
+			b: "guid",
+			c: "id",
+			d: "state",
+			e: "error",
+		},
+		"265B8137": {
+			a: "clientId",
+			b: "guid",
+		},
+		"40FBF4B8": {
+			a: "clientId",
+			b: "guid",
+			c: "id",
+			d: "token",
+			e: "error",
+			f: "demand",
+		},
+		"1E55A8C8": {
+			a: "clientId",
+			b: "guid",
+			c: "status",
+			d: "error",
+		},
+		"479DF39": {
+			a: "scope",
+		},
+		"4C521D22": {
+			a: "clientId",
+			b: "guid",
+		},
+		"502499A9": {
+			a: "clientId",
+			b: "guid",
+		},
+		"2A67B2A": {
+			a: "clientId",
+			b: "guid",
+			c: "demand",
+			d: "protocol",
+			e: "token",
+			f: "query",
+		},
+		"55509F06": {
+			a: "clientId",
+			b: "guid",
+			c: "status",
+			d: "error",
+		},
+		"5EDF73E": {
+			a: "clientId",
+			b: "guid",
+		},
+		"699C3EBD": {
+			a: "clientId",
+			b: "guid",
+			c: "demand",
+			d: "protocol",
+			e: "token",
+		},
+		"393C1C0D": {
+			a: "clientId",
+			b: "guid",
+			c: "status",
+		},
+		"4F0C247D": {
+			a: "clientId",
+			b: "guid",
+			c: "event",
+			d: "demand",
+			e: "return",
+		},
+		"282376D8": {
+			a: "protocol",
+			b: "event",
+			c: "body",
+		},
+		"61578FC3": {
+			a: "id",
+			b: "protocol",
+			c: "demand",
+			d: "body",
+			e: "expected",
+			f: "error",
+			g: "pending",
+		},
+		"2DEBB962": {
+			a: "protocol",
+			b: "event",
+		},
+		"583DFB65": {
+			a: "guid",
+			b: "reason",
+			c: "message",
+		},
+		"1DB68EE9": {
+			a: "key",
+			b: "value",
+		},
+	};
+	export const AdvancedTypes: {[key: string]: any} = {};
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	* Injection: injection.root.ts
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	// tslint:disable:max-classes-per-file
+	
 	// declare var ReferencesMap: {[key: string]: any};
 	// declare var PrimitiveTypes: {[key: string]: any};
 	// declare var AdvancedTypes: {[key: string]: any};
+	// declare var KeysMapLeft: {[key: string]: any};
+	// declare var KeysMapRight: {[key: string]: any};
 	// declare type TTypes = any;
+	
+	export class ProtocolState {
+	
+	    private _debug: boolean = false;
+	
+	    public debug(value: boolean) {
+	        this._debug = value;
+	    }
+	
+	    public isDebugged(): boolean {
+	        return this._debug;
+	    }
+	
+	}
+	
+	export const state: ProtocolState = new ProtocolState();
 	
 	export enum EEntityType {
 	    root = 'root',
@@ -213,6 +549,32 @@ export namespace Protocol {
 	    type: EEntityType;
 	    optional: boolean;
 	    value: any;
+	}
+	
+	export function _getPropNameAlias(propName: string, signature: string): string | Error {
+	    if (state.isDebugged() || propName === '__signature') {
+	        return propName;
+	    }
+	    if (KeysMapLeft[signature] === void 0) {
+	        return new Error(`Fail to find keys map for ${signature}`);
+	    }
+	    if (KeysMapLeft[signature][propName] === void 0) {
+	        return new Error(`Fail to find keys map for ${signature}; property "${propName}".`);
+	    }
+	    return KeysMapLeft[signature][propName];
+	}
+	
+	export function _getPropName(alias: string, signature: string): string | Error {
+	    if (state.isDebugged() || alias === '__signature') {
+	        return alias;
+	    }
+	    if (KeysMapRight[signature] === void 0) {
+	        return new Error(`Fail to find keys map for ${signature}`);
+	    }
+	    if (KeysMapRight[signature][alias] === void 0) {
+	        return new Error(`Fail to find keys map for ${signature}; property alias "${alias}".`);
+	    }
+	    return KeysMapRight[signature][alias];
 	}
 	
 	export function _parse(json: any, target?: any): TTypes | Error[] {
@@ -243,6 +605,21 @@ export namespace Protocol {
 	    const description: {[key: string]: IProperty} = classRef.getDescription();
 	    // Parsing properties
 	    const errors: Error[] = [];
+	    Object.keys(json).forEach((alias: string) => {
+	        const prop: string | Error = _getPropName(alias, json.__signature);
+	        if (prop instanceof Error) {
+	            errors.push(new Error(`Cannot get property name by alias "${alias}" due error: ${prop.message}.`));
+	            return;
+	        }
+	        if (prop === alias) {
+	            return;
+	        }
+	        json[prop] = json[alias];
+	        delete json[alias];
+	    });
+	    if (errors.length > 0) {
+	        return errors;
+	    }
 	    Object.keys(description).forEach((prop: string) => {
 	        const desc = description[prop];
 	        if (desc.optional && json[prop] === void 0) {
@@ -333,6 +710,11 @@ export namespace Protocol {
 	        __signature: target.getSignature(),
 	    };
 	    Object.keys(description).forEach((prop: string) => {
+	        const propNameAlias: string | Error = _getPropNameAlias(prop, target.getSignature());
+	        if (propNameAlias instanceof Error) {
+	            errors.push(new Error(`Cannot get property alias for property "${prop}" due error: ${propNameAlias.message}.`));
+	            return;
+	        }
 	        const desc = description[prop];
 	        if (desc.optional && target[prop] === void 0) {
 	            return;
@@ -344,7 +726,7 @@ export namespace Protocol {
 	                    break;
 	                }
 	                if (typeof desc.value === 'string') {
-	                    json[prop] = target[prop].map((value: any) => {
+	                    json[propNameAlias] = target[prop].map((value: any) => {
 	                        const nestedType = types[desc.value];
 	                        if (!nestedType.validate(value)) {
 	                            errors.push(new Error(`Property "${prop}" has wrong format.`));
@@ -365,10 +747,10 @@ export namespace Protocol {
 	                    if (errors.length > 0) {
 	                        break;
 	                    }
-	                    json[prop] = parsed;
+	                    json[propNameAlias] = parsed;
 	                } else if (typeof desc.value === 'object') {
 	                    // It's reference to enum
-	                    json[prop] = target[prop].map((value: any) => {
+	                    json[propNameAlias] = target[prop].map((value: any) => {
 	                        if (desc.value[value] === void 0) {
 	                            errors.push(new Error(`Property "${prop}" has wrong value: "${value}". Available values: ${Object.keys(desc.value).join(', ')}.`));
 	                            return undefined;
@@ -383,7 +765,7 @@ export namespace Protocol {
 	                    errors.push(new Error(`Property "${prop}" has wrong format.`));
 	                    break;
 	                }
-	                json[prop] = type.serialize(target[prop]);
+	                json[propNameAlias] = type.serialize(target[prop]);
 	                break;
 	            case EEntityType.reference:
 	                if (typeof desc.value === 'function') {
@@ -393,14 +775,14 @@ export namespace Protocol {
 	                        errors.push(new Error(`Cannot get instance of class "${desc.value.name}" from property "${prop}" due error: \n${nested.map((e: Error) => e.message).join(';\n')}`));
 	                        break;
 	                    }
-	                    json[prop] = nested;
+	                    json[propNameAlias] = nested;
 	                } else if (typeof desc.value === 'object') {
 	                    // It's reference to enum
 	                    if (desc.value[target[prop]] === void 0) {
 	                        errors.push(new Error(`Property "${prop}" has wrong value: "${target[prop]}". Available values: ${Object.keys(desc.value).join(', ')}.`));
 	                        break;
 	                    }
-	                    json[prop] = target[prop];
+	                    json[propNameAlias] = target[prop];
 	                }
 	                break;
 	        }
@@ -574,6 +956,141 @@ export namespace Protocol {
 	export class Root {
 	
 	}
+	
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	* Injection: injection.types.primitive.ts
+	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	
+	export interface IPrimitiveType<T> {
+	    tsType: string;
+	    init: string;
+	    parse: (value: string | number | T) => T;
+	    serialize: (value: T) => string | number | boolean | T;
+	    validate: (value: string | number | T) => boolean;
+	    implementation?: () => {};
+	}
+	
+	export const PrimitiveTypes:  { [key: string]: IPrimitiveType<any> } = {
+	
+	    string      : {
+	        init        : '""',
+	        parse       : (value: string) => value,
+	        serialize   : (value: string) => value,
+	        tsType      : 'string',
+	        validate    : (value: string) => {
+	            if (typeof value !== 'string') {
+	                return false;
+	            }
+	            return true;
+	        },
+	    } as IPrimitiveType<string>,
+	
+	    integer     : {
+	        init        : '-1',
+	        parse       : (value: number) => value,
+	        serialize   : (value: number) => value,
+	        tsType      : 'number',
+	        validate    : (value: number) => {
+	            if (typeof value !== 'number') {
+	                return false;
+	            }
+	            if (isNaN(value)) {
+	                return false;
+	            }
+	            if (!Number.isInteger(value)) {
+	                return false;
+	            }
+	            return true;
+	        },
+	    } as IPrimitiveType<number>,
+	
+	    float     : {
+	        init        : '-1',
+	        parse       : (value: number) => value,
+	        serialize   : (value: number) => value,
+	        tsType      : 'number',
+	        validate    : (value: number) => {
+	            if (typeof value !== 'number') {
+	                return false;
+	            }
+	            if (isNaN(value)) {
+	                return false;
+	            }
+	            return true;
+	        },
+	    } as IPrimitiveType<number>,
+	
+	    boolean     : {
+	        init        : 'false',
+	        parse       : (value: boolean) => value,
+	        serialize   : (value: boolean) => value,
+	        tsType      : 'boolean',
+	        validate    : (value: boolean) => {
+	            if (typeof value !== 'boolean') {
+	                return false;
+	            }
+	            return true;
+	        },
+	    } as IPrimitiveType<boolean>,
+	
+	    datetime    : {
+	        init        : 'new Date()',
+	        parse       : (value: number) => {
+	            return new Date(value);
+	        },
+	        serialize   : (value: Date) => value.getTime(),
+	        tsType      : 'Date',
+	        validate    : (value: number | Date) => {
+	            if (value instanceof Date) {
+	                return true;
+	            }
+	            if (typeof value !== 'number') {
+	                return false;
+	            }
+	            if (isNaN(value)) {
+	                return false;
+	            }
+	            if (!Number.isInteger(value)) {
+	                return false;
+	            }
+	            const date = new Date(value);
+	            if (!(date instanceof Date)) {
+	                return false;
+	            }
+	            if (date.toString().toLowerCase().indexOf('invalid date') !== -1) {
+	                return false;
+	            }
+	            return !isNaN(date.getTime());
+	        },
+	    } as IPrimitiveType<Date>,
+	
+	    guid     : {
+	        implementation  : function guid() {
+	            const lengths = [4, 4, 4, 8];
+	            let resultGuid = '';
+	            for (let i = lengths.length - 1; i >= 0; i -= 1) {
+	                resultGuid += (Math.round(Math.random() * Math.random() * Math.pow(10, lengths[i] * 2))
+	                            .toString(16)
+	                            .substr(0, lengths[i])
+	                            .toUpperCase() + '-');
+	            }
+	            resultGuid += ((new Date()).getTime() * (Math.random() * 100))
+	                        .toString(16)
+	                        .substr(0, 12)
+	                        .toUpperCase();
+	            return resultGuid;
+	        },
+	        init            : 'guid()',
+	        parse           : (value: string) => value,
+	        serialize       : (value: string) => value,
+	        tsType          : 'string',
+	        validate        : (value: string) => {
+	            return typeof value === 'string' ? (value.trim() !== '' ? true : false) : false;
+	        },
+	
+	    } as IPrimitiveType<string>,
+	
+	};
 	
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *

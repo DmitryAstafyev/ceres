@@ -34,6 +34,12 @@ export class Convertor {
     private _entities: { [key: string]: IEntity } = {};
     private _injections: Injections = new Injections();
     private _map: {[key: string]: string } = {};
+    private _keysMapLeft: {[key: string]:
+        {[key: string]: string },
+    } = {};
+    private _keysMapRight: {[key: string]:
+        {[key: string]: string },
+    } = {};
 
     public convert(JSON: any, injections: string[] = [], adTypes: IAdvancedTypeDeclaration | null = null): Promise<string> {
         return new Promise((resolve, reject) => {
@@ -97,6 +103,7 @@ export class Convertor {
                 let protocolNamespace: string = '';
                 protocolNamespace += `export namespace Protocol {\n`;
                 protocolNamespace += this._getTypes() + '\n';
+                protocolNamespace += this._getKeysMaps() + '\n';
                 protocolNamespace += injectStr + '\n';
                 protocolNamespace += this._getMap() + '\n';
                 protocolNamespace += this._getProtocolSignature() + '\n';
@@ -478,6 +485,8 @@ export class Convertor {
             throw new Error(this._logger.error(`Signature (${signature}) for "${entity.name}" already exsist. Cannot continue converting.`));
         }
         this._map[signature] = chain;
+        // Create keys map
+        this._setKeysMap(entity, signature);
         // Define properties
         Object.keys(entity.children).forEach((prop: string) => {
             const child: IEntity = entity.children[prop];
@@ -528,6 +537,86 @@ export class Convertor {
         });
         output += `${tab}\t}\n`;
         output += `${tab}}\n`;
+        return output;
+    }
+
+    private _setKeysMap(entity: IEntity, signature: string) {
+        const index = {
+            l: 97,
+            n: 0,
+        };
+        let cache: any = {};
+        function next(): string {
+            const key = `${String.fromCharCode(index.l)}${index.n === 0 ? '' : index.n}`;
+            if (cache[String.fromCharCode(index.l)] === void 0) {
+                cache[String.fromCharCode(index.l)] = true;
+                return key;
+            }
+            if (index.l < 122 && index.l >= 97) {
+                index.l += 1;
+            } else if (index.l < 90 && index.l >= 65) {
+                index.l += 1;
+            } else if (index.l === 122) {
+                index.n += 1;
+                index.l = 65;
+            } else if (index.l === 90) {
+                index.l = 97;
+            }
+            return next();
+        }
+        const ownArgs: IArgument[] = this._getOwnArguments(entity);
+        const parentArgs: IArgument[] = entity.parent !== null ? (!entity.single ? this._getParentsArguments(entity.parent) : []) : [];
+        const args: IArgument[] = [];
+        args.push(...parentArgs);
+        args.push(...ownArgs);
+        const keyMapLeft: any = {};
+        const keyMapRight: any = {};
+        args.forEach((arg: IArgument) => {
+            const name: string = this._entityType.hardSerializeName(arg.name);
+            switch (arg.type) {
+                case EEntityType.class:
+                case EEntityType.complex:
+                case EEntityType.namespace:
+                case EEntityType.reference:
+                case EEntityType.primitive:
+                case EEntityType.repeated:
+                    keyMapLeft[name] = next();
+                    keyMapRight[keyMapLeft[name]] = name;
+                    break;
+                case EEntityType.enum:
+                    break;
+            }
+        });
+        cache = null;
+        this._keysMapLeft[signature] = keyMapLeft;
+        this._keysMapRight[signature] = keyMapRight;
+    }
+
+    private _getKeysMaps(): string {
+        let output: string =
+        '\t/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n' +
+        `\t* Injection: map of types\n` +
+        '\t* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */\n';
+        output += '\texport const KeysMapLeft: {[key: string]: any} = {\n';
+        Object.keys(this._keysMapLeft).forEach((signature: string) => {
+            const map = this._keysMapLeft[signature];
+            output += `\t\t"${signature}": {\n`;
+            Object.keys(map).forEach((key: string) => {
+                output += `\t\t\t${key}: "${map[key]}",\n`;
+            });
+            output += `\t\t},\n`;
+        });
+        output += '\t};\n';
+        output += '\texport const KeysMapRight: {[key: string]: any} = {\n';
+        Object.keys(this._keysMapLeft).forEach((signature: string) => {
+            const map = this._keysMapLeft[signature];
+            output += `\t\t"${signature}": {\n`;
+            Object.keys(map).forEach((key: string) => {
+                output += `\t\t\t${map[key]}: "${key}",\n`;
+            });
+            output += `\t\t},\n`;
+        });
+        output += '\t};';
         return output;
     }
 

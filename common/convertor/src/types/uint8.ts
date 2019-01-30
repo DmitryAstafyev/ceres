@@ -19,7 +19,7 @@ export default class Uint8 {
     }
 
     public static fromUtf8Str(str: string): Uint8Array {
-        // Source of solution: https://stackoverflow.com/questions/18729405/how-to-convert-utf8-string-to-byte-array
+        // Source of method implementation: https://stackoverflow.com/questions/18729405/how-to-convert-utf8-string-to-byte-array
         const utf8 = [];
         for (let i = 0; i < str.length; i++) {
             let charcode = str.charCodeAt(i);
@@ -49,7 +49,7 @@ export default class Uint8 {
     }
 
     public static toUtf8Str(bytes: Uint8Array): string {
-        // Source of solution: https://stackoverflow.com/questions/17191945/conversion-between-utf-8-arraybuffer-and-string
+        // Source of method implementation: https://stackoverflow.com/questions/17191945/conversion-between-utf-8-arraybuffer-and-string
         let out = "";
         let i = 0;
         const len = bytes.length;

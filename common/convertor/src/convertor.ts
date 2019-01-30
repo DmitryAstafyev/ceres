@@ -44,12 +44,16 @@ class Convertor {
                 // We have an array
                 const itemType = type[0];
                 const items: number[] = [];
+                const data: number[] = [];
+                data.push(propName.length);
+                data.push(...propName);
+                data.push(Scheme.Types.array);
                 if (this._isPrimitive(itemType)) {
                     if ([Scheme.Types.asciiString, Scheme.Types.utf8String].indexOf(itemType) !== -1) {
                         value.forEach((item: any, index: number) => {
                             const propValue: number[] | Error = this._encodePrimitive(item, itemType, validation);
                             if (propValue instanceof Error) {
-                                throw new Error(`Fail to encode property "${key}" due error: ${propValue.message}.`);
+                                throw new Error(`Fail to encode property "${key}" due error: ${propValue.message}. Index in array: ${index}.`);
                             }
                             items.push(...Scheme.LengthConvertor[itemType](propValue.length));
                             items.push(...propValue);
@@ -58,22 +62,22 @@ class Convertor {
                         value.forEach((item: any, index: number) => {
                             const propValue: number[] | Error = this._encodePrimitive(item, itemType, validation);
                             if (propValue instanceof Error) {
-                                throw new Error(`Fail to encode property "${key}" due error: ${propValue.message}.`);
+                                throw new Error(`Fail to encode property "${key}" due error: ${propValue.message}. Index in array: ${index}.`);
                             }
                             items.push(...propValue);
                         });
                     }
+                    // Save data
+                    data.push(itemType);
                 } else if (typeof itemType === 'object' && itemType !== null && !(itemType instanceof Array)) {
-                    // TODO
+                    value.forEach((item: any) => {
+                        const propValue: Uint8Array = this.encode(item, itemType, validation);
+                        items.push(...propValue);
+                    });
+                    data.push(Scheme.Types.object);
                 } else {
                     throw new Error(`Incorrect declaration of array type: ${typeof itemType}`);
                 }
-                // Save data
-                const data: number[] = [];
-                data.push(propName.length);
-                data.push(...propName);
-                data.push(Scheme.Types.array);
-                data.push(itemType);
                 data.push(...Impls.Uint32.toUint8(items.length));
                 data.push(...items);
                 paket.push(...data);
@@ -143,8 +147,20 @@ class Convertor {
                                 arrayBytes = arrayBytes.slice(Scheme.TypesSizes[itemType], arrayBytes.length);
                             } while (arrayBytes.length > 0);
                         }
-                    } else {
-                        // TODO
+                    } else if (itemType === Scheme.Types.object) {
+                        let objType;
+                        let objLength;
+                        let objBody;
+                        do {
+                            objType = Impls.Uint8.fromUint8(arrayBytes.slice(0, 1));
+                            if (objType !== Scheme.Types.object) {
+                                throw new Error(`Expecting to have as an item of array object, but found type = ${Scheme.TypesNames[objType]} / ${objType}`);
+                            }
+                            objLength = Impls.Uint32.fromUint8(arrayBytes.slice(1, 5));
+                            objBody = arrayBytes.slice(0, objLength + 5);
+                            items.push(this.decode(objBody));
+                            arrayBytes = arrayBytes.slice(5 + objLength, arrayBytes.length);
+                        } while (arrayBytes.length > 0);
                     }
                     paket[propName] = items;
                     buffer = buffer.slice(offset + 4 + 1 + arrayLength, buffer.length);
@@ -235,66 +251,4 @@ class Convertor {
     }
 }
 
-const EXAMPLE = {
-    arr0: [1, 2, 3, 4, 5, 6, 7, 8],
-    arrSa: ['1', '2', '3', '4', '5'],
-    arrSutf8: ['1фффф', '2фффф', '3фффф', '4фффф', '5фффф'],
-    a: 100,
-    b: 200,
-    a1: 10000,
-    b1: 20000,
-    nested: {
-        a2: 10000,
-        b2: 20000,
-        arr1: [-1000, -2000, -3000, -4000, -5000],
-    },
-    name: 'this is name (ascii)',
-    a3: 12000,
-    b3: 22000,
-    int: {
-        int8: -30,
-        int16: -30000,
-        int32: -3000000,
-    },
-    float32: 1e-3,
-    float64: 0.0001,
-    bool1: true,
-    bool2: false,
-    utf8: `Это проверка UTF8 строки\nЭто проверка UTF8 строки\nЭто проверка UTF8 строки\nЭто проверка UTF8 строки`,
-};
-
-const EXAMPLE_SCHEME = {
-    arr0: [Scheme.Types.uint8],
-    arrSa: [Scheme.Types.asciiString],
-    arrSutf8: [Scheme.Types.utf8String],
-    a: Scheme.Types.uint8,
-    b: Scheme.Types.uint8,
-    a1: Scheme.Types.uint16,
-    b1: Scheme.Types.uint16,
-    nested: {
-        a2: Scheme.Types.uint16,
-        b2: Scheme.Types.uint16,
-        arr1: [Scheme.Types.int16],
-    },
-    name: Scheme.Types.asciiString,
-    a3: Scheme.Types.uint16,
-    b3: Scheme.Types.uint16,
-    int: {
-        int8: Scheme.Types.int8,
-        int16: Scheme.Types.int16,
-        int32: Scheme.Types.int32,
-    },
-    float32: Scheme.Types.float32,
-    float64: Scheme.Types.float64,
-    bool1: Scheme.Types.boolean,
-    bool2: Scheme.Types.boolean,
-    utf8: Scheme.Types.utf8String,
-};
-
-const converted = Convertor.encode(EXAMPLE, EXAMPLE_SCHEME);
-const json = JSON.stringify(EXAMPLE);
-console.log(`Converted: ${converted.join(' ')} / size: ${converted.length}`);
-console.log(`JSON: ${json.length} / ${Impls.Uint8.fromUtf8Str(json).length}`);
-
-const decoded = Convertor.decode(converted);
-console.log(decoded);
+export { Scheme, Impls, Convertor };

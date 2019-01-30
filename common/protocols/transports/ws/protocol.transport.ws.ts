@@ -1,6 +1,6 @@
 /* tslint:disable */
 /*
-* This file generated automaticaly (Sun Jan 27 2019 00:54:38 GMT+0100 (CET))
+* This file generated automaticaly (Wed Jan 30 2019 23:20:44 GMT+0100 (CET))
 * Do not remove or change this code.
 * Protocol version: 0.0.1
 */
@@ -22,14 +22,155 @@ export namespace Protocol {
 		DemandDefinition |
 		ConnectionError;
 
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	* Injection: map of types
+	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	export const KeysMapLeft: {[key: string]: any} = {
+		"59648854": {
+			clientId: "a",
+			guid: "b",
+			token: "c",
+		},
+		"71280621": {
+			reason: "a",
+			message: "b",
+		},
+		"70D1C8A2": {
+			clientId: "a",
+			guid: "b",
+		},
+		"5B342A75": {
+			clientId: "a",
+			guid: "b",
+		},
+		"1D8E5E9C": {
+			clientId: "a",
+			guid: "b",
+			token: "c",
+			reason: "d",
+			error: "e",
+		},
+		"6A4CB50C": {
+			clientId: "a",
+			guid: "b",
+		},
+		"3ED7382B": {
+			clientId: "a",
+			guid: "b",
+		},
+		"2FFB32C4": {
+			clientId: "a",
+			guid: "b",
+			event: "c",
+			demand: "d",
+			return: "e",
+		},
+		"282376D8": {
+			protocol: "a",
+			event: "b",
+			body: "c",
+		},
+		"61578FC3": {
+			id: "a",
+			protocol: "b",
+			demand: "c",
+			body: "d",
+			expected: "e",
+			error: "f",
+			pending: "g",
+		},
+		"583DFB65": {
+			reason: "a",
+			message: "b",
+		},
+	};
+	export const KeysMapRight: {[key: string]: any} = {
+		"59648854": {
+			a: "clientId",
+			b: "guid",
+			c: "token",
+		},
+		"71280621": {
+			a: "reason",
+			b: "message",
+		},
+		"70D1C8A2": {
+			a: "clientId",
+			b: "guid",
+		},
+		"5B342A75": {
+			a: "clientId",
+			b: "guid",
+		},
+		"1D8E5E9C": {
+			a: "clientId",
+			b: "guid",
+			c: "token",
+			d: "reason",
+			e: "error",
+		},
+		"6A4CB50C": {
+			a: "clientId",
+			b: "guid",
+		},
+		"3ED7382B": {
+			a: "clientId",
+			b: "guid",
+		},
+		"2FFB32C4": {
+			a: "clientId",
+			b: "guid",
+			c: "event",
+			d: "demand",
+			e: "return",
+		},
+		"282376D8": {
+			a: "protocol",
+			b: "event",
+			c: "body",
+		},
+		"61578FC3": {
+			a: "id",
+			b: "protocol",
+			c: "demand",
+			d: "body",
+			e: "expected",
+			f: "error",
+			g: "pending",
+		},
+		"583DFB65": {
+			a: "reason",
+			b: "message",
+		},
+	};
 	export const AdvancedTypes: {[key: string]: any} = {};
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	* Injection: injection.root.ts
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	// tslint:disable:max-classes-per-file
+	
 	// declare var ReferencesMap: {[key: string]: any};
 	// declare var PrimitiveTypes: {[key: string]: any};
 	// declare var AdvancedTypes: {[key: string]: any};
+	// declare var KeysMapLeft: {[key: string]: any};
+	// declare var KeysMapRight: {[key: string]: any};
 	// declare type TTypes = any;
+	
+	export class ProtocolState {
+	
+	    private _debug: boolean = false;
+	
+	    public debug(value: boolean) {
+	        this._debug = value;
+	    }
+	
+	    public isDebugged(): boolean {
+	        return this._debug;
+	    }
+	
+	}
+	
+	export const state: ProtocolState = new ProtocolState();
 	
 	export enum EEntityType {
 	    root = 'root',
@@ -47,6 +188,32 @@ export namespace Protocol {
 	    type: EEntityType;
 	    optional: boolean;
 	    value: any;
+	}
+	
+	export function _getPropNameAlias(propName: string, signature: string): string | Error {
+	    if (state.isDebugged() || propName === '__signature') {
+	        return propName;
+	    }
+	    if (KeysMapLeft[signature] === void 0) {
+	        return new Error(`Fail to find keys map for ${signature}`);
+	    }
+	    if (KeysMapLeft[signature][propName] === void 0) {
+	        return new Error(`Fail to find keys map for ${signature}; property "${propName}".`);
+	    }
+	    return KeysMapLeft[signature][propName];
+	}
+	
+	export function _getPropName(alias: string, signature: string): string | Error {
+	    if (state.isDebugged() || alias === '__signature') {
+	        return alias;
+	    }
+	    if (KeysMapRight[signature] === void 0) {
+	        return new Error(`Fail to find keys map for ${signature}`);
+	    }
+	    if (KeysMapRight[signature][alias] === void 0) {
+	        return new Error(`Fail to find keys map for ${signature}; property alias "${alias}".`);
+	    }
+	    return KeysMapRight[signature][alias];
 	}
 	
 	export function _parse(json: any, target?: any): TTypes | Error[] {
@@ -77,6 +244,21 @@ export namespace Protocol {
 	    const description: {[key: string]: IProperty} = classRef.getDescription();
 	    // Parsing properties
 	    const errors: Error[] = [];
+	    Object.keys(json).forEach((alias: string) => {
+	        const prop: string | Error = _getPropName(alias, json.__signature);
+	        if (prop instanceof Error) {
+	            errors.push(new Error(`Cannot get property name by alias "${alias}" due error: ${prop.message}.`));
+	            return;
+	        }
+	        if (prop === alias) {
+	            return;
+	        }
+	        json[prop] = json[alias];
+	        delete json[alias];
+	    });
+	    if (errors.length > 0) {
+	        return errors;
+	    }
 	    Object.keys(description).forEach((prop: string) => {
 	        const desc = description[prop];
 	        if (desc.optional && json[prop] === void 0) {
@@ -167,6 +349,11 @@ export namespace Protocol {
 	        __signature: target.getSignature(),
 	    };
 	    Object.keys(description).forEach((prop: string) => {
+	        const propNameAlias: string | Error = _getPropNameAlias(prop, target.getSignature());
+	        if (propNameAlias instanceof Error) {
+	            errors.push(new Error(`Cannot get property alias for property "${prop}" due error: ${propNameAlias.message}.`));
+	            return;
+	        }
 	        const desc = description[prop];
 	        if (desc.optional && target[prop] === void 0) {
 	            return;
@@ -178,7 +365,7 @@ export namespace Protocol {
 	                    break;
 	                }
 	                if (typeof desc.value === 'string') {
-	                    json[prop] = target[prop].map((value: any) => {
+	                    json[propNameAlias] = target[prop].map((value: any) => {
 	                        const nestedType = types[desc.value];
 	                        if (!nestedType.validate(value)) {
 	                            errors.push(new Error(`Property "${prop}" has wrong format.`));
@@ -199,10 +386,10 @@ export namespace Protocol {
 	                    if (errors.length > 0) {
 	                        break;
 	                    }
-	                    json[prop] = parsed;
+	                    json[propNameAlias] = parsed;
 	                } else if (typeof desc.value === 'object') {
 	                    // It's reference to enum
-	                    json[prop] = target[prop].map((value: any) => {
+	                    json[propNameAlias] = target[prop].map((value: any) => {
 	                        if (desc.value[value] === void 0) {
 	                            errors.push(new Error(`Property "${prop}" has wrong value: "${value}". Available values: ${Object.keys(desc.value).join(', ')}.`));
 	                            return undefined;
@@ -217,7 +404,7 @@ export namespace Protocol {
 	                    errors.push(new Error(`Property "${prop}" has wrong format.`));
 	                    break;
 	                }
-	                json[prop] = type.serialize(target[prop]);
+	                json[propNameAlias] = type.serialize(target[prop]);
 	                break;
 	            case EEntityType.reference:
 	                if (typeof desc.value === 'function') {
@@ -227,14 +414,14 @@ export namespace Protocol {
 	                        errors.push(new Error(`Cannot get instance of class "${desc.value.name}" from property "${prop}" due error: \n${nested.map((e: Error) => e.message).join(';\n')}`));
 	                        break;
 	                    }
-	                    json[prop] = nested;
+	                    json[propNameAlias] = nested;
 	                } else if (typeof desc.value === 'object') {
 	                    // It's reference to enum
 	                    if (desc.value[target[prop]] === void 0) {
 	                        errors.push(new Error(`Property "${prop}" has wrong value: "${target[prop]}". Available values: ${Object.keys(desc.value).join(', ')}.`));
 	                        break;
 	                    }
-	                    json[prop] = target[prop];
+	                    json[propNameAlias] = target[prop];
 	                }
 	                break;
 	        }

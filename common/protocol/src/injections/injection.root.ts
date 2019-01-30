@@ -1,7 +1,27 @@
+// tslint:disable:max-classes-per-file
+
 declare var ReferencesMap: {[key: string]: any};
 declare var PrimitiveTypes: {[key: string]: any};
 declare var AdvancedTypes: {[key: string]: any};
+declare var KeysMapLeft: {[key: string]: any};
+declare var KeysMapRight: {[key: string]: any};
 declare type TTypes = any;
+
+export class ProtocolState {
+
+    private _debug: boolean = false;
+
+    public debug(value: boolean) {
+        this._debug = value;
+    }
+
+    public isDebugged(): boolean {
+        return this._debug;
+    }
+
+}
+
+export const state: ProtocolState = new ProtocolState();
 
 export enum EEntityType {
     root = 'root',
@@ -19,6 +39,32 @@ export interface IProperty {
     type: EEntityType;
     optional: boolean;
     value: any;
+}
+
+export function _getPropNameAlias(propName: string, signature: string): string | Error {
+    if (state.isDebugged() || propName === '__signature') {
+        return propName;
+    }
+    if (KeysMapLeft[signature] === void 0) {
+        return new Error(`Fail to find keys map for ${signature}`);
+    }
+    if (KeysMapLeft[signature][propName] === void 0) {
+        return new Error(`Fail to find keys map for ${signature}; property "${propName}".`);
+    }
+    return KeysMapLeft[signature][propName];
+}
+
+export function _getPropName(alias: string, signature: string): string | Error {
+    if (state.isDebugged() || alias === '__signature') {
+        return alias;
+    }
+    if (KeysMapRight[signature] === void 0) {
+        return new Error(`Fail to find keys map for ${signature}`);
+    }
+    if (KeysMapRight[signature][alias] === void 0) {
+        return new Error(`Fail to find keys map for ${signature}; property alias "${alias}".`);
+    }
+    return KeysMapRight[signature][alias];
 }
 
 export function _parse(json: any, target?: any): TTypes | Error[] {
@@ -49,6 +95,21 @@ export function _parse(json: any, target?: any): TTypes | Error[] {
     const description: {[key: string]: IProperty} = classRef.getDescription();
     // Parsing properties
     const errors: Error[] = [];
+    Object.keys(json).forEach((alias: string) => {
+        const prop: string | Error = _getPropName(alias, json.__signature);
+        if (prop instanceof Error) {
+            errors.push(new Error(`Cannot get property name by alias "${alias}" due error: ${prop.message}.`));
+            return;
+        }
+        if (prop === alias) {
+            return;
+        }
+        json[prop] = json[alias];
+        delete json[alias];
+    });
+    if (errors.length > 0) {
+        return errors;
+    }
     Object.keys(description).forEach((prop: string) => {
         const desc = description[prop];
         if (desc.optional && json[prop] === void 0) {
@@ -139,6 +200,11 @@ export function _stringify(target: any, classRef: any): string | Error[] {
         __signature: target.getSignature(),
     };
     Object.keys(description).forEach((prop: string) => {
+        const propNameAlias: string | Error = _getPropNameAlias(prop, target.getSignature());
+        if (propNameAlias instanceof Error) {
+            errors.push(new Error(`Cannot get property alias for property "${prop}" due error: ${propNameAlias.message}.`));
+            return;
+        }
         const desc = description[prop];
         if (desc.optional && target[prop] === void 0) {
             return;
@@ -150,7 +216,7 @@ export function _stringify(target: any, classRef: any): string | Error[] {
                     break;
                 }
                 if (typeof desc.value === 'string') {
-                    json[prop] = target[prop].map((value: any) => {
+                    json[propNameAlias] = target[prop].map((value: any) => {
                         const nestedType = types[desc.value];
                         if (!nestedType.validate(value)) {
                             errors.push(new Error(`Property "${prop}" has wrong format.`));
@@ -171,10 +237,10 @@ export function _stringify(target: any, classRef: any): string | Error[] {
                     if (errors.length > 0) {
                         break;
                     }
-                    json[prop] = parsed;
+                    json[propNameAlias] = parsed;
                 } else if (typeof desc.value === 'object') {
                     // It's reference to enum
-                    json[prop] = target[prop].map((value: any) => {
+                    json[propNameAlias] = target[prop].map((value: any) => {
                         if (desc.value[value] === void 0) {
                             errors.push(new Error(`Property "${prop}" has wrong value: "${value}". Available values: ${Object.keys(desc.value).join(', ')}.`));
                             return undefined;
@@ -189,7 +255,7 @@ export function _stringify(target: any, classRef: any): string | Error[] {
                     errors.push(new Error(`Property "${prop}" has wrong format.`));
                     break;
                 }
-                json[prop] = type.serialize(target[prop]);
+                json[propNameAlias] = type.serialize(target[prop]);
                 break;
             case EEntityType.reference:
                 if (typeof desc.value === 'function') {
@@ -199,14 +265,14 @@ export function _stringify(target: any, classRef: any): string | Error[] {
                         errors.push(new Error(`Cannot get instance of class "${desc.value.name}" from property "${prop}" due error: \n${nested.map((e: Error) => e.message).join(';\n')}`));
                         break;
                     }
-                    json[prop] = nested;
+                    json[propNameAlias] = nested;
                 } else if (typeof desc.value === 'object') {
                     // It's reference to enum
                     if (desc.value[target[prop]] === void 0) {
                         errors.push(new Error(`Property "${prop}" has wrong value: "${target[prop]}". Available values: ${Object.keys(desc.value).join(', ')}.`));
                         break;
                     }
-                    json[prop] = target[prop];
+                    json[propNameAlias] = target[prop];
                 }
                 break;
         }
