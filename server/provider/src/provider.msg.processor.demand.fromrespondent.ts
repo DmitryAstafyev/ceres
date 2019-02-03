@@ -55,7 +55,7 @@ export class MessageDemandFromRespondentProcessor extends MessageProcessor<Proto
                         return this.state.demands.sendDemandResponse(
                             (message.demand as Protocol.DemandDefinition).protocol,
                             (message.demand as Protocol.DemandDefinition).demand,
-                            (message.demand as Protocol.DemandDefinition).body,
+                            (message.demand as Protocol.DemandDefinition).bodyStr === '' ? new Uint8Array((message.demand as Protocol.DemandDefinition).bodyBinary) : (message.demand as Protocol.DemandDefinition).bodyStr,
                             (message.demand as Protocol.DemandDefinition).expected,
                             pendingDemand.expectantId,
                             '',

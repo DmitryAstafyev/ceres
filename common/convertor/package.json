@@ -2,7 +2,8 @@
   "name": "protocol.convertor",
   "version": "1.0.0",
   "description": "Convertor to binary for network protocol based JSON format. Coverting JSON description to TS classes",
-  "main": "./src/convertor.ts",
+  "main": "./dist/convertor.js",
+  "types": "./dist/convertor.d.ts",
   "scripts": {
     "build": "tsc -p ./tsconfig.json",
     "build:watch": "tsc -p ./tsconfig.json -w",
@@ -19,5 +20,9 @@
     "typescript": "^3.1.3"
   },
   "dependencies": {},
-  "author": "Dmitry Astafyev (D.Astafyev@outlook.com)"
+  "author": "Dmitry Astafyev (D.Astafyev@outlook.com)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DmitryAstafyev/ceres.git"
+  }
 }

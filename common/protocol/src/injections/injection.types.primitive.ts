@@ -1,6 +1,7 @@
 
 export interface IPrimitiveType<T> {
     tsType: string;
+    binaryType: string;
     init: string;
     parse: (value: string | number | T) => T;
     serialize: (value: T) => string | number | boolean | T;
@@ -10,7 +11,177 @@ export interface IPrimitiveType<T> {
 
 export const PrimitiveTypes:  { [key: string]: IPrimitiveType<any> } = {
 
+    uint8     : {
+        binaryType  : 'uint8',
+        init        : '0',
+        parse       : (value: number) => value,
+        serialize   : (value: number) => value,
+        tsType      : 'number',
+        validate    : (value: number) => {
+            if (typeof value !== 'number') {
+                return false;
+            }
+            if (isNaN(value)) {
+                return false;
+            }
+            if (!Number.isInteger(value)) {
+                return false;
+            }
+            if (value < 0) {
+                return false;
+            }
+            return true;
+        },
+    } as IPrimitiveType<number>,
+
+    uint16     : {
+        binaryType  : 'uint16',
+        init        : '0',
+        parse       : (value: number) => value,
+        serialize   : (value: number) => value,
+        tsType      : 'number',
+        validate    : (value: number) => {
+            if (typeof value !== 'number') {
+                return false;
+            }
+            if (isNaN(value)) {
+                return false;
+            }
+            if (!Number.isInteger(value)) {
+                return false;
+            }
+            if (value < 0) {
+                return false;
+            }
+            return true;
+        },
+    } as IPrimitiveType<number>,
+
+    uint32     : {
+        binaryType  : 'uint32',
+        init        : '0',
+        parse       : (value: number) => value,
+        serialize   : (value: number) => value,
+        tsType      : 'number',
+        validate    : (value: number) => {
+            if (typeof value !== 'number') {
+                return false;
+            }
+            if (isNaN(value)) {
+                return false;
+            }
+            if (!Number.isInteger(value)) {
+                return false;
+            }
+            if (value < 0) {
+                return false;
+            }
+            return true;
+        },
+    } as IPrimitiveType<number>,
+
+    int8     : {
+        binaryType  : 'int8',
+        init        : '-1',
+        parse       : (value: number) => value,
+        serialize   : (value: number) => value,
+        tsType      : 'number',
+        validate    : (value: number) => {
+            if (typeof value !== 'number') {
+                return false;
+            }
+            if (isNaN(value)) {
+                return false;
+            }
+            if (!Number.isInteger(value)) {
+                return false;
+            }
+            return true;
+        },
+    } as IPrimitiveType<number>,
+
+    int16     : {
+        binaryType  : 'int16',
+        init        : '-1',
+        parse       : (value: number) => value,
+        serialize   : (value: number) => value,
+        tsType      : 'number',
+        validate    : (value: number) => {
+            if (typeof value !== 'number') {
+                return false;
+            }
+            if (isNaN(value)) {
+                return false;
+            }
+            if (!Number.isInteger(value)) {
+                return false;
+            }
+            return true;
+        },
+    } as IPrimitiveType<number>,
+
+    int32     : {
+        binaryType  : 'int32',
+        init        : '-1',
+        parse       : (value: number) => value,
+        serialize   : (value: number) => value,
+        tsType      : 'number',
+        validate    : (value: number) => {
+            if (typeof value !== 'number') {
+                return false;
+            }
+            if (isNaN(value)) {
+                return false;
+            }
+            if (!Number.isInteger(value)) {
+                return false;
+            }
+            return true;
+        },
+    } as IPrimitiveType<number>,
+
+    float32     : {
+        binaryType  : 'float32',
+        init        : '-1',
+        parse       : (value: number) => value,
+        serialize   : (value: number) => value,
+        tsType      : 'number',
+        validate    : (value: number) => {
+            if (typeof value !== 'number') {
+                return false;
+            }
+            if (isNaN(value)) {
+                return false;
+            }
+            if (!Number.isInteger(value)) {
+                return false;
+            }
+            return true;
+        },
+    } as IPrimitiveType<number>,
+
+    float64     : {
+        binaryType  : 'float64',
+        init        : '-1',
+        parse       : (value: number) => value,
+        serialize   : (value: number) => value,
+        tsType      : 'number',
+        validate    : (value: number) => {
+            if (typeof value !== 'number') {
+                return false;
+            }
+            if (isNaN(value)) {
+                return false;
+            }
+            if (!Number.isInteger(value)) {
+                return false;
+            }
+            return true;
+        },
+    } as IPrimitiveType<number>,
+
     string      : {
+        binaryType  : 'utf8String',
         init        : '""',
         parse       : (value: string) => value,
         serialize   : (value: string) => value,
@@ -24,6 +195,7 @@ export const PrimitiveTypes:  { [key: string]: IPrimitiveType<any> } = {
     } as IPrimitiveType<string>,
 
     integer     : {
+        binaryType  : 'int32',
         init        : '-1',
         parse       : (value: number) => value,
         serialize   : (value: number) => value,
@@ -43,6 +215,7 @@ export const PrimitiveTypes:  { [key: string]: IPrimitiveType<any> } = {
     } as IPrimitiveType<number>,
 
     float     : {
+        binaryType  : 'float64',
         init        : '-1',
         parse       : (value: number) => value,
         serialize   : (value: number) => value,
@@ -59,6 +232,7 @@ export const PrimitiveTypes:  { [key: string]: IPrimitiveType<any> } = {
     } as IPrimitiveType<number>,
 
     boolean     : {
+        binaryType  : 'boolean',
         init        : 'false',
         parse       : (value: boolean) => value,
         serialize   : (value: boolean) => value,
@@ -72,6 +246,7 @@ export const PrimitiveTypes:  { [key: string]: IPrimitiveType<any> } = {
     } as IPrimitiveType<boolean>,
 
     datetime    : {
+        binaryType  : 'float64',
         init        : 'new Date()',
         parse       : (value: number) => {
             return new Date(value);
@@ -103,6 +278,7 @@ export const PrimitiveTypes:  { [key: string]: IPrimitiveType<any> } = {
     } as IPrimitiveType<Date>,
 
     guid     : {
+        binaryType  : 'asciiString',
         implementation  : function guid() {
             const lengths = [4, 4, 4, 8];
             let resultGuid = '';

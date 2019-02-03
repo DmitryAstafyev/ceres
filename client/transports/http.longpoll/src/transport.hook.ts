@@ -26,7 +26,7 @@ export class Hook {
             });
             this._request = new Request(url, instance.stringify());
             const requestId = this._request.getId();
-            this._request.send().then((response: string) => {
+            this._request.send().then((response: string | Uint8Array) => {
                 const message = TransportProtocol.parseFrom(response, [TransportProtocol, Protocol]);
                 this._request = null;
                 if (message instanceof Error) {

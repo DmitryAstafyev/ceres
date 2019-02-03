@@ -1,4 +1,4 @@
-import { Tools, Token } from 'ceres.client.consumer';
+import { Tools, Token, Protocol } from 'ceres.client.consumer';
 import * as TransportProtocol from './protocols/protocol.transport.ws';
 import { Pending } from './transport.pending.task';
 
@@ -48,23 +48,21 @@ export class PendingTasks extends Tools.EventEmitter {
         const pending = new Pending();
         const guid = pending.getGUID();
         const url = this._urlGet();
-        pending.create(url, this._clientGUID, this._token)
-            .then((response: TransportProtocol.Message.Pending.Response | TransportProtocol.Disconnect) => {
-                (this._urlFree as THandler)(url);
-                if (response instanceof TransportProtocol.Disconnect) {
-                    return this.emit(PendingTasks.EVENTS.onDisconnect, response);
-                }
-                // Remove current
-                this._pending.delete(guid);
-                // Add new pending imedeately, while current in process
-                this._add();
-                // Trigger event
-                this.emit(PendingTasks.EVENTS.onTask, response);
-            })
-            .catch((error: Error) => {
-                (this._urlFree as THandler)(url);
-                return this.emit(PendingTasks.EVENTS.onError, error);
-            });
+        pending.create(url, this._clientGUID, this._token).then((response: Protocol.Message.ToConsumer | TransportProtocol.Message.Pending.Response | TransportProtocol.Disconnect) => {
+            (this._urlFree as THandler)(url);
+            if (response instanceof TransportProtocol.Disconnect) {
+                return this.emit(PendingTasks.EVENTS.onDisconnect, response);
+            }
+            // Remove current
+            this._pending.delete(guid);
+            // Add new pending imedeately, while current in process
+            this._add();
+            // Trigger event
+            this.emit(PendingTasks.EVENTS.onTask, response);
+        }).catch((error: Error) => {
+            (this._urlFree as THandler)(url);
+            return this.emit(PendingTasks.EVENTS.onError, error);
+        });
         this._pending.set(guid, pending);
     }
 

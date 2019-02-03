@@ -1,7 +1,7 @@
 // tslint:disable
 
-/// <reference path="../node_modules/@types/jasmine/index.d.ts" />
-/// <reference path="../node_modules/@types/node/index.d.ts" />
+/// <reference path="../../node_modules/@types/jasmine/index.d.ts" />
+/// <reference path="../../node_modules/@types/node/index.d.ts" />
 
 //./node_modules/.bin/jasmine-ts src/something.spec.ts
 
@@ -117,9 +117,9 @@ describe('[Test][platform][protocol]', () => {
                                 });
                                 expect(DataWriteRequest instanceof proto.Data.Write.Request).toBe(true);
                                 console.log(`DataWriteRequest created.`);
-                                let strDataWriteRequest: string = DataWriteRequest.stringify();
-                                expect(typeof strDataWriteRequest).toBe('string');
-                                console.log(`DataWriteRequest converted to string.`);
+                                let strDataWriteRequest: string | Uint8Array= DataWriteRequest.stringify();
+                                expect(strDataWriteRequest instanceof Uint8Array).toBe(true);
+                                console.log(`DataWriteRequest converted to Uint8Array; length = ${strDataWriteRequest.length}.`);
                                 let parsedDataWriteRequest: any = proto.Data.Write.Request.parse(strDataWriteRequest);
                                 if (parsedDataWriteRequest instanceof Array) {
                                     parsedDataWriteRequest.forEach((error: Error) => {
@@ -127,13 +127,44 @@ describe('[Test][platform][protocol]', () => {
                                     });
                                 }
                                 expect(parsedDataWriteRequest instanceof proto.Data.Write.Request).toBe(true);
-                                console.log(`DataWriteRequest created from string.`);
+                                console.log(`DataWriteRequest created from Uint8Array.`);
+                                const binaryData = new proto.BinaryData({
+                                    bytes: Array.from(new Uint8Array([0,1,2,3,4])),
+                                    sequence: 100
+                                });
+                                const binaryDataConv = binaryData.stringify();
+                                expect(binaryDataConv instanceof Uint8Array).toBe(true);
+                                const binaryDataParsed = proto.parse(binaryDataConv);
+                                expect(binaryDataParsed instanceof proto.BinaryData).toBe(true);
+
+                                const aliases = [
+                                    new proto.KeyValue({ key: 'one', value: 'one-value'}),
+                                    new proto.KeyValue({ key: 'two', value: 'two-value'}),
+                                    new proto.KeyValue({ key: 'three', value: 'three-value'}),
+                                ];
+                                const eventInst = new proto.Message.Event.Request({
+                                    clientId: '1234',
+                                    event: new proto.EventDefinition({
+                                        protocol: "protocol-name",
+                                        event: "event-name",
+                                        body: "body-content",
+                                    }),
+                                    aliases: aliases,
+                                    options: new proto.Message.Event.Options({
+                                        scope: 'hosts'
+                                    })
+                                });
+                                const eventConv = eventInst.stringify();
+                                console.log(`proto.Message.Event.Request converted to Uint8Array; length = ${eventConv.length}.`);
+                                const eventParsed = proto.parse(eventConv);
+                                expect(eventParsed instanceof proto.Message.Event.Request).toBe(true);
+
                                 console.log(`Production mode is ok. Checking debug mode`);
                                 
                                 proto.Protocol.state.debug(true);
                                 strDataWriteRequest = DataWriteRequest.stringify();
                                 expect(typeof strDataWriteRequest).toBe('string');
-                                console.log(`[DEBUG]: DataWriteRequest converted to string.`);
+                                console.log(`[DEBUG]: DataWriteRequest converted to string; length = ${strDataWriteRequest.length}`);
                                 parsedDataWriteRequest = proto.Data.Write.Request.parse(strDataWriteRequest);
                                 if (parsedDataWriteRequest instanceof Array) {
                                     parsedDataWriteRequest.forEach((error: Error) => {

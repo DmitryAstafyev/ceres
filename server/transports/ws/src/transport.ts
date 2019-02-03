@@ -119,7 +119,7 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
         });
     }
 
-    public send(clientId: string, data: string): Promise<void> {
+    public send(clientId: string, data: string | Uint8Array): Promise<void> {
         return this._connections.send(clientId, data);
     }
 
@@ -195,18 +195,22 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
         this._connections.addWebSocket(clientId, socket);
     }
 
-    private _onWSMessage(clientId: string, request: string) {
+    private _onWSMessage(clientId: string, request: string | Uint8Array) {
         // Parse request
         let post;
-        try {
-            post = JSON.parse(request);
-            if (Tools.getTypeOf(post) !== Tools.EPrimitiveTypes.object) {
-                this._logger.warn(`Client ${clientId} sent incorrect package. Type of package: ${typeof post}`);
+        if (typeof request === 'string') {
+            try {
+                post = JSON.parse(request);
+                if (Tools.getTypeOf(post) !== Tools.EPrimitiveTypes.object) {
+                    this._logger.warn(`Client ${clientId} sent incorrect package. Type of package: ${typeof post}`);
+                    return;
+                }
+            } catch (error) {
+                this._logger.warn(`Fail to parse request data from client ${clientId} due error: ${error.message}`);
                 return;
             }
-        } catch (error) {
-            this._logger.warn(`Fail to parse request data from client ${clientId} due error: ${error.message}`);
-            return;
+        } else if (request instanceof Uint8Array) {
+            post = request;
         }
         // Exctract message
         const message = TransportProtocol.parseFrom(post, [TransportProtocol, Protocol]) as TRequests;
@@ -231,18 +235,26 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
 
     private _onRequest(httpRequest: HTTP.IncomingMessage, httpResponse: HTTP.ServerResponse) {
         const connection = new Connection(httpRequest, httpResponse, this.parameters.getMaxSize(), this.parameters.getCORS());
-        connection.getRequest().then((request: string) => {
+        connection.getRequest().then((request: string | Uint8Array) => {
             // Parse request
             let post;
-            try {
-                post = JSON.parse(request);
-                if (Tools.getTypeOf(post) !== Tools.EPrimitiveTypes.object) {
-                    return connection.close(this._logger.warn(`As post data expecting only {object}.`)).catch((closeError: Error) => {
+            if (typeof request === 'string') {
+                try {
+                    post = JSON.parse(request);
+                    if (Tools.getTypeOf(post) !== Tools.EPrimitiveTypes.object) {
+                        return connection.close(this._logger.warn(`As post data expecting only {object}.`)).catch((closeError: Error) => {
+                            this._logger.warn(`Fail to close connection due error: ${closeError.message}`);
+                        });
+                    }
+                } catch (error) {
+                    return connection.close(this._logger.warn(`Fail to parse post data due error: ${error.message}`)).catch((closeError: Error) => {
                         this._logger.warn(`Fail to close connection due error: ${closeError.message}`);
                     });
                 }
-            } catch (error) {
-                return connection.close(this._logger.warn(`Fail to parse post data due error: ${error.message}`)).catch((closeError: Error) => {
+            } else if (request instanceof Uint8Array) {
+                post = request;
+            } else {
+                return connection.close(this._logger.warn(`Fail to parse post data, because unexpected type of request: ${typeof request}`)).catch((closeError: Error) => {
                     this._logger.warn(`Fail to close connection due error: ${closeError.message}`);
                 });
             }

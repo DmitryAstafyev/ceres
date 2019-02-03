@@ -20,7 +20,12 @@ export class ProcessorEvents {
         this.state = state;
     }
 
-    public emitAll(protocolSignature: string, eventSignature: string, body: string, options: Protocol.Message.Event.Options, aliases?: Protocol.KeyValue[]): Promise<number> {
+    public emitAll(
+        protocolSignature: string,
+        eventSignature: string,
+        body: string | Uint8Array,
+        options: Protocol.Message.Event.Options,
+        aliases?: Protocol.KeyValue[]): Promise<number> {
         return new Promise((resolve, reject) => {
             if (options.scope === Protocol.Message.Event.Options.Scope.all) {
                 Promise.all([
@@ -42,7 +47,7 @@ export class ProcessorEvents {
     public emit(
         protocol: string,
         event: string,
-        body: string,
+        body: string | Uint8Array,
         clientId: string,
     ): Promise<void> {
         return new Promise((resolve, reject) => {
@@ -55,7 +60,8 @@ export class ProcessorEvents {
             this.state.transport.send(clientId, (new Protocol.Message.ToConsumer({
                 clientId: clientId,
                 event: new Protocol.EventDefinition({
-                    body: body,
+                    bodyBinary: body instanceof Uint8Array ? Array.from(body) : [],
+                    bodyStr: typeof body === 'string' ? body : '',
                     event: event,
                     protocol: protocol,
                 }),
@@ -172,7 +178,12 @@ export class ProcessorEvents {
         return this.subscriptions.getInfo();
     }
 
-    private _emitClients(protocolSignature: string, eventSignature: string, body: string, options: Protocol.Message.Event.Options, aliases?: Protocol.KeyValue[]): Promise<number> {
+    private _emitClients(
+        protocolSignature: string,
+        eventSignature: string,
+        body: string | Uint8Array,
+        options: Protocol.Message.Event.Options,
+        aliases?: Protocol.KeyValue[]): Promise<number> {
         return new Promise((resolve) => {
             let subscribers = this.state.events.getSubscribers(protocolSignature, eventSignature);
             // Check aliases
@@ -202,7 +213,12 @@ export class ProcessorEvents {
         });
     }
 
-    private _emitServer(protocolSignature: string, eventSignature: string, body: string, options: Protocol.Message.Event.Options, aliases?: Protocol.KeyValue[]): Promise<number> {
+    private _emitServer(
+        protocolSignature: string,
+        eventSignature: string,
+        body: string | Uint8Array,
+        options: Protocol.Message.Event.Options,
+        aliases?: Protocol.KeyValue[]): Promise<number> {
         return new Promise((resolve, reject) => {
             // Check server alias
             if (aliases instanceof Array && !isAliasInclude(this.alias, aliases)) {

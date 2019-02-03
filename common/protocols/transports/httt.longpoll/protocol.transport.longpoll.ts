@@ -1,6 +1,6 @@
 /* tslint:disable */
 /*
-* This file generated automaticaly (Wed Jan 30 2019 23:20:44 GMT+0100 (CET))
+* This file generated automaticaly (Mon Feb 04 2019 00:20:14 GMT+0100 (CET))
 * Do not remove or change this code.
 * Protocol version: 0.0.1
 */
@@ -172,7 +172,996 @@ export namespace Protocol {
 			b: "message",
 		},
 	};
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	* Injection: typed map
+	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	export const TypedEntitiesMap: {[key: string]: any} = {
+		"59648854": {
+			a: "string",
+			b: "guid",
+			c: "string",
+		},
+		"71280621": {
+			a: "string",
+			b: "string",
+		},
+		"70D1C8A2": {
+			a: "string",
+			b: "guid",
+		},
+		"5B342A75": {
+			a: "string",
+			b: "guid",
+		},
+		"1D8E5E9C": {
+			a: "string",
+			b: "guid",
+			c: "string",
+			d: "string",
+			e: "string",
+		},
+		"6A4CB50C": {
+			a: "string",
+			b: "guid",
+		},
+		"35D910F1": {
+			a: "string",
+			b: "guid",
+		},
+		"26C80A90": {
+			a: "string",
+			b: "guid",
+			c: "string",
+		},
+		"4A9F03A0": {
+			a: "string",
+			b: "guid",
+		},
+		"3ED7382B": {
+			a: "string",
+			b: "guid",
+		},
+		"2FFB32C4": {
+			a: "string",
+			b: "guid",
+			c: {
+				a: "string",
+				b: "string",
+				c: "string",
+			},
+			d: {
+				a: "string",
+				b: "string",
+				c: "string",
+				d: "string",
+				e: "string",
+				f: "string",
+				g: "boolean",
+			},
+			e: {
+				a: "string",
+				b: "string",
+				c: "string",
+				d: "string",
+				e: "string",
+				f: "string",
+				g: "boolean",
+			},
+		},
+		"282376D8": {
+			a: "string",
+			b: "string",
+			c: "string",
+		},
+		"61578FC3": {
+			a: "string",
+			b: "string",
+			c: "string",
+			d: "string",
+			e: "string",
+			f: "string",
+			g: "boolean",
+		},
+		"583DFB65": {
+			a: "string",
+			b: "string",
+		},
+	};
+
 	export const AdvancedTypes: {[key: string]: any} = {};
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	* Injection: injection.convertor.ts
+	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	// tslint:disable:no-namespace
+	// tslint:disable:max-classes-per-file
+	// tslint:disable:no-bitwise
+	// tslint:disable:object-literal-sort-keys
+	
+	export namespace Json {
+	
+	    export namespace Impls {
+	        export class Boolean {
+	            public static toUint8(value: any): Uint8Array {
+	                return new Uint8Array((new Uint8Array([value ? 1 : 0])).buffer);
+	            }
+	            public static fromUint8(bytes: Uint8Array): boolean {
+	                const int8 = new Uint8Array((new Uint8Array(bytes)).buffer);
+	                return int8[0] === 1;
+	            }
+	            public static validate(value: number): Error | undefined {
+	                if (typeof value !== 'boolean') {
+	                    return new Error(`Invalid basic type: ${typeof value}. Expected type: boolean.`);
+	                }
+	                return undefined;
+	            }
+	        }
+	        export class Float32 {
+	            public static toUint8(int: any): Uint8Array {
+	                return new Uint8Array((new Float32Array([int])).buffer);
+	            }
+	            public static fromUint8(bytes: Uint8Array): number {
+	                const float32 = new Float32Array((new Uint8Array(bytes)).buffer);
+	                return float32[0];
+	            }
+	            public static validate(value: number): Error | undefined {
+	                if (typeof value !== 'number' || isNaN(value) || !isFinite(value)) {
+	                    return new Error(`Invalid basic type: ${typeof value}. Expected type: number.`);
+	                }
+	                let generated: number = this.fromUint8(this.toUint8(value));
+	                if (generated !== value) {
+	                    const valueAsStr: string = value.toString();
+	                    const decimalPos: number = valueAsStr.indexOf('.');
+	                    if (decimalPos === -1) {
+	                        generated = Math.round(generated);
+	                    } else {
+	                        const decimal: number = valueAsStr.substr(decimalPos + 1, valueAsStr.length).length;
+	                        generated = parseFloat(generated.toFixed(decimal));
+	                    }
+	                }
+	                return generated === value ? undefined : new Error(`Values dismatch. Original value: ${value}. Encoded & decoded value: ${generated}`);
+	            }
+	        }
+	        export class Float64 {
+	            public static toUint8(int: any): Uint8Array {
+	                return new Uint8Array((new Float64Array([int])).buffer);
+	            }
+	            public static fromUint8(bytes: Uint8Array): number {
+	                const float64 = new Float64Array((new Uint8Array(bytes)).buffer);
+	                return float64[0];
+	            }
+	            public static validate(value: number): Error | undefined {
+	                if (typeof value !== 'number' || isNaN(value) || !isFinite(value)) {
+	                    return new Error(`Invalid basic type: ${typeof value}. Expected type: number.`);
+	                }
+	                let generated: number = this.fromUint8(this.toUint8(value));
+	                if (generated !== value) {
+	                    const valueAsStr: string = value.toString();
+	                    const decimalPos: number = valueAsStr.indexOf('.');
+	                    if (decimalPos === -1) {
+	                        generated = Math.round(generated);
+	                    } else {
+	                        const decimal: number = valueAsStr.substr(decimalPos + 1, valueAsStr.length).length;
+	                        generated = parseFloat(generated.toFixed(decimal));
+	                    }
+	                }
+	                return generated === value ? undefined : new Error(`Values dismatch. Original value: ${value}. Encoded & decoded value: ${generated}`);
+	            }
+	        }
+	        export class Int8 {
+	            public static toUint8(int: any): Uint8Array {
+	                return new Uint8Array((new Int8Array([int])).buffer);
+	            }
+	            public static fromUint8(bytes: Uint8Array): number {
+	                const int8 = new Int8Array((new Uint8Array(bytes)).buffer);
+	                return int8[0];
+	            }
+	            public static validate(value: number): Error | undefined {
+	                if (typeof value !== 'number' || isNaN(value) || !isFinite(value)) {
+	                    return new Error(`Invalid basic type: ${typeof value}. Expected type: number.`);
+	                }
+	                const generated: number = this.fromUint8(this.toUint8(value));
+	                return generated === value ? undefined : new Error(`Values dismatch. Original value: ${value}. Encoded & decoded value: ${generated}`);
+	            }
+	        }
+	        export class Int16 {
+	            public static toUint8(int: any): Uint8Array {
+	                return new Uint8Array((new Int16Array([int])).buffer);
+	            }
+	            public static fromUint8(bytes: Uint8Array): number {
+	                const int16 = new Int16Array((new Uint8Array(bytes)).buffer);
+	                return int16[0];
+	            }
+	            public static validate(value: number): Error | undefined {
+	                if (typeof value !== 'number' || isNaN(value) || !isFinite(value)) {
+	                    return new Error(`Invalid basic type: ${typeof value}. Expected type: number.`);
+	                }
+	                const generated: number = this.fromUint8(this.toUint8(value));
+	                return generated === value ? undefined : new Error(`Values dismatch. Original value: ${value}. Encoded & decoded value: ${generated}`);
+	            }
+	        }
+	        export class Int32 {
+	            public static toUint8(int: any): Uint8Array {
+	                return new Uint8Array((new Int32Array([int])).buffer);
+	            }
+	            public static fromUint8(bytes: Uint8Array): number {
+	                const int32 = new Int32Array((new Uint8Array(bytes)).buffer);
+	                return int32[0];
+	            }
+	            public static validate(value: number): Error | undefined {
+	                if (typeof value !== 'number' || isNaN(value) || !isFinite(value)) {
+	                    return new Error(`Invalid basic type: ${typeof value}. Expected type: number.`);
+	                }
+	                const generated: number = this.fromUint8(this.toUint8(value));
+	                return generated === value ? undefined : new Error(`Values dismatch. Original value: ${value}. Encoded & decoded value: ${generated}`);
+	            }
+	        }
+	        export class Uint8 {
+	            public static fromAsciiStr(str: string): Uint8Array {
+	                const result = new Uint8Array(str.length);
+	                Array.prototype.forEach.call(str, (char: string, i: number) => {
+	                    result[i] = char.charCodeAt(0);
+	                });
+	                return result;
+	            }
+	            public static toAsciiStr(data: Uint8Array): string {
+	                let result = '';
+	                data.map((code: number) => {
+	                    result += String.fromCharCode(code);
+	                    return code;
+	                });
+	                return result;
+	            }
+	            public static fromUtf8Str(str: string): Uint8Array {
+	                // Source of method implementation: https://stackoverflow.com/questions/18729405/how-to-convert-utf8-string-to-byte-array
+	                const utf8 = [];
+	                for (let i = 0; i < str.length; i++) {
+	                    let charcode = str.charCodeAt(i);
+	                    if (charcode < 0x80)  {
+	                        utf8.push(charcode);
+	                    } else if (charcode < 0x800) {
+	                        utf8.push(0xc0 | (charcode >> 6),
+	                                0x80 | (charcode & 0x3f));
+	                    } else if (charcode < 0xd800 || charcode >= 0xe000) {
+	                        utf8.push(0xe0 | (charcode >> 12),
+	                                0x80 | ((charcode >> 6) & 0x3f),
+	                                0x80 | (charcode & 0x3f));
+	                    } else {
+	                        i++;
+	                        // UTF-16 encodes 0x10000-0x10FFFF by
+	                        // subtracting 0x10000 and splitting the
+	                        // 20 bits of 0x0-0xFFFFF into two halves
+	                        charcode = 0x10000 + (((charcode & 0x3ff) << 10)
+	                                | (str.charCodeAt(i) & 0x3ff));
+	                        utf8.push(0xf0 | (charcode >> 18),
+	                                0x80 | ((charcode >> 12) & 0x3f),
+	                                0x80 | ((charcode >> 6) & 0x3f),
+	                                0x80 | (charcode & 0x3f));
+	                    }
+	                }
+	                return new Uint8Array(utf8);
+	            }
+	            public static toUtf8Str(bytes: Uint8Array): string {
+	                // Source of method implementation: https://stackoverflow.com/questions/17191945/conversion-between-utf-8-arraybuffer-and-string
+	                let out = "";
+	                let i = 0;
+	                const len = bytes.length;
+	                while (i < len) {
+	                    let char2;
+	                    let char3;
+	                    const c = bytes[ i++ ];
+	                    switch (c >> 4) {
+	                        case 0: case 1: case 2: case 3: case 4: case 5: case 6: case 7:
+	                            // 0xxxxxxx
+	                            out += String.fromCharCode(c);
+	                            break;
+	                        case 12: case 13:
+	                            // 110x xxxx   10xx xxxx
+	                            char2 = bytes[i++];
+	                            out += String.fromCharCode(((c & 0x1F) << 6) | (char2 & 0x3F));
+	                            break;
+	                        case 14:
+	                            // 1110 xxxx  10xx xxxx  10xx xxxx
+	                            char2 = bytes[i++];
+	                            char3 = bytes[i++];
+	                            out += String.fromCharCode(((c & 0x0F) << 12) |
+	                                                        ((char2 & 0x3F) << 6) |
+	                                                        ((char3 & 0x3F) << 0));
+	                            break;
+	                    }
+	                }
+	                return out;
+	            }
+	            public static toUint8(int: any): Uint8Array {
+	                return new Uint8Array((new Uint8Array([int])).buffer);
+	            }
+	            public static fromUint8(bytes: Uint8Array): number {
+	                const int8 = new Uint8Array((new Uint8Array(bytes)).buffer);
+	                return int8[0];
+	            }
+	            public static validate(value: number): Error | undefined {
+	                if (typeof value !== 'number' || isNaN(value) || !isFinite(value)) {
+	                    return new Error(`Invalid basic type: ${typeof value}. Expected type: number.`);
+	                }
+	                const generated: number = this.fromUint8(this.toUint8(value));
+	                return generated === value ? undefined : new Error(`Values dismatch. Original value: ${value}. Encoded & decoded value: ${generated}`);
+	            }
+	        }
+	        export class Uint16 {
+	            public static toUint8(int: any): Uint8Array {
+	                return new Uint8Array((new Uint16Array([int])).buffer);
+	            }
+	            public static fromUint8(bytes: Uint8Array): number {
+	                const int16 = new Uint16Array((new Uint8Array(bytes)).buffer);
+	                return int16[0];
+	            }
+	            public static validate(value: number): Error | undefined {
+	                if (typeof value !== 'number' || isNaN(value) || !isFinite(value)) {
+	                    return new Error(`Invalid basic type: ${typeof value}. Expected type: number.`);
+	                }
+	                const generated: number = this.fromUint8(this.toUint8(value));
+	                return generated === value ? undefined : new Error(`Values dismatch. Original value: ${value}. Encoded & decoded value: ${generated}`);
+	            }
+	        }
+	        export class Uint32 {
+	            public static toUint8(int: any): Uint8Array {
+	                return new Uint8Array((new Uint32Array([int])).buffer);
+	            }
+	            public static fromUint8(bytes: Uint8Array): number {
+	                const int32 = new Uint32Array((new Uint8Array(bytes)).buffer);
+	                return int32[0];
+	            }
+	            public static validate(value: number): Error | undefined {
+	                if (typeof value !== 'number' || isNaN(value) || !isFinite(value)) {
+	                    return new Error(`Invalid basic type: ${typeof value}. Expected type: number.`);
+	                }
+	                const generated: number = this.fromUint8(this.toUint8(value));
+	                return generated === value ? undefined : new Error(`Values dismatch. Original value: ${value}. Encoded & decoded value: ${generated}`);
+	            }
+	        }
+	    }
+	
+	    export namespace Scheme {
+	        export const Types = {
+	            // Primitive types
+	            int8: 0,
+	            int16: 1,
+	            int32: 2,
+	            uint8: 3,
+	            uint16: 4,
+	            uint32: 5,
+	            float32: 6,
+	            float64: 7,
+	            boolean: 8,
+	            asciiString: 9,
+	            utf8String: 10,
+	            // Complex types
+	            object: 100,
+	            array: 101,
+	        };
+	        export const TypesNames = {
+	            [Types.int8]: 'int8',
+	            [Types.int16]: 'int16',
+	            [Types.int32]: 'int32',
+	            [Types.uint8]: 'uint8',
+	            [Types.uint16]: 'uint16',
+	            [Types.uint32]: 'uint32',
+	            [Types.float32]: 'float32',
+	            [Types.float64]: 'float64',
+	            [Types.boolean]: 'boolean',
+	            [Types.asciiString]: 'asciiString',
+	            [Types.utf8String]: 'utf8String',
+	            [Types.object]: 'object',
+	        };
+	        export const TypesSizes = {
+	            [Types.int8]: 1,
+	            [Types.int16]: 2,
+	            [Types.int32]: 4,
+	            [Types.uint8]: 1,
+	            [Types.uint16]: 2,
+	            [Types.uint32]: 4,
+	            [Types.float32]: 4,
+	            [Types.float64]: 8,
+	            [Types.boolean]: 1,
+	        };
+	        export const TypesProviders = {
+	            [Types.int8]: Impls.Int8,
+	            [Types.int16]: Impls.Int16,
+	            [Types.int32]: Impls.Int32,
+	            [Types.uint8]: Impls.Uint8,
+	            [Types.uint16]: Impls.Uint16,
+	            [Types.uint32]: Impls.Uint32,
+	            [Types.float32]: Impls.Float32,
+	            [Types.float64]: Impls.Float64,
+	            [Types.boolean]: Impls.Boolean,
+	        };
+	        export const LengthConvertor = {
+	            object: Impls.Uint32.toUint8,
+	            [Types.asciiString]: Impls.Uint32.toUint8,
+	            [Types.utf8String]: Impls.Uint32.toUint8,
+	        };
+	        export const SizeDeclaration = {
+	            [Types.asciiString]: true,
+	            [Types.utf8String]: true,
+	        };
+	    }
+	
+	    const MAX_INTERACTIONS_COUNT = 1000;
+	
+	    export class Convertor {
+	
+	        public static encode(target: any, scheme: any, validation: boolean = true): Uint8Array {
+	            const paket: number[] = [];
+	            Object.keys(target).forEach((key: string) => {
+	                const type = this._getPrimitiveType(scheme[key]);
+	                const value = target[key];
+	                const propName: Uint8Array = Impls.Uint8.fromAsciiStr(key);
+	                if (type === null || type === undefined) {
+	                    throw new Error(`Incorrect type provided in scheme: ${typeof type}; key: ${key}.`);
+	                }
+	                if (value === undefined) {
+	                    return;
+	                }
+	                if (typeof type !== 'object' && !(type instanceof Array)) {
+	                    // Primitives
+	                    const propValue: number[] | Error = this._encodePrimitive(value, type, validation);
+	                    if (propValue instanceof Error) {
+	                        throw new Error(`Fail to encode property "${key}" due error: ${propValue.message}.`);
+	                    }
+	                    // Save data
+	                    const data: number[] = [];
+	                    data.push(propName.length);
+	                    data.push(...propName);
+	                    data.push(type);
+	                    if (Scheme.SizeDeclaration[type]) {
+	                        data.push(...Scheme.LengthConvertor[type](propValue.length));
+	                    }
+	                    data.push(...propValue);
+	                    paket.push(...data);
+	                } else if (type instanceof Array) {
+	                    if (type.length !== 1) {
+	                        throw new Error(`Array declaration should have one (only) type definition. Property: ${propName}.`);
+	                    }
+	                    if (!(value instanceof Array)) {
+	                        throw new Error(`Type of value isn't an array. Property: ${propName}.`);
+	                    }
+	                    // We have an array
+	                    const itemType = this._getPrimitiveType(type[0]);
+	                    const items: number[] = [];
+	                    const data: number[] = [];
+	                    data.push(propName.length);
+	                    data.push(...propName);
+	                    data.push(Scheme.Types.array);
+	                    if (this._isPrimitive(itemType)) {
+	                        if ([Scheme.Types.asciiString, Scheme.Types.utf8String].indexOf(itemType) !== -1) {
+	                            value.forEach((item: any, index: number) => {
+	                                const propValue: number[] | Error = this._encodePrimitive(item, itemType, validation);
+	                                if (propValue instanceof Error) {
+	                                    throw new Error(`Fail to encode property "${key}" due error: ${propValue.message}. Index in array: ${index}; key: ${key}.`);
+	                                }
+	                                items.push(...Scheme.LengthConvertor[itemType](propValue.length));
+	                                items.push(...propValue);
+	                            });
+	                        } else {
+	                            value.forEach((item: any, index: number) => {
+	                                const propValue: number[] | Error = this._encodePrimitive(item, itemType, validation);
+	                                if (propValue instanceof Error) {
+	                                    throw new Error(`Fail to encode property "${key}" due error: ${propValue.message}. Index in array: ${index}; key: ${key}.`);
+	                                }
+	                                items.push(...propValue);
+	                            });
+	                        }
+	                        // Save data
+	                        data.push(itemType);
+	                    } else if (typeof itemType === 'object' && itemType !== null && !(itemType instanceof Array)) {
+	                        value.forEach((item: any) => {
+	                            const propValue: Uint8Array = this.encode(item, itemType, validation);
+	                            items.push(...propValue);
+	                        });
+	                        data.push(Scheme.Types.object);
+	                    } else {
+	                        throw new Error(`Incorrect declaration of array type: ${typeof itemType} / ${itemType}; key: ${key}`);
+	                    }
+	                    data.push(...Impls.Uint32.toUint8(items.length));
+	                    data.push(...items);
+	                    paket.push(...data);
+	                } else {
+	                    // Nested
+	                    const propValue: Uint8Array = this.encode(target[key], scheme[key], validation);
+	                    paket.push(propName.length);
+	                    paket.push(...propName);
+	                    paket.push(...propValue);
+	                }
+	            });
+	            // Set size
+	            paket.unshift(...Impls.Uint32.toUint8(paket.length));
+	            // Set type
+	            paket.unshift(Scheme.Types.object);
+	            // Return value
+	            return new Uint8Array(paket);
+	        }
+	    
+	        public static decode(target: Uint8Array, maxInteractionsCount = MAX_INTERACTIONS_COUNT): any {
+	            const paket: any = {};
+	            const type = target[0];
+	            if (type !== Scheme.Types.object) {
+	                throw new Error(`Expecting type to be object (type = ${Scheme.Types.object}), but type is "${type}"`);
+	            }
+	            const length = Impls.Uint32.fromUint8(target.slice(1, 5));
+	            let buffer = target.slice(5, 5 + length);
+	            let counter = 0;
+	            do {
+	                // Get name of prop
+	                const propNameLength: number = buffer[0];
+	                const propName: string = Impls.Uint8.toAsciiStr(buffer.slice(1, propNameLength + 1));
+	                const propType: number = Impls.Uint8.fromUint8(buffer.slice(propNameLength + 1, propNameLength + 2));
+	                const offset: number = propNameLength + 1 + 1;
+	                switch (propType) {
+	                    case Scheme.Types.object:
+	                        const objValueLength = Impls.Uint32.fromUint8(buffer.slice(offset, offset + 4));
+	                        const objValueBytes = buffer.slice(offset - 1, offset + 4 + objValueLength);
+	                        if (objValueLength > 0) {
+	                            paket[propName] = this.decode(objValueBytes);
+	                        } else {
+	                            paket[propName] = {};
+	                        }
+	                        buffer = buffer.slice(offset + 4 + objValueLength, buffer.length);
+	                        break;
+	                    case Scheme.Types.array:
+	                        const itemType = Impls.Uint8.fromUint8(buffer.slice(offset, offset + 1));
+	                        const arrayLength = Impls.Uint32.fromUint8(buffer.slice(offset + 1, offset + 4 + 1));
+	                        let arrayBytes = buffer.slice(offset + 4 + 1, offset + 4 + 1 + arrayLength);
+	                        const items: any[] = [];
+	                        if (arrayLength > 0) {
+	                            if (this._isPrimitive(itemType)) {
+	                                if ([Scheme.Types.asciiString, Scheme.Types.utf8String].indexOf(itemType) !== -1) {
+	                                    let strLength;
+	                                    let strValue;
+	                                    do {
+	                                        strLength = Impls.Uint32.fromUint8(arrayBytes.slice(0, 4));
+	                                        strValue = arrayBytes.slice(4, 4 + strLength);
+	                                        switch (itemType) {
+	                                            case Scheme.Types.asciiString:
+	                                                items.push(Impls.Uint8.toAsciiStr(strValue));
+	                                                break;
+	                                            case Scheme.Types.utf8String:
+	                                                items.push(Impls.Uint8.toUtf8Str(strValue));
+	                                                break;
+	                                        }
+	                                        arrayBytes = arrayBytes.slice(4 + strLength, arrayBytes.length);
+	                                    } while (arrayBytes.length > 0);
+	                                } else {
+	                                    do {
+	                                        items.push(Scheme.TypesProviders[itemType].fromUint8(arrayBytes.slice(0, Scheme.TypesSizes[itemType])));
+	                                        arrayBytes = arrayBytes.slice(Scheme.TypesSizes[itemType], arrayBytes.length);
+	                                    } while (arrayBytes.length > 0);
+	                                }
+	                            } else if (itemType === Scheme.Types.object) {
+	                                let objType;
+	                                let objLength;
+	                                let objBody;
+	                                do {
+	                                    objType = Impls.Uint8.fromUint8(arrayBytes.slice(0, 1));
+	                                    if (objType !== Scheme.Types.object) {
+	                                        throw new Error(`Expecting to have as an item of array object, but found type = ${Scheme.TypesNames[objType]} / ${objType}`);
+	                                    }
+	                                    objLength = Impls.Uint32.fromUint8(arrayBytes.slice(1, 5));
+	                                    objBody = arrayBytes.slice(0, objLength + 5);
+	                                    items.push(this.decode(objBody));
+	                                    arrayBytes = arrayBytes.slice(5 + objLength, arrayBytes.length);
+	                                } while (arrayBytes.length > 0);
+	                            }
+	                        }
+	                        paket[propName] = items;
+	                        buffer = buffer.slice(offset + 4 + 1 + arrayLength, buffer.length);
+	                        break;
+	                    case Scheme.Types.uint8:
+	                    case Scheme.Types.uint16:
+	                    case Scheme.Types.uint32:
+	                    case Scheme.Types.int8:
+	                    case Scheme.Types.int16:
+	                    case Scheme.Types.int32:
+	                    case Scheme.Types.float32:
+	                    case Scheme.Types.float64:
+	                    case Scheme.Types.boolean:
+	                        paket[propName] = Scheme.TypesProviders[propType].fromUint8(buffer.slice(offset, offset + Scheme.TypesSizes[propType]));
+	                        buffer = buffer.slice(offset + Scheme.TypesSizes[propType], buffer.length);
+	                        break;
+	                    case Scheme.Types.asciiString:
+	                        const asciiStringLength = Impls.Uint32.fromUint8(buffer.slice(offset, offset + 4));
+	                        const asciiStringBytes = buffer.slice(offset + 4, offset + 4 + asciiStringLength);
+	                        paket[propName] = Impls.Uint8.toAsciiStr(asciiStringBytes);
+	                        buffer = buffer.slice(offset + 4 + asciiStringLength, buffer.length);
+	                        break;
+	                    case Scheme.Types.utf8String:
+	                        const utf8StringLength = Impls.Uint32.fromUint8(buffer.slice(offset, offset + 4));
+	                        const utf8StringBytes = buffer.slice(offset + 4, offset + 4 + utf8StringLength);
+	                        paket[propName] = Impls.Uint8.toUtf8Str(utf8StringBytes);
+	                        buffer = buffer.slice(offset + 4 + utf8StringLength, buffer.length);
+	                        break;
+	                    default:
+	                        throw new Error(`Was detected unknown type of data or some errors during parsing. Found type of data: ${propType}.`);
+	                }
+	                counter += 1;
+	                if (counter >= maxInteractionsCount) {
+	                    throw new Error(`Max count of interactions was done. Probably parser works with error because data isn't right.`);
+	                }
+	            } while (buffer.length > 0);
+	            return paket;
+	        }
+	    
+	        private static _encodePrimitive(value: any, type: number, validation: boolean): number[] | Error {
+	            const encoded: number[] = [];
+	            // Get value of property
+	            switch (type) {
+	                case Scheme.Types.uint8:
+	                case Scheme.Types.uint16:
+	                case Scheme.Types.uint32:
+	                case Scheme.Types.int8:
+	                case Scheme.Types.int16:
+	                case Scheme.Types.int32:
+	                case Scheme.Types.float32:
+	                case Scheme.Types.float64:
+	                case Scheme.Types.boolean:
+	                    if (validation) {
+	                        const validationError: Error | undefined = Scheme.TypesProviders[type].validate(value);
+	                        if (validationError) {
+	                            return new Error(`Invalid value = ${value}. Declared type is: ${Scheme.TypesNames[type]}. Checks finished with error: ${validationError.message}.`);
+	                        }
+	                    }
+	                    encoded.push(...Scheme.TypesProviders[type].toUint8(value));
+	                    break;
+	                case Scheme.Types.asciiString:
+	                    encoded.push(...Impls.Uint8.fromAsciiStr(value));
+	                    break;
+	                case Scheme.Types.utf8String:
+	                    encoded.push(...Impls.Uint8.fromUtf8Str(value));
+	                    break;
+	            }
+	            return encoded;
+	        }
+	    
+	        private static _isPrimitive(type: number): boolean {
+	            switch (type) {
+	                case Scheme.Types.uint8:
+	                case Scheme.Types.uint16:
+	                case Scheme.Types.uint32:
+	                case Scheme.Types.int8:
+	                case Scheme.Types.int16:
+	                case Scheme.Types.int32:
+	                case Scheme.Types.float32:
+	                case Scheme.Types.float64:
+	                case Scheme.Types.boolean:
+	                case Scheme.Types.asciiString:
+	                case Scheme.Types.utf8String:
+	                    return true;
+	                default:
+	                    return false;
+	            }
+	        }
+	    
+	        private static _getPrimitiveType(type: any): any {
+	            if (typeof type === 'number') {
+	                return type;
+	            } else if (typeof type === 'string') {
+	                return (Scheme.Types as any)[type];
+	            } else {
+	                return type;
+	            }
+	        }
+	    }
+	}
+	
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	* Injection: injection.types.primitive.ts
+	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	
+	export interface IPrimitiveType<T> {
+	    tsType: string;
+	    binaryType: string;
+	    init: string;
+	    parse: (value: string | number | T) => T;
+	    serialize: (value: T) => string | number | boolean | T;
+	    validate: (value: string | number | T) => boolean;
+	    implementation?: () => {};
+	}
+	
+	export const PrimitiveTypes:  { [key: string]: IPrimitiveType<any> } = {
+	
+	    uint8     : {
+	        binaryType  : 'uint8',
+	        init        : '0',
+	        parse       : (value: number) => value,
+	        serialize   : (value: number) => value,
+	        tsType      : 'number',
+	        validate    : (value: number) => {
+	            if (typeof value !== 'number') {
+	                return false;
+	            }
+	            if (isNaN(value)) {
+	                return false;
+	            }
+	            if (!Number.isInteger(value)) {
+	                return false;
+	            }
+	            if (value < 0) {
+	                return false;
+	            }
+	            return true;
+	        },
+	    } as IPrimitiveType<number>,
+	
+	    uint16     : {
+	        binaryType  : 'uint16',
+	        init        : '0',
+	        parse       : (value: number) => value,
+	        serialize   : (value: number) => value,
+	        tsType      : 'number',
+	        validate    : (value: number) => {
+	            if (typeof value !== 'number') {
+	                return false;
+	            }
+	            if (isNaN(value)) {
+	                return false;
+	            }
+	            if (!Number.isInteger(value)) {
+	                return false;
+	            }
+	            if (value < 0) {
+	                return false;
+	            }
+	            return true;
+	        },
+	    } as IPrimitiveType<number>,
+	
+	    uint32     : {
+	        binaryType  : 'uint32',
+	        init        : '0',
+	        parse       : (value: number) => value,
+	        serialize   : (value: number) => value,
+	        tsType      : 'number',
+	        validate    : (value: number) => {
+	            if (typeof value !== 'number') {
+	                return false;
+	            }
+	            if (isNaN(value)) {
+	                return false;
+	            }
+	            if (!Number.isInteger(value)) {
+	                return false;
+	            }
+	            if (value < 0) {
+	                return false;
+	            }
+	            return true;
+	        },
+	    } as IPrimitiveType<number>,
+	
+	    int8     : {
+	        binaryType  : 'int8',
+	        init        : '-1',
+	        parse       : (value: number) => value,
+	        serialize   : (value: number) => value,
+	        tsType      : 'number',
+	        validate    : (value: number) => {
+	            if (typeof value !== 'number') {
+	                return false;
+	            }
+	            if (isNaN(value)) {
+	                return false;
+	            }
+	            if (!Number.isInteger(value)) {
+	                return false;
+	            }
+	            return true;
+	        },
+	    } as IPrimitiveType<number>,
+	
+	    int16     : {
+	        binaryType  : 'int16',
+	        init        : '-1',
+	        parse       : (value: number) => value,
+	        serialize   : (value: number) => value,
+	        tsType      : 'number',
+	        validate    : (value: number) => {
+	            if (typeof value !== 'number') {
+	                return false;
+	            }
+	            if (isNaN(value)) {
+	                return false;
+	            }
+	            if (!Number.isInteger(value)) {
+	                return false;
+	            }
+	            return true;
+	        },
+	    } as IPrimitiveType<number>,
+	
+	    int32     : {
+	        binaryType  : 'int32',
+	        init        : '-1',
+	        parse       : (value: number) => value,
+	        serialize   : (value: number) => value,
+	        tsType      : 'number',
+	        validate    : (value: number) => {
+	            if (typeof value !== 'number') {
+	                return false;
+	            }
+	            if (isNaN(value)) {
+	                return false;
+	            }
+	            if (!Number.isInteger(value)) {
+	                return false;
+	            }
+	            return true;
+	        },
+	    } as IPrimitiveType<number>,
+	
+	    float32     : {
+	        binaryType  : 'float32',
+	        init        : '-1',
+	        parse       : (value: number) => value,
+	        serialize   : (value: number) => value,
+	        tsType      : 'number',
+	        validate    : (value: number) => {
+	            if (typeof value !== 'number') {
+	                return false;
+	            }
+	            if (isNaN(value)) {
+	                return false;
+	            }
+	            if (!Number.isInteger(value)) {
+	                return false;
+	            }
+	            return true;
+	        },
+	    } as IPrimitiveType<number>,
+	
+	    float64     : {
+	        binaryType  : 'float64',
+	        init        : '-1',
+	        parse       : (value: number) => value,
+	        serialize   : (value: number) => value,
+	        tsType      : 'number',
+	        validate    : (value: number) => {
+	            if (typeof value !== 'number') {
+	                return false;
+	            }
+	            if (isNaN(value)) {
+	                return false;
+	            }
+	            if (!Number.isInteger(value)) {
+	                return false;
+	            }
+	            return true;
+	        },
+	    } as IPrimitiveType<number>,
+	
+	    string      : {
+	        binaryType  : 'utf8String',
+	        init        : '""',
+	        parse       : (value: string) => value,
+	        serialize   : (value: string) => value,
+	        tsType      : 'string',
+	        validate    : (value: string) => {
+	            if (typeof value !== 'string') {
+	                return false;
+	            }
+	            return true;
+	        },
+	    } as IPrimitiveType<string>,
+	
+	    integer     : {
+	        binaryType  : 'int32',
+	        init        : '-1',
+	        parse       : (value: number) => value,
+	        serialize   : (value: number) => value,
+	        tsType      : 'number',
+	        validate    : (value: number) => {
+	            if (typeof value !== 'number') {
+	                return false;
+	            }
+	            if (isNaN(value)) {
+	                return false;
+	            }
+	            if (!Number.isInteger(value)) {
+	                return false;
+	            }
+	            return true;
+	        },
+	    } as IPrimitiveType<number>,
+	
+	    float     : {
+	        binaryType  : 'float64',
+	        init        : '-1',
+	        parse       : (value: number) => value,
+	        serialize   : (value: number) => value,
+	        tsType      : 'number',
+	        validate    : (value: number) => {
+	            if (typeof value !== 'number') {
+	                return false;
+	            }
+	            if (isNaN(value)) {
+	                return false;
+	            }
+	            return true;
+	        },
+	    } as IPrimitiveType<number>,
+	
+	    boolean     : {
+	        binaryType  : 'boolean',
+	        init        : 'false',
+	        parse       : (value: boolean) => value,
+	        serialize   : (value: boolean) => value,
+	        tsType      : 'boolean',
+	        validate    : (value: boolean) => {
+	            if (typeof value !== 'boolean') {
+	                return false;
+	            }
+	            return true;
+	        },
+	    } as IPrimitiveType<boolean>,
+	
+	    datetime    : {
+	        binaryType  : 'float64',
+	        init        : 'new Date()',
+	        parse       : (value: number) => {
+	            return new Date(value);
+	        },
+	        serialize   : (value: Date) => value.getTime(),
+	        tsType      : 'Date',
+	        validate    : (value: number | Date) => {
+	            if (value instanceof Date) {
+	                return true;
+	            }
+	            if (typeof value !== 'number') {
+	                return false;
+	            }
+	            if (isNaN(value)) {
+	                return false;
+	            }
+	            if (!Number.isInteger(value)) {
+	                return false;
+	            }
+	            const date = new Date(value);
+	            if (!(date instanceof Date)) {
+	                return false;
+	            }
+	            if (date.toString().toLowerCase().indexOf('invalid date') !== -1) {
+	                return false;
+	            }
+	            return !isNaN(date.getTime());
+	        },
+	    } as IPrimitiveType<Date>,
+	
+	    guid     : {
+	        binaryType  : 'asciiString',
+	        implementation  : function guid() {
+	            const lengths = [4, 4, 4, 8];
+	            let resultGuid = '';
+	            for (let i = lengths.length - 1; i >= 0; i -= 1) {
+	                resultGuid += (Math.round(Math.random() * Math.random() * Math.pow(10, lengths[i] * 2))
+	                            .toString(16)
+	                            .substr(0, lengths[i])
+	                            .toUpperCase() + '-');
+	            }
+	            resultGuid += ((new Date()).getTime() * (Math.random() * 100))
+	                        .toString(16)
+	                        .substr(0, 12)
+	                        .toUpperCase();
+	            return resultGuid;
+	        },
+	        init            : 'guid()',
+	        parse           : (value: string) => value,
+	        serialize       : (value: string) => value,
+	        tsType          : 'string',
+	        validate        : (value: string) => {
+	            return typeof value === 'string' ? (value.trim() !== '' ? true : false) : false;
+	        },
+	
+	    } as IPrimitiveType<string>,
+	
+	};
+	
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	* Injection: injection.root.ts
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -183,6 +1172,10 @@ export namespace Protocol {
 	// declare var AdvancedTypes: {[key: string]: any};
 	// declare var KeysMapLeft: {[key: string]: any};
 	// declare var KeysMapRight: {[key: string]: any};
+	// declare var TypedEntitiesMap: {[key: string]: any};
+	// declare var ConvertedTypedEntitiesMap: {[key: string]: any};
+	// declare var ConvertedTypedEntitiesMinMap: {[key: string]: any};
+	// declare var Json: any;
 	// declare type TTypes = any;
 	
 	export class ProtocolState {
@@ -219,6 +1212,13 @@ export namespace Protocol {
 	    value: any;
 	}
 	
+	export const StandardTypes: string[] = [
+	    'int8', 'int16', 'int32',
+	    'uint8', 'uint16', 'uint32',
+	    'float32', 'float64', 'boolean',
+	    'asciiString', 'utf8String',
+	];
+	
 	export function _getPropNameAlias(propName: string, signature: string): string | Error {
 	    if (state.isDebugged() || propName === '__signature') {
 	        return propName;
@@ -247,15 +1247,21 @@ export namespace Protocol {
 	
 	export function _parse(json: any, target?: any): TTypes | Error[] {
 	    const types: {[key: string]: any} = getTypes();
-	    if (typeof json !== 'object' || json === null) {
+	    if (typeof json === 'string' || json instanceof Uint8Array) {
 	        if (typeof json === 'string') {
 	            json = getJSONFromStr(json);
 	            if (json instanceof Error) {
 	                return [new Error(`Extract function can be applied only to object. Error: ${json.message}.`)];
 	            }
-	        } else {
-	            return [new Error(`Extract function can be applied only to object.`)];
+	        } else if (json instanceof Uint8Array) {
+	            json = _JSONFromBinary(json);
+	            if (json instanceof Error) {
+	                return [new Error(`Fail to extract object from binary due error: ${json.message}.`)];
+	            }
 	        }
+	    }
+	    if (typeof json !== 'object' || json === null) {
+	        return [new Error(`Extract function can be applied only to object.`)];
 	    }
 	    if (typeof json.__signature !== 'string' || json.__signature.trim() === '') {
 	        return [new Error(`Cannot find signature of entity.`)];
@@ -367,7 +1373,7 @@ export namespace Protocol {
 	    }
 	}
 	
-	export function _stringify(target: any, classRef: any): string | Error[] {
+	export function _stringify(target: any, classRef: any): { [key: string]: any } | Error[] {
 	    if (!(target instanceof classRef)) {
 	        return [new Error(`Defined wrong reference to class.`)];
 	    }
@@ -397,7 +1403,7 @@ export namespace Protocol {
 	                    json[propNameAlias] = target[prop].map((value: any) => {
 	                        const nestedType = types[desc.value];
 	                        if (!nestedType.validate(value)) {
-	                            errors.push(new Error(`Property "${prop}" has wrong format.`));
+	                            errors.push(new Error(`Property "${prop}" has wrong format. Value: ${value}; type: ${typeof value}.`));
 	                            return undefined;
 	                        }
 	                        return nestedType.serialize(value);
@@ -458,7 +1464,26 @@ export namespace Protocol {
 	    if (errors.length > 0) {
 	        return errors;
 	    }
-	    return JSON.stringify(json);
+	    return json;
+	}
+	
+	export function _JSONToBinary(target: any, signature: string): Uint8Array | Error {
+	    if (ConvertedTypedEntitiesMap[signature] === void 0) {
+	        return new Error(`Cannot find typed map for "${signature}"`);
+	    }
+	    try {
+	        return Json.Convertor.encode(target, ConvertedTypedEntitiesMap[signature]);
+	    } catch (error) {
+	        return error;
+	    }
+	}
+	
+	export function _JSONFromBinary(data: Uint8Array): {} | Error {
+	    try {
+	        return Json.Convertor.decode(data);
+	    } catch (error) {
+	        return error;
+	    }
 	}
 	
 	export function getTypes(): {[key: string]: any} {
@@ -475,28 +1500,35 @@ export namespace Protocol {
 	    }
 	}
 	
-	export function stringify(target: any, classRef: any): string | Error {
+	export function stringify(target: any, classRef: any): string | Uint8Array | Error {
 	    const result = _stringify(target, classRef);
 	    if (result instanceof Array) {
 	        return new Error(`Cannot stringify due errors:\n ${result.map((error: Error) => error.message).join('\n')}`);
 	    }
-	    return result;
+	    // Create binary
+	    if (state.isDebugged()) {
+	        return JSON.stringify(result);
+	    }
+	    return _JSONToBinary(result, classRef.getSignature());
 	}
 	
-	export function parse(str: string | object, target?: any): TTypes | Error {
+	export function parse(source: string | object | Uint8Array, target?: any): TTypes | Error {
 	    let json: any;
-	    if (typeof str === 'string') {
-	        json = getJSONFromStr(str);
-	        if (json instanceof Error) {
-	            return json;
-	        }
-	    } else if (typeof str !== 'object' || str === null) {
+	    if (typeof source === 'string') {
+	        json = getJSONFromStr(source);
+	    } else if (source instanceof Uint8Array) {
+	        json = _JSONFromBinary(source);
+	    } else if (typeof source !== 'object' || source === null) {
 	        return new Error(`Expecting string or object.`);
 	    } else {
-	        json = str;
+	        json = source;
+	    }
+	    if (json instanceof Error) {
+	        return json;
 	    }
 	    const result = _parse(json, target);
 	    if (result instanceof Array) {
+	        (global as any).__json = json;
 	        return new Error(`Cannot parse due errors:\n ${result.map((error: Error) => error.message).join('\n')}`);
 	    }
 	    return result;
@@ -544,7 +1576,6 @@ export namespace Protocol {
 	        default:
 	            return typeof smth;
 	    }
-	
 	}
 	
 	export function validateParams(params: any, classRef: any): Error[] {
@@ -621,149 +1652,62 @@ export namespace Protocol {
 	    return errors;
 	}
 	
+	export function convertTypesToStandard(target: {[key: string]: any}): {[key: string]: any} {
+	    function getTypeFromStr(type: string): string | Error {
+	        let result: string | Error;
+	        if (PrimitiveTypes[type] !== void 0) {
+	            result = PrimitiveTypes[type].binaryType;
+	        } else if (AdvancedTypes[type] !== void 0) {
+	            if (typeof AdvancedTypes[type].binaryType === 'string') {
+	                result = AdvancedTypes[type].binaryType;
+	            } else {
+	                result = new Error(`Type "${type}" is defined as advanced type, but property "binaryType" isn't defined.`);
+	            }
+	        } else {
+	            const availableTypes = [...Object.keys(PrimitiveTypes), ...Object.keys(AdvancedTypes)];
+	            result = new Error(`Found unexpected type: "${type}". This type isn't defined in protocol. Available types in this protocol: ${availableTypes.join(', ')}`);
+	        }
+	        if (result instanceof Error) {
+	            return result;
+	        }
+	        if (StandardTypes.indexOf(result) === -1) {
+	            result = new Error(`Type "${result}" isn't standard type. Available standard types: ${StandardTypes.join(', ')}`);
+	        }
+	        return result;
+	    }
+	    const converted: {[key: string]: any} = { __signature: 'asciiString' };
+	    Object.keys(target).forEach((key: string) => {
+	        const value = target[key];
+	        if (typeof value === 'string') {
+	            const type: string | Error = getTypeFromStr(value);
+	            if (type instanceof Error) {
+	                throw type;
+	            }
+	            converted[key] = type;
+	        } else if (value instanceof Array && value.length === 1) {
+	            const type: string | {} | Error = typeof value[0] === 'string' ? getTypeFromStr(value[0]) : convertTypesToStandard(value[0]);
+	            if (type instanceof Error) {
+	                throw type;
+	            }
+	            converted[key] = [type];
+	        } else if (typeof value === 'object' && value !== null) {
+	            converted[key] = convertTypesToStandard(value);
+	        } else {
+	            throw new Error(`Unexpected value of type: ${value}. Check key: ${key}`);
+	        }
+	    });
+	    return converted;
+	}
+	
 	export class Root {
 	
 	}
-	
-	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	* Injection: injection.types.primitive.ts
-	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-	
-	export interface IPrimitiveType<T> {
-	    tsType: string;
-	    init: string;
-	    parse: (value: string | number | T) => T;
-	    serialize: (value: T) => string | number | boolean | T;
-	    validate: (value: string | number | T) => boolean;
-	    implementation?: () => {};
-	}
-	
-	export const PrimitiveTypes:  { [key: string]: IPrimitiveType<any> } = {
-	
-	    string      : {
-	        init        : '""',
-	        parse       : (value: string) => value,
-	        serialize   : (value: string) => value,
-	        tsType      : 'string',
-	        validate    : (value: string) => {
-	            if (typeof value !== 'string') {
-	                return false;
-	            }
-	            return true;
-	        },
-	    } as IPrimitiveType<string>,
-	
-	    integer     : {
-	        init        : '-1',
-	        parse       : (value: number) => value,
-	        serialize   : (value: number) => value,
-	        tsType      : 'number',
-	        validate    : (value: number) => {
-	            if (typeof value !== 'number') {
-	                return false;
-	            }
-	            if (isNaN(value)) {
-	                return false;
-	            }
-	            if (!Number.isInteger(value)) {
-	                return false;
-	            }
-	            return true;
-	        },
-	    } as IPrimitiveType<number>,
-	
-	    float     : {
-	        init        : '-1',
-	        parse       : (value: number) => value,
-	        serialize   : (value: number) => value,
-	        tsType      : 'number',
-	        validate    : (value: number) => {
-	            if (typeof value !== 'number') {
-	                return false;
-	            }
-	            if (isNaN(value)) {
-	                return false;
-	            }
-	            return true;
-	        },
-	    } as IPrimitiveType<number>,
-	
-	    boolean     : {
-	        init        : 'false',
-	        parse       : (value: boolean) => value,
-	        serialize   : (value: boolean) => value,
-	        tsType      : 'boolean',
-	        validate    : (value: boolean) => {
-	            if (typeof value !== 'boolean') {
-	                return false;
-	            }
-	            return true;
-	        },
-	    } as IPrimitiveType<boolean>,
-	
-	    datetime    : {
-	        init        : 'new Date()',
-	        parse       : (value: number) => {
-	            return new Date(value);
-	        },
-	        serialize   : (value: Date) => value.getTime(),
-	        tsType      : 'Date',
-	        validate    : (value: number | Date) => {
-	            if (value instanceof Date) {
-	                return true;
-	            }
-	            if (typeof value !== 'number') {
-	                return false;
-	            }
-	            if (isNaN(value)) {
-	                return false;
-	            }
-	            if (!Number.isInteger(value)) {
-	                return false;
-	            }
-	            const date = new Date(value);
-	            if (!(date instanceof Date)) {
-	                return false;
-	            }
-	            if (date.toString().toLowerCase().indexOf('invalid date') !== -1) {
-	                return false;
-	            }
-	            return !isNaN(date.getTime());
-	        },
-	    } as IPrimitiveType<Date>,
-	
-	    guid     : {
-	        implementation  : function guid() {
-	            const lengths = [4, 4, 4, 8];
-	            let resultGuid = '';
-	            for (let i = lengths.length - 1; i >= 0; i -= 1) {
-	                resultGuid += (Math.round(Math.random() * Math.random() * Math.pow(10, lengths[i] * 2))
-	                            .toString(16)
-	                            .substr(0, lengths[i])
-	                            .toUpperCase() + '-');
-	            }
-	            resultGuid += ((new Date()).getTime() * (Math.random() * 100))
-	                        .toString(16)
-	                        .substr(0, 12)
-	                        .toUpperCase();
-	            return resultGuid;
-	        },
-	        init            : 'guid()',
-	        parse           : (value: string) => value,
-	        serialize       : (value: string) => value,
-	        tsType          : 'string',
-	        validate        : (value: string) => {
-	            return typeof value === 'string' ? (value.trim() !== '' ? true : false) : false;
-	        },
-	
-	    } as IPrimitiveType<string>,
-	
-	};
 	
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	* Injection: map of references
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	export let ConvertedTypedEntitiesMap: {[key: string]: any} = {};
 	export let ReferencesMap: {[key: string]: any} = {};
 	export function init(){
 		ReferencesMap["59648854"] = Message.Pending.Request;
@@ -780,6 +1724,7 @@ export namespace Protocol {
 		ReferencesMap["282376D8"] = EventDefinition;
 		ReferencesMap["61578FC3"] = DemandDefinition;
 		ReferencesMap["583DFB65"] = ConnectionError;
+		ConvertedTypedEntitiesMap = convertTypesToStandard(TypedEntitiesMap);
 	}
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -1356,7 +2301,7 @@ export const parseFrom = Protocol.parseFrom;
 export const stringify = Protocol.stringify;
 export const getSignature = Protocol.getSignature;
 export interface IClass { getSignature: () => string; parse: (str: string | object) => any; }
-export interface IImplementation { getSignature: () => string; stringify: () => string; }
+export interface IImplementation { getSignature: () => string; stringify: () => string | Uint8Array; }
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 * Injection: initialization
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */

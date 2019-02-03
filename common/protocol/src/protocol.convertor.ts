@@ -5,6 +5,7 @@ import * as Path from 'path';
 import * as Tools from '../../platform/tools/index';
 
 const DEFAULT_INJECTIONS = [
+    './injections/injection.convertor.ts',
     './injections/injection.root.ts',
     './injections/injection.types.primitive.ts',
 ];
@@ -40,6 +41,7 @@ export class Convertor {
     private _keysMapRight: {[key: string]:
         {[key: string]: string },
     } = {};
+    private _typedMap: { [key: string]: any } = {};
 
     public convert(JSON: any, injections: string[] = [], adTypes: IAdvancedTypeDeclaration | null = null): Promise<string> {
         return new Promise((resolve, reject) => {
@@ -104,6 +106,7 @@ export class Convertor {
                 protocolNamespace += `export namespace Protocol {\n`;
                 protocolNamespace += this._getTypes() + '\n';
                 protocolNamespace += this._getKeysMaps() + '\n';
+                protocolNamespace += this._getTypedMap() + '\n';
                 protocolNamespace += injectStr + '\n';
                 protocolNamespace += this._getMap() + '\n';
                 protocolNamespace += this._getProtocolSignature() + '\n';
@@ -178,11 +181,13 @@ export class Convertor {
                     '\t/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n' +
                     `\t* Injection: map of references\n` +
                     '\t* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */\n';
+        output += '\texport let ConvertedTypedEntitiesMap: {[key: string]: any} = {};\n';
         output += '\texport let ReferencesMap: {[key: string]: any} = {};\n';
         output += `\texport function init(){\n`;
         Object.keys(this._map).forEach((signature: string) => {
             output += `\t\tReferencesMap["${signature}"] = ${this._map[signature]};\n`;
         });
+        output += `\t\tConvertedTypedEntitiesMap = convertTypesToStandard(TypedEntitiesMap);\n`;
         output += `\t}\n`;
         return output;
     }
@@ -223,7 +228,7 @@ export class Convertor {
         output += 'export const stringify = Protocol.stringify;\n';
         output += 'export const getSignature = Protocol.getSignature;\n';
         output += 'export interface IClass { getSignature: () => string; parse: (str: string | object) => any; }\n';
-        output += 'export interface IImplementation { getSignature: () => string; stringify: () => string; }\n';
+        output += 'export interface IImplementation { getSignature: () => string; stringify: () => string | Uint8Array; }\n';
         return output;
     }
 
@@ -319,6 +324,19 @@ export class Convertor {
             }
             return undefined;
         }
+        return entity;
+    }
+
+    private _findEntityByPath(path: string): IEntity | undefined {
+        const parts = path.split('.');
+        let entity: IEntity | undefined = this._entities.root;
+        parts.forEach((part: string) => {
+            if (entity === undefined || entity.children === void 0 || (entity.children[part] === void 0 && entity.children[`@${part}`] === void 0)) {
+                entity = undefined;
+                return;
+            }
+            entity = entity.children[part] !== void 0 ? entity.children[part] : entity.children[`@${part}`];
+        });
         return entity;
     }
 
@@ -487,6 +505,8 @@ export class Convertor {
         this._map[signature] = chain;
         // Create keys map
         this._setKeysMap(entity, signature);
+        // Create json/typed map
+        this._setTypedMap(entity, signature);
         // Define properties
         Object.keys(entity.children).forEach((prop: string) => {
             const child: IEntity = entity.children[prop];
@@ -540,7 +560,138 @@ export class Convertor {
         return output;
     }
 
+    private _getTypedMap(target?: {[key: string]: any}, deep: number = 1, signature?: string) {
+        let output: string = '';
+        const tab = '\t'.repeat(deep);
+        if (target === undefined) {
+            output =
+            `${tab}/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n` +
+            `${tab}* Injection: typed map\n` +
+            `${tab}* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */\n` +
+            `${tab}export const TypedEntitiesMap: {[key: string]: any} = {\n`;
+            Object.keys(this._typedMap).forEach((signatureKey: string) => {
+                const map = this._typedMap[signatureKey];
+                output += `${tab}\t"${signatureKey}": {\n`;
+                Object.keys(map).forEach((key: string) => {
+                    let value = map[key];
+                    if (typeof value === 'string') {
+                        output += `${tab}\t\t${key}: "${value}",\n`;
+                    } else if (value instanceof Array && value.length === 1) {
+                        value = value[0];
+                        if (typeof value === 'string') {
+                            output += `${tab}\t\t${key}: ["${value}"],\n`;
+                        } else if (typeof value === 'object' && value !== null && !(value instanceof Array)) {
+                            output += `${tab}\t\t${key}: [${this._getTypedMap(value, deep + 1, signatureKey)}],\n`;
+                        } else {
+                            throw new Error(`Unsupported type is detected or incorrect structure. Check name: ${key} for signature ${signatureKey}.`);
+                        }
+                    } else if (typeof value === 'object' && value !== null) {
+                        output += `${tab}\t\t${key}: ${this._getTypedMap(value, deep + 1, signatureKey)},\n`;
+                    } else {
+                        throw new Error(`Unsupported type is detected or incorrect structure. Check name: ${key} for signature ${signatureKey}.`);
+                    }
+                });
+                output += `${tab}\t},\n`;
+            });
+            output += `${tab}};\n`;
+        } else if (target !== undefined) {
+            output = `{\n`;
+            Object.keys(target).forEach((key: string) => {
+                let value = target[key];
+                if (typeof value === 'string') {
+                    output += `${tab}\t\t${key}: "${value}",\n`;
+                } else if (value instanceof Array && value.length === 1) {
+                    value = value[0];
+                    if (typeof value === 'string') {
+                        output += `${tab}\t\t${key}: ["${value}"],\n`;
+                    } else if (typeof value === 'object' && value !== null && !(value instanceof Array)) {
+                        output += `${tab}\t\t${key}: [${this._getTypedMap(value, deep + 1, signature)}],\n`;
+                    } else {
+                        throw new Error(`Unsupported type is detected or incorrect structure. Check name: ${key} for signature ${signature}.`);
+                    }
+                } else if (typeof value === 'object' && value !== null) {
+                    output += `${tab}\t\t${key}: ${this._getTypedMap(value, deep + 1, signature)},\n`;
+                } else {
+                    throw new Error(`Unsupported type is detected or incorrect structure. Check name: ${key} for signature ${signature}.`);
+                }
+            });
+            output += `${tab}\t}`;
+        }
+        return output;
+    }
+
+    private _setTypedMap(entity: IEntity, signature: string) {
+        this._typedMap[signature] = this._getEntityTypedMap(entity);
+    }
+
+    private _getEntityTypedMap(entity: IEntity): { [key: string]: any } {
+        const chain: string = this._getClassChain(entity);
+        const signature: string = Tools.hash(`${this._version}:${chain}`, true);
+        const map: any = {};
+        const ownArgs: IArgument[] = this._getOwnArguments(entity);
+        const parentArgs: IArgument[] = entity.parent !== null ? (!entity.single ? this._getParentsArguments(entity.parent) : []) : [];
+        const args: IArgument[] = [];
+        if (this._keysMapLeft[signature] === undefined) {
+            this._setKeysMap(entity, signature);
+        }
+        const propsAliases = this._keysMapLeft[signature];
+        if (propsAliases === undefined) {
+            throw new Error(`Fail to find keys map for "${signature}"`);
+        }
+        args.push(...parentArgs);
+        args.push(...ownArgs);
+        args.forEach((arg: IArgument) => {
+            const name: string = this._entityType.hardSerializeName(arg.name);
+            const nameAlias: string = propsAliases[name];
+            let refEntity: IEntity | undefined;
+            switch (arg.type) {
+                case EEntityType.class:
+                case EEntityType.complex:
+                case EEntityType.namespace:
+                case EEntityType.reference:
+                    refEntity = this._findEntityByPath(arg.tsType);
+                    if (refEntity === undefined) {
+                        refEntity = this._findEntityByPath(arg.tsType);
+                        throw new Error(`[reference] Cannot find reference for "${name}". Reference: "${arg.tsType}"`);
+                    }
+                    if (refEntity.type === EEntityType.enum) {
+                        map[nameAlias] = 'string';
+                    } else {
+                        map[nameAlias] = this._getEntityTypedMap(refEntity);
+                    }
+                    break;
+                case EEntityType.primitive:
+                    map[nameAlias] = arg.protoType;
+                    break;
+                case EEntityType.repeated:
+                    let repeatedType: string = this._entityType.getRepeatedType(arg.protoType);
+                    if (this._entityType.isPrimitive(repeatedType)) {
+                        map[nameAlias] = [repeatedType];
+                    } else {
+                        repeatedType = this._entityType.getRepeatedType(arg.tsType);
+                        refEntity = this._findEntityByPath(repeatedType);
+                        if (refEntity === undefined) {
+                            throw new Error(`[repeated] Cannot find reference for "${name}". Reference: "${repeatedType}"`);
+                        }
+                        if (refEntity.type === EEntityType.enum) {
+                            map[nameAlias] = ['string'];
+                        } else {
+                            map[nameAlias] = [this._getEntityTypedMap(refEntity)];
+                        }
+                    }
+                    break;
+                case EEntityType.enum:
+                    map[nameAlias] = ['string'];
+                    break;
+            }
+        });
+        return map;
+    }
+
     private _setKeysMap(entity: IEntity, signature: string) {
+        if (this._keysMapLeft[signature] !== undefined && this._keysMapRight[signature] !== undefined) {
+            return;
+        }
         const index = {
             l: 97,
             n: 0,
@@ -588,8 +739,8 @@ export class Convertor {
             }
         });
         cache = null;
-        this._keysMapLeft[signature] = keyMapLeft;
-        this._keysMapRight[signature] = keyMapRight;
+        this._keysMapLeft[signature] === undefined && (this._keysMapLeft[signature] = keyMapLeft);
+        this._keysMapRight[signature] === undefined && (this._keysMapRight[signature] = keyMapRight);
     }
 
     private _getKeysMaps(): string {

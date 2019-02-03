@@ -1,9 +1,10 @@
 export const AdvancedTypes: { [key:string]: any} = {
     byte: {
-        tsType      : 'number',
+        binaryType  : 'uint8',
         init        : '-1',
         parse       : (value: number) => { return value; },
         serialize   : (value: number) => { return value; },
+        tsType      : 'number',
         validate    : (value: number) => { 
             if (typeof value !== 'number'){
                 return false;
@@ -18,6 +19,6 @@ export const AdvancedTypes: { [key:string]: any} = {
                 return false;
             }
             return true;
-        }
+        },
     }
 };

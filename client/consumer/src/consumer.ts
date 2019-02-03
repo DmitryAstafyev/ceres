@@ -119,17 +119,21 @@ export default class Consumer extends Tools.EventEmitter {
             } catch (error) {
                 return reject(error);
             }
-            this._transport.send((new Protocol.Message.Event.Request({
+            const eventBody: string | Uint8Array = event.stringify();
+            const eventInst: Protocol.EventDefinition = new Protocol.EventDefinition({
+                bodyBinary: eventBody instanceof Uint8Array ? Array.from(eventBody) : [],
+                bodyStr: typeof eventBody === 'string' ? eventBody : '',
+                event: eventSignature,
+                protocol: protocolSignature,
+            });
+            const paketInst = new Protocol.Message.Event.Request({
                 aliases: _aliases,
                 clientId: this._transport.getClientId(),
-                event: new Protocol.EventDefinition({
-                    body: event.stringify(),
-                    event: eventSignature,
-                    protocol: protocolSignature,
-                }),
+                event: eventInst,
                 guid: Tools.guid(),
                 token: this._transport.getClientToken(),
-            })).stringify()).then((message: Protocol.TProtocolTypes) => {
+            });
+            this._transport.send(paketInst.stringify()).then((message: Protocol.TProtocolTypes) => {
                 if (message instanceof Protocol.ConnectionError) {
                     return reject(new Error(this._logger.warn(`Connection error. Reason: ${message.reason} (error: ${message.message}). Initialize hard reconnection.`)));
                 }
@@ -545,13 +549,15 @@ export default class Consumer extends Tools.EventEmitter {
                 return reject(new Error(this._logger.verbose(`Query can not be empty. Define at least one property.`)));
             }
             // Register protocol implementation
+            const demandBody: string | Uint8Array = demand.stringify();
             this._protocols.add(protocol).then(() => {
                 const guid = Tools.guid();
                 // Send demand's request to server
                 this._transport.send((new Protocol.Message.Demand.FromExpectant.Request({
                     clientId: this._transport.getClientId(),
                     demand: (new Protocol.DemandDefinition({
-                        body: demand.stringify(),
+                        bodyBinary: demandBody instanceof Uint8Array ? Array.from(demandBody) : [],
+                        bodyStr: typeof demandBody === 'string' ? demandBody : '',
                         demand: demandSignature,
                         expected: expectedSignature,
                         id: '',                                                                 // ID will be defined on server
@@ -669,12 +675,13 @@ export default class Consumer extends Tools.EventEmitter {
         if (message.demand instanceof Protocol.DemandDefinition) {
             // Processing income demand
             const demand = message.demand as Protocol.DemandDefinition;
-            this._proccessDemand(message.demand).then((results: string) => {
+            this._proccessDemand(message.demand).then((results: string | Uint8Array) => {
                 // Send success message
                 this._transport.send((new Protocol.Message.Demand.FromRespondent.Request({
                     clientId: this._transport.getClientId(),
                     demand: new Protocol.DemandDefinition({
-                        body: results,
+                        bodyBinary: results instanceof Uint8Array ? Array.from(results) : [],
+                        bodyStr: typeof results === 'string' ? results : '',
                         demand: demand.demand,
                         expected: demand.expected,
                         id: demand.id,
@@ -730,7 +737,10 @@ export default class Consumer extends Tools.EventEmitter {
                 return this._pendingDemands.reject(demandReturn.id, new Error(demandReturn.error));
             }
             // Get instance of protocol
-            this._protocols.parse(demandReturn.protocol, demandReturn.body).then((returnImpl: Protocol.IImplementation) => {
+            this._protocols.parse(
+                demandReturn.protocol,
+                demandReturn.bodyStr === '' ? (new Uint8Array(demandReturn.bodyBinary)) : demandReturn.bodyStr,
+            ).then((returnImpl: Protocol.IImplementation) => {
                 // Check correction of return
                 if (returnImpl.getSignature() !== demandReturn.expected) {
                     return this._pendingDemands.reject(demandReturn.id, new Error(this._logger.env(`Signatures aren't match: expected demand's return "${demandReturn.expected}", but was gotten "${returnImpl.getSignature()}".`)));
@@ -752,13 +762,14 @@ export default class Consumer extends Tools.EventEmitter {
 	 * Events: private
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
     private _emitIncomeEvent(eventDef: Protocol.EventDefinition) {
-        this._protocols.parse(eventDef.protocol, eventDef.body)
-            .then((eventImpl: any) => {
-                this._subscriptions.emit(eventDef.protocol, eventImpl.getSignature(), eventImpl);
-            })
-            .catch((error: Error) => {
-                this._logger.env(`Error during emit income event: ${error.message}.`);
-            });
+        this._protocols.parse(
+            eventDef.protocol,
+            eventDef.bodyStr === '' ? new Uint8Array(eventDef.bodyBinary) : eventDef.bodyStr,
+        ).then((eventImpl: any) => {
+            this._subscriptions.emit(eventDef.protocol, eventImpl.getSignature(), eventImpl);
+        }).catch((error: Error) => {
+            this._logger.env(`Error during emit income event: ${error.message}.`);
+        });
     }
 
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -766,8 +777,10 @@ export default class Consumer extends Tools.EventEmitter {
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
     private _proccessDemand(demand: Protocol.DemandDefinition): Promise<any> {
         return new Promise((resolve, reject) => {
-            this._protocols.parse(demand.protocol, demand.body)
-            .then((demandImpl: any) => {
+            this._protocols.parse(
+                demand.protocol,
+                demand.bodyStr === '' ? (new Uint8Array(demand.bodyBinary)) : demand.bodyStr,
+            ).then((demandImpl: any) => {
                 // Check signature
                 if (demandImpl.getSignature() !== demand.demand) {
                     return reject(new Error(this._logger.env(`Implementation demand mismatch with demand name in request. Implemented: "${demandImpl.getSignature()}"; defined in request: ${demand.demand}.`)));
@@ -793,8 +806,7 @@ export default class Consumer extends Tools.EventEmitter {
                     }
                     resolve(results.stringify());
                 });
-            })
-            .catch((error: Error) => {
+            }).catch((error: Error) => {
                 this._logger.env(`Error during processing demand: ${error.message}.`);
                 reject(error);
             });

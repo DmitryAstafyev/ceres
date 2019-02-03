@@ -23,22 +23,27 @@ export interface IEventDone {
     response: string | object;
 }
 
+export const ContentType = {
+    binary: 'application/octet-stream',
+    text: 'text/plain',
+}
+
 export default class ImpXMLHTTPRequest {
 
     public static METHODS = ERequestTypes;
-    private _logger:            Tools.Logger      = new Tools.Logger('ImpXMLHTTPRequest');
+    private _logger:            Tools.Logger        = new Tools.Logger('ImpXMLHTTPRequest');
     private _httpRequest:       XMLHttpRequest;
-    private _method:            TRequestType      = ERequestTypes.post;
-    private _url:               string            = '';
-    private _timeout:           number            = 0;
-    private _requestHeaders:    THeaders          = {};
-    private _requestPost:       string            = '';
-    private _resolved:          boolean           = false;
-    private _rejected:          boolean           = false;
+    private _method:            TRequestType        = ERequestTypes.post;
+    private _url:               string              = '';
+    private _timeout:           number              = 0;
+    private _requestHeaders:    THeaders            = {};
+    private _requestPost:       string | Uint8Array = '';
+    private _resolved:          boolean             = false;
+    private _rejected:          boolean             = false;
 
     constructor(
         url: string,
-        post: string,
+        post: string | Uint8Array,
         method: TRequestType = ERequestTypes.post,
         headers: THeaders = {},
         timeout: number = 0,
@@ -46,7 +51,7 @@ export default class ImpXMLHTTPRequest {
         if (typeof url !== 'string' || url.trim() === '') {
             throw new Error(this._logger.env(`Parameter url should be defined.`));
         }
-        if (typeof post !== 'string' || post.trim() === '') {
+        if ((typeof post !== 'string' || post.trim() === '') && !(post instanceof Uint8Array)) {
             throw new Error(this._logger.env(`Parameter post should be defined.`));
         }
         if ((Object as any).values(ERequestTypes).indexOf(method) === -1) {
@@ -67,8 +72,11 @@ export default class ImpXMLHTTPRequest {
 	 * Public
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-    public send(): Promise<string> {
+    public send(): Promise<string | Uint8Array> {
         return new Promise((resolve: TCallback, reject: TCallback) => {
+            if (this._requestPost instanceof Uint8Array) {
+                this._httpRequest.responseType = "arraybuffer";
+            }
             this._resolve = resolve;
             this._reject = reject;
             this._httpRequest.open(this._method, this._url, true);
@@ -138,7 +146,27 @@ export default class ImpXMLHTTPRequest {
                 if (this._httpRequest.status !== 200) {
                     return this._onerror(event);
                 }
-                this._resolveRequest(this._httpRequest.responseText, this._getResponseHeaders());
+                const contentType = this._getContentType();
+                switch(contentType) {
+                    case ContentType.text:
+                        this._resolveRequest(this._httpRequest.responseText, this._getResponseHeaders());
+                        break;
+                    case ContentType.binary:
+                        if (!(this._httpRequest.response instanceof ArrayBuffer)) {
+                            return this._rejectRequest(
+                                new Error(this._logger.env(`Request to url "${this._url}" finished with error: for binary data expected ArrayBuffer, but response has type: ${typeof this._httpRequest.response}`)),
+                            ); 
+                        }
+                        const bytes = new Uint8Array(this._httpRequest.response);
+                        debugger;
+                        this._resolveRequest(new Uint8Array(this._httpRequest.response), this._getResponseHeaders());
+                        break;
+                    default:
+                        this._rejectRequest(
+                            new Error(this._logger.env(`Request to url "${this._url}" finished with error: unsupported content type: ${contentType}`)),
+                        ); 
+                        break;
+                }
         }
     }
 
@@ -152,11 +180,11 @@ export default class ImpXMLHTTPRequest {
         this._reject(error);
     }
 
-    private _resolveRequest(responseText: string, headers: THeaders) {
+    private _resolveRequest(response: string | Uint8Array, headers: THeaders) {
         if (this._rejected || this._resolved) {
             return this._logger.env(`Request to url "${this._url}" is already ${this._rejected ? 'rejected' : 'resolved'}. Cannot resolve it.`);
         }
-        this._resolve(responseText, headers);
+        this._resolve(response, headers);
     }
 
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -169,11 +197,16 @@ export default class ImpXMLHTTPRequest {
             headers.split(/[\r\n]/gi).forEach((header) => {
                 const pair = header.split(':');
                 if (pair.length === 2) {
-                    results[pair[0]] = pair[1];
+                    results[pair[0].toLowerCase().trim()] = pair[1].toLowerCase().trim();
                 }
             });
         }
         return results;
+    }
+
+    private _getContentType(): string | undefined {
+        const headers = this._getResponseHeaders();
+        return headers['content-type'];
     }
 
     private _defaultRequestHeaders(headers: THeaders = {}) {

@@ -3,7 +3,7 @@ import * as Protocol from './protocols/connection/protocol.connection';
 import { ProviderState } from './provider.state';
 
 export type TPendingDemand = {
-    body?: string;
+    body?: string | Uint8Array;
     respondemtId: string,
     protocol: string,
     demand: string,
@@ -132,7 +132,7 @@ export class ProcessorDemands {
     public sendDemand(
         protocol: string,
         demand: string,
-        body: string,
+        body: string | Uint8Array,
         expected: string,
         expectantId: string,
         respondentId: string,
@@ -161,7 +161,8 @@ export class ProcessorDemands {
             this.state.transport.send(respondentId, (new Protocol.Message.ToConsumer({
                 clientId: respondentId,
                 demand: new Protocol.DemandDefinition({
-                    body: body,
+                    bodyBinary: body instanceof Uint8Array ? Array.from(body) : [],
+                    bodyStr: typeof body === 'string' ? body : '',
                     demand: demand,
                     expected: expected,
                     id: demandGUID,
@@ -182,7 +183,7 @@ export class ProcessorDemands {
     public sendDemandResponse(
         protocol: string,
         demand: string,
-        body: string,
+        body: string | Uint8Array,
         expected: string,
         expectantId: string,
         error: string,
@@ -199,7 +200,8 @@ export class ProcessorDemands {
                 clientId: expectantId,
                 guid: Tools.guid(),
                 return: new Protocol.DemandDefinition({
-                    body: body,
+                    bodyBinary: body instanceof Uint8Array ? Array.from(body) : [],
+                    bodyStr: typeof body === 'string' ? body : '',
                     demand: demand,
                     error: error,
                     expected: expected,
@@ -221,7 +223,7 @@ export class ProcessorDemands {
     public getResponseOfDemandByServer(
         protocol: string,
         demand: string,
-        body: string,
+        body: string | Uint8Array,
         expected: string,
         respondentId: string,
     ): Promise<string> {
@@ -259,7 +261,7 @@ export class ProcessorDemands {
     public proccessDemandByServer(
         protocol: string,
         demand: string,
-        body: string,
+        body: string | Uint8Array,
         expected: string,
         respondentId: string,
         expectantId: string,

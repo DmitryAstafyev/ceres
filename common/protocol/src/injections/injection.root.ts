@@ -5,6 +5,10 @@ declare var PrimitiveTypes: {[key: string]: any};
 declare var AdvancedTypes: {[key: string]: any};
 declare var KeysMapLeft: {[key: string]: any};
 declare var KeysMapRight: {[key: string]: any};
+declare var TypedEntitiesMap: {[key: string]: any};
+declare var ConvertedTypedEntitiesMap: {[key: string]: any};
+declare var ConvertedTypedEntitiesMinMap: {[key: string]: any};
+declare var Json: any;
 declare type TTypes = any;
 
 export class ProtocolState {
@@ -41,6 +45,13 @@ export interface IProperty {
     value: any;
 }
 
+export const StandardTypes: string[] = [
+    'int8', 'int16', 'int32',
+    'uint8', 'uint16', 'uint32',
+    'float32', 'float64', 'boolean',
+    'asciiString', 'utf8String',
+];
+
 export function _getPropNameAlias(propName: string, signature: string): string | Error {
     if (state.isDebugged() || propName === '__signature') {
         return propName;
@@ -69,15 +80,21 @@ export function _getPropName(alias: string, signature: string): string | Error {
 
 export function _parse(json: any, target?: any): TTypes | Error[] {
     const types: {[key: string]: any} = getTypes();
-    if (typeof json !== 'object' || json === null) {
+    if (typeof json === 'string' || json instanceof Uint8Array) {
         if (typeof json === 'string') {
             json = getJSONFromStr(json);
             if (json instanceof Error) {
                 return [new Error(`Extract function can be applied only to object. Error: ${json.message}.`)];
             }
-        } else {
-            return [new Error(`Extract function can be applied only to object.`)];
+        } else if (json instanceof Uint8Array) {
+            json = _JSONFromBinary(json);
+            if (json instanceof Error) {
+                return [new Error(`Fail to extract object from binary due error: ${json.message}.`)];
+            }
         }
+    }
+    if (typeof json !== 'object' || json === null) {
+        return [new Error(`Extract function can be applied only to object.`)];
     }
     if (typeof json.__signature !== 'string' || json.__signature.trim() === '') {
         return [new Error(`Cannot find signature of entity.`)];
@@ -189,7 +206,7 @@ export function _parse(json: any, target?: any): TTypes | Error[] {
     }
 }
 
-export function _stringify(target: any, classRef: any): string | Error[] {
+export function _stringify(target: any, classRef: any): { [key: string]: any } | Error[] {
     if (!(target instanceof classRef)) {
         return [new Error(`Defined wrong reference to class.`)];
     }
@@ -219,7 +236,7 @@ export function _stringify(target: any, classRef: any): string | Error[] {
                     json[propNameAlias] = target[prop].map((value: any) => {
                         const nestedType = types[desc.value];
                         if (!nestedType.validate(value)) {
-                            errors.push(new Error(`Property "${prop}" has wrong format.`));
+                            errors.push(new Error(`Property "${prop}" has wrong format. Value: ${value}; type: ${typeof value}.`));
                             return undefined;
                         }
                         return nestedType.serialize(value);
@@ -280,7 +297,26 @@ export function _stringify(target: any, classRef: any): string | Error[] {
     if (errors.length > 0) {
         return errors;
     }
-    return JSON.stringify(json);
+    return json;
+}
+
+export function _JSONToBinary(target: any, signature: string): Uint8Array | Error {
+    if (ConvertedTypedEntitiesMap[signature] === void 0) {
+        return new Error(`Cannot find typed map for "${signature}"`);
+    }
+    try {
+        return Json.Convertor.encode(target, ConvertedTypedEntitiesMap[signature]);
+    } catch (error) {
+        return error;
+    }
+}
+
+export function _JSONFromBinary(data: Uint8Array): {} | Error {
+    try {
+        return Json.Convertor.decode(data);
+    } catch (error) {
+        return error;
+    }
 }
 
 export function getTypes(): {[key: string]: any} {
@@ -297,28 +333,35 @@ export function getJSONFromStr(str: string): {} | Error {
     }
 }
 
-export function stringify(target: any, classRef: any): string | Error {
+export function stringify(target: any, classRef: any): string | Uint8Array | Error {
     const result = _stringify(target, classRef);
     if (result instanceof Array) {
         return new Error(`Cannot stringify due errors:\n ${result.map((error: Error) => error.message).join('\n')}`);
     }
-    return result;
+    // Create binary
+    if (state.isDebugged()) {
+        return JSON.stringify(result);
+    }
+    return _JSONToBinary(result, classRef.getSignature());
 }
 
-export function parse(str: string | object, target?: any): TTypes | Error {
+export function parse(source: string | object | Uint8Array, target?: any): TTypes | Error {
     let json: any;
-    if (typeof str === 'string') {
-        json = getJSONFromStr(str);
-        if (json instanceof Error) {
-            return json;
-        }
-    } else if (typeof str !== 'object' || str === null) {
+    if (typeof source === 'string') {
+        json = getJSONFromStr(source);
+    } else if (source instanceof Uint8Array) {
+        json = _JSONFromBinary(source);
+    } else if (typeof source !== 'object' || source === null) {
         return new Error(`Expecting string or object.`);
     } else {
-        json = str;
+        json = source;
+    }
+    if (json instanceof Error) {
+        return json;
     }
     const result = _parse(json, target);
     if (result instanceof Array) {
+        (global as any).__json = json;
         return new Error(`Cannot parse due errors:\n ${result.map((error: Error) => error.message).join('\n')}`);
     }
     return result;
@@ -366,7 +409,6 @@ export function typeOf(smth: any): string {
         default:
             return typeof smth;
     }
-
 }
 
 export function validateParams(params: any, classRef: any): Error[] {
@@ -441,6 +483,53 @@ export function validateParams(params: any, classRef: any): Error[] {
         }
     });
     return errors;
+}
+
+export function convertTypesToStandard(target: {[key: string]: any}): {[key: string]: any} {
+    function getTypeFromStr(type: string): string | Error {
+        let result: string | Error;
+        if (PrimitiveTypes[type] !== void 0) {
+            result = PrimitiveTypes[type].binaryType;
+        } else if (AdvancedTypes[type] !== void 0) {
+            if (typeof AdvancedTypes[type].binaryType === 'string') {
+                result = AdvancedTypes[type].binaryType;
+            } else {
+                result = new Error(`Type "${type}" is defined as advanced type, but property "binaryType" isn't defined.`);
+            }
+        } else {
+            const availableTypes = [...Object.keys(PrimitiveTypes), ...Object.keys(AdvancedTypes)];
+            result = new Error(`Found unexpected type: "${type}". This type isn't defined in protocol. Available types in this protocol: ${availableTypes.join(', ')}`);
+        }
+        if (result instanceof Error) {
+            return result;
+        }
+        if (StandardTypes.indexOf(result) === -1) {
+            result = new Error(`Type "${result}" isn't standard type. Available standard types: ${StandardTypes.join(', ')}`);
+        }
+        return result;
+    }
+    const converted: {[key: string]: any} = { __signature: 'asciiString' };
+    Object.keys(target).forEach((key: string) => {
+        const value = target[key];
+        if (typeof value === 'string') {
+            const type: string | Error = getTypeFromStr(value);
+            if (type instanceof Error) {
+                throw type;
+            }
+            converted[key] = type;
+        } else if (value instanceof Array && value.length === 1) {
+            const type: string | {} | Error = typeof value[0] === 'string' ? getTypeFromStr(value[0]) : convertTypesToStandard(value[0]);
+            if (type instanceof Error) {
+                throw type;
+            }
+            converted[key] = [type];
+        } else if (typeof value === 'object' && value !== null) {
+            converted[key] = convertTypesToStandard(value);
+        } else {
+            throw new Error(`Unexpected value of type: ${value}. Check key: ${key}`);
+        }
+    });
+    return converted;
 }
 
 export class Root {

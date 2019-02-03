@@ -13,7 +13,7 @@ export class Request {
 
     constructor(
 		url: 		string,
-		post: 		string,
+		post: 		string | Uint8Array,
 		timeout: 	number = SETTINGS.DEFAULT_TIMEOUT,
 	) {
 		this._id 			= Tools.guid();
@@ -37,7 +37,7 @@ export class Request {
 		this._destroy();
 	}
 
-	public send(): Promise<string> {
+	public send(): Promise<string | Uint8Array> {
 		return this._request.send();
 	}
 

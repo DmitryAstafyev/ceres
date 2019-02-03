@@ -62,7 +62,7 @@ export class MessageDemandFromExpectantProcessor extends MessageProcessor<Protoc
                     this._logger.env(`Confirmation of pendinng demand of client ${clientId} "${message.demand.protocol}/${message.demand.demand}" is sent.`);
                     // No respondents, create pending task
                     this.state.demands.createPendingTask(demandGUID, {
-                        body: message.demand.body,
+                        body: message.demand.bodyStr === '' ? (new Uint8Array(message.demand.bodyBinary)) : message.demand.bodyStr,
                         demand: message.demand.demand,
                         expectantId: clientId,
                         expected: message.demand.expected,
@@ -90,7 +90,7 @@ export class MessageDemandFromExpectantProcessor extends MessageProcessor<Protoc
                     this.state.demands.proccessDemandByServer(
                         message.demand.protocol,
                         message.demand.demand,
-                        message.demand.body,
+                        message.demand.bodyStr === '' ? new Uint8Array(message.demand.bodyBinary) : message.demand.bodyStr,
                         message.demand.expected,
                         respondents.target as string,
                         clientId,
@@ -103,7 +103,7 @@ export class MessageDemandFromExpectantProcessor extends MessageProcessor<Protoc
                             return this.state.demands.sendDemand(
                                 message.demand.protocol,
                                 message.demand.demand,
-                                message.demand.body,
+                                message.demand.bodyStr === '' ? new Uint8Array(message.demand.bodyBinary) : message.demand.bodyStr,
                                 message.demand.expected,
                                 clientId,
                                 respondents.target as string,

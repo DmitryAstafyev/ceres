@@ -38,16 +38,21 @@ export class Connection extends Tools.EventEmitter {
         return this._clientGUID;
     }
 
-    public getRequest(): Promise<string> {
+    public getRequest(): Promise<string | Uint8Array> {
         return new Promise((resolve, reject) => {
-            let str = '';
+            let str: string = '';
+            const buffer: number[] = [];
             let error: Error | null = null;
             this._request.on('data', (data) => {
                 if (error !== null) {
                     return;
                 }
-                str += data;
-                if (str.length > this._maxSize) {
+                if (data instanceof Buffer) {
+                    buffer.push(...data);
+                } else {
+                    str += data;
+                }
+                if (str.length > this._maxSize || buffer.length > this._maxSize) {
                     error = new Error(`Length of request to big. Maximum length of request is: ${this._maxSize} bytes`);
                     this._request.destroy(error);
                     reject(error);
@@ -57,15 +62,22 @@ export class Connection extends Tools.EventEmitter {
                 if (error !== null) {
                     return;
                 }
-                resolve(str);
+                if (buffer.length > 0) {
+                    resolve(new Uint8Array(buffer));
+                } else {
+                    resolve(str);
+                }
             });
         });
     }
 
-    public close(response: string): Promise<void> {
+    public close(response: string | Uint8Array): Promise<void> {
         return new Promise((resolve, reject) => {
+            if (typeof response !== 'string' && !(response instanceof Uint8Array)) {
+                return reject(new Error(`To client can be sent only {string} or {Uint8Array}, but here is attempt to send: ${typeof response}.`));
+            }
             this._setHeaders();
-            this._response.write(response, (error: Error | null | undefined) => {
+            this._response.write(response instanceof Uint8Array ? new Buffer(response) : response, (error: Error | null | undefined) => {
                 if (error) {
                     return reject();
                 }

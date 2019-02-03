@@ -99,7 +99,7 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
         });
     }
 
-    public send(data: string, connecting: boolean = false): Promise<Protocol.TProtocolTypes | TransportProtocol.TProtocolTypes> {
+    public send(data: string | Uint8Array, connecting: boolean = false): Promise<Protocol.TProtocolTypes | TransportProtocol.TProtocolTypes> {
         return new Promise((resolve, reject) => {
             const url = this._getURL();
             // Create request
@@ -107,7 +107,7 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
             // Save request
             this._requests.set(request.getId(), request);
             // Send request
-            request.send().then((response: string) => {
+            request.send().then((response: string | Uint8Array) => {
                 const next = new Promise((resolveNext, rejectNext) => {
                     if (connecting) {
                         (this.middleware as Middleware).connecting(request.getXMLHttpRequest(), response).then(() => {

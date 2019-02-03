@@ -17,7 +17,7 @@ export default class ProtocolsHolder {
         });
     }
 
-    public parse(protocolSignature: string, json: string): Promise<any> {
+    public parse(protocolSignature: string, json: string | Uint8Array | number[]): Promise<any> {
         return new Promise((resolve, reject) => {
             if (!this._protocols.has(protocolSignature)) {
                 return reject(new Error(`Protocol ${protocolSignature} is unknown. Be sure, this protocol is registered.`));

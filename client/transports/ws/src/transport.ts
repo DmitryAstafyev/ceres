@@ -113,12 +113,17 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
         });
     }
 
-    public send(data: string): Promise<Protocol.TProtocolTypes | TransportProtocol.TProtocolTypes> {
-        if (data.length < (this.parameters.wsPackageMaxSize as number)) {
-            return this._sendViaWS(data);
-        } else {
-            return this._sendViaHTML(data);
-        }
+    public send(data: string | Uint8Array): Promise<Protocol.TProtocolTypes | TransportProtocol.TProtocolTypes> {
+        return new Promise((resolve, reject) => {
+            if ((typeof data !== 'string' || data.trim() === '') && !(data instanceof Uint8Array)) {
+                return reject(new Error(this._logger.error(`Only string or Uint8Array can be sent via transport.`)));
+            }
+            if (data.length < (this.parameters.wsPackageMaxSize as number)) {
+                this._sendViaWS(data).then(resolve).catch(reject);
+            } else {
+                this._sendViaHTML(data).then(resolve).catch(reject);
+            }
+        });
     }
 
     public getClientId(): string {
@@ -153,7 +158,7 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * HTML requests
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-    private _sendViaHTML(data: string, connecting: boolean = false): Promise<Protocol.TProtocolTypes | TransportProtocol.TProtocolTypes> {
+    private _sendViaHTML(data: string | Uint8Array, connecting: boolean = false): Promise<Protocol.TProtocolTypes | TransportProtocol.TProtocolTypes> {
         return new Promise((resolve, reject) => {
             const url = this._getURL();
             // Create request
@@ -161,7 +166,7 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
             // Save request
             this._requests.set(request.getId(), request);
             // Send request
-            request.send().then((response: string) => {
+            request.send().then((response: string | Uint8Array) => {
                 const next = new Promise((resolveNext, rejectNext) => {
                     if (connecting) {
                         (this.middleware as Middleware).connecting(request.getXMLHttpRequest(), response).then(() => {
@@ -200,7 +205,7 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * WS
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-    private _sendViaWS(data: string): Promise<Protocol.TProtocolTypes | TransportProtocol.TProtocolTypes> {
+    private _sendViaWS(data: string | Uint8Array): Promise<Protocol.TProtocolTypes | TransportProtocol.TProtocolTypes> {
         return new Promise((resolve, reject) => {
             if (!this._socket) {
                 return reject(new Error(this._logger.error(`WebSocket connection isn't okay.`)));
@@ -216,6 +221,10 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
             const guid = message.guid;
             // Store handler
             this._wsResolversHolder.add('ws', guid, resolve);
+            // Check mode
+            if (!TransportProtocol.Protocol.state.isDebugged()) {
+                this._socket.binaryType = "arraybuffer";
+            }
             this._socket.send(data);
         });
     }
@@ -246,10 +255,10 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
     }
 
     private _onWSMessage(event: MessageEvent) {
-        if (typeof event.data !== 'string' || event.data.trim() === '') {
+        if ((typeof event.data !== 'string' || event.data.trim() === '') && !(event.data instanceof ArrayBuffer)) {
             return this._logger.warn(`Server sent via WS not valid data: ${typeof event.data}.`);
         }
-        const response = event.data;
+        const response = typeof event.data === 'string' ? event.data : new Uint8Array(event.data);
         const message = TransportProtocol.parseFrom(response, [TransportProtocol, Protocol]);
         if (message instanceof Error) {
             return this._logger.warn(`Server sent invalid data with error: ${message.message}. Response body: ${Tools.inspect(response)}`);

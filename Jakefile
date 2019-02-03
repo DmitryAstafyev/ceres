@@ -121,6 +121,7 @@ function logo(){
     if (logo.__show !== void 0) { 
         return;
     }
+    logo.__show = true;
     const file = path.resolve(__dirname, LOGO_FILE);
     if (!fs.existsSync(file)) {
         return;
@@ -142,6 +143,27 @@ function echoDec(msg, filler = '*', colorFunc = null) {
 }
 
 namespace('build', function() {
+
+    task('protocol', function() {
+        logo();
+        const paths = {
+            convertor: path.normalize(path.join(__dirname, '/common/convertor')),
+            protocol: path.normalize(path.join(__dirname, '/common/protocol')),
+        };
+        const tasks = [
+            `npm install --prod --prefix ${paths.convertor}`,
+            `npm run build --prefix ${paths.convertor}`,
+            `rm -rf ${path.normalize(path.join(paths.convertor, '/etc'))} & exit 0`,
+            `rm -rf ${path.normalize(path.join(paths.protocol, '/node_modules'))} & exit 0`,
+            `npm install --prod --prefix ${paths.protocol}`,
+            `mkdir ${path.normalize(path.join(paths.protocol, '/node_modules'))} & exit 0`,
+            `ln -s ${paths.convertor} ${path.normalize(path.join(paths.protocol, '/node_modules/protocol.convertor'))}`,
+            `rm -rf ${path.normalize(path.join(paths.protocol, '/etc'))} & exit 0`,
+            `npm run build --prefix ${paths.protocol}`,
+        ];
+        sh(this, '.', ...tasks);
+    }, {async: true});
+
     namespace('client', function() {
         task('all', function() {
             logo();
@@ -218,6 +240,7 @@ namespace('build', function() {
                 `ln -s ${paths.cLongpoll} ${path.normalize(path.join(paths.pgClient0, '/node_modules/ceres.client.transport.httplongpoll'))}`,
                 `unlink ${path.normalize(path.join(paths.pgClient0, '/node_modules/ceres.client.transport.ws'))} & exit 0`,
                 `ln -s ${paths.cWs} ${path.normalize(path.join(paths.pgClient0, '/node_modules/ceres.client.transport.ws'))}`,
+                `npm run build-ts --prefix ${paths.pgClient0}`,
 
                 `unlink ${path.normalize(path.join(paths.pgClient1, '/node_modules/ceres.client.consumer'))} & exit 0`,
                 `mkdir ${path.normalize(path.join(paths.pgClient1, '/node_modules'))} & exit 0`,
@@ -226,6 +249,7 @@ namespace('build', function() {
                 `ln -s ${paths.cLongpoll} ${path.normalize(path.join(paths.pgClient1, '/node_modules/ceres.client.transport.httplongpoll'))}`,
                 `unlink ${path.normalize(path.join(paths.pgClient1, '/node_modules/ceres.client.transport.ws'))} & exit 0`,
                 `ln -s ${paths.cWs} ${path.normalize(path.join(paths.pgClient1, '/node_modules/ceres.client.transport.ws'))}`,
+                `npm run build-ts --prefix ${paths.pgClient1}`,
 
                 `unlink ${path.normalize(path.join(paths.pgServer, '/node_modules/ceres.server.provider'))} & exit 0`,
                 `mkdir ${path.normalize(path.join(paths.pgServer, '/node_modules'))} & exit 0`,
@@ -234,6 +258,7 @@ namespace('build', function() {
                 `ln -s ${paths.sLongpoll} ${path.normalize(path.join(paths.pgServer, '/node_modules/ceres.server.transport.httplongpoll'))}`,
                 `unlink ${path.normalize(path.join(paths.pgServer, '/node_modules/ceres.server.transport.ws'))} & exit 0`,
                 `ln -s ${paths.sWs} ${path.normalize(path.join(paths.pgServer, '/node_modules/ceres.server.transport.ws'))}`,
+                `npm run build --prefix ${paths.pgServer}`,
 
             ];
             sh(this, '.', ...tasks);
@@ -256,11 +281,14 @@ namespace('build', function() {
                 sWs: path.normalize(path.join(__dirname, '/server/transports/ws')),
                 cLongpoll: path.normalize(path.join(__dirname, '/client/transports/http.longpoll')),
                 cWs: path.normalize(path.join(__dirname, '/client/transports/ws')),
+                playgroundSrc: path.normalize(path.join(__dirname, '/playground/protocol/src/protocol.playground.json')),
+                playgroundDest: path.normalize(path.join(__dirname, '/playground/protocol/protocol.playground.ts')),
             };
             const tasks = [
                 `ts-node ${paths.cli} -s ${paths.protocolSrc} -o ${paths.protocolDest} -r`,
                 `ts-node ${paths.cli} -s ${paths.wsSrc} -o ${paths.wsDest} -r`,
                 `ts-node ${paths.cli} -s ${paths.longpollSrc} -o ${paths.longpollDest} -r`,
+                `ts-node ${paths.cli} -s ${paths.playgroundSrc} -o ${paths.playgroundDest} -r`,
 
                 `unlink ${path.normalize(path.join(paths.cWs, '/src/protocols'))} & exit 0`,
                 `rm -rf ${path.normalize(path.join(paths.cWs, '/src/protocols'))} & exit 0`,
@@ -286,7 +314,7 @@ namespace('build', function() {
         }, {async: true});
     });
 
-    task('all', ['build:protocol:all', 'build:client:all', 'build:server:all', 'build:playground:all']);
+    task('all', ['build:protocol', 'build:protocol:all', 'build:client:all', 'build:server:all', 'build:playground:all']);
 
     /**
 ts-node ./cli/src/generate.ts -s ../protocols/connection/src/protocol.transport.longpoll.json -o ../protocols/connection/protocol.transport.longpoll.ts -r     * 

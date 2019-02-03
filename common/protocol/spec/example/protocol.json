@@ -35,13 +35,19 @@
         },
         "Event": {
             "Request": {
-                "event": "EventDefinition"
+                "event": "EventDefinition",
+                "aliases?": "array<KeyValue>",
+                "options?": "Options"
             },
             "Response": {
                 "eventGUID?": "string",
                 "subscribers": "integer"
             },
-            "Responses" : ["ConnectionError"]
+            "Responses" : ["ConnectionError"],
+            "@Options": {
+                "scope?": "Scope",
+                "Scope": ["local", "hosts", "clients", "all"]
+            }
         },
         "Subscribe": {
             "Request": {
@@ -90,6 +96,14 @@
         "reason": "Reasons",
         "message": "string",
         "Reasons": ["SHUTDOWN"]
+    },
+    "BinaryData": {
+        "bytes": "array<uint8>",
+        "sequence": "uint8"
+    },
+    "KeyValue": {
+        "key": "string",
+        "value": "string"
     },
     "version": "0.0.1"
 }

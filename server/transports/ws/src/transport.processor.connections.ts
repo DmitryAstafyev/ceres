@@ -34,10 +34,10 @@ export class ProcessorConnections extends Tools.EventEmitter {
         this._heartbeat();
     }
 
-    public send(clientId: string, data: string): Promise<void> {
+    public send(clientId: string, data: string | Uint8Array): Promise<void> {
         return new Promise((resolve, reject) => {
-            if (typeof data !== 'string') {
-                return reject(new Error(this._logger.error(`Only string can be sent`)));
+            if (typeof data !== 'string' && !(data instanceof Uint8Array)) {
+                return reject(new Error(this._logger.error(`Only string or Uint8Array can be sent`)));
             }
             if ((this._paramters.wsPackageMaxSize as number) < data.length) {
                 // Use HTTP request
@@ -124,7 +124,7 @@ export class ProcessorConnections extends Tools.EventEmitter {
         this.pending.delete(clientId);
     }
 
-    private _sendViaHTTP(clientId: string, data: string): Promise<void> {
+    private _sendViaHTTP(clientId: string, data: string | Uint8Array): Promise<void> {
         return new Promise((resolve, reject) => {
             const connection: Connection | null = this.pending.get(clientId);
             if (connection === null) {
@@ -134,7 +134,7 @@ export class ProcessorConnections extends Tools.EventEmitter {
         });
     }
 
-    private _sendViaWS(clientId: string, response: string): Promise<void> {
+    private _sendViaWS(clientId: string, response: string | Uint8Array): Promise<void> {
         return new Promise((resolve, reject) => {
             const info: ISocketInfo | undefined = this.sockets.get(clientId);
             if (info === undefined) {

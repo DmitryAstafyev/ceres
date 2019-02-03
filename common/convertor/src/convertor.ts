@@ -12,11 +12,14 @@ class Convertor {
     public static encode(target: any, scheme: any, validation: boolean = true): Uint8Array {
         const paket: number[] = [];
         Object.keys(target).forEach((key: string) => {
-            const type = scheme[key];
+            const type = this._getPrimitiveType(scheme[key]);
             const value = target[key];
             const propName: Uint8Array = Impls.Uint8.fromAsciiStr(key);
             if (type === null || type === undefined) {
-                throw new Error(`Incorrect type provided in scheme: ${typeof type}.`);
+                throw new Error(`Incorrect type provided in scheme: ${typeof type}; key: ${key}.`);
+            }
+            if (value === undefined) {
+                return;
             }
             if (typeof type !== 'object' && !(type instanceof Array)) {
                 // Primitives
@@ -42,7 +45,7 @@ class Convertor {
                     throw new Error(`Type of value isn't an array. Property: ${propName}.`);
                 }
                 // We have an array
-                const itemType = type[0];
+                const itemType = this._getPrimitiveType(type[0]);
                 const items: number[] = [];
                 const data: number[] = [];
                 data.push(propName.length);
@@ -53,7 +56,7 @@ class Convertor {
                         value.forEach((item: any, index: number) => {
                             const propValue: number[] | Error = this._encodePrimitive(item, itemType, validation);
                             if (propValue instanceof Error) {
-                                throw new Error(`Fail to encode property "${key}" due error: ${propValue.message}. Index in array: ${index}.`);
+                                throw new Error(`Fail to encode property "${key}" due error: ${propValue.message}. Index in array: ${index}; key: ${key}.`);
                             }
                             items.push(...Scheme.LengthConvertor[itemType](propValue.length));
                             items.push(...propValue);
@@ -62,7 +65,7 @@ class Convertor {
                         value.forEach((item: any, index: number) => {
                             const propValue: number[] | Error = this._encodePrimitive(item, itemType, validation);
                             if (propValue instanceof Error) {
-                                throw new Error(`Fail to encode property "${key}" due error: ${propValue.message}. Index in array: ${index}.`);
+                                throw new Error(`Fail to encode property "${key}" due error: ${propValue.message}. Index in array: ${index}; key: ${key}.`);
                             }
                             items.push(...propValue);
                         });
@@ -76,7 +79,7 @@ class Convertor {
                     });
                     data.push(Scheme.Types.object);
                 } else {
-                    throw new Error(`Incorrect declaration of array type: ${typeof itemType}`);
+                    throw new Error(`Incorrect declaration of array type: ${typeof itemType} / ${itemType}; key: ${key}`);
                 }
                 data.push(...Impls.Uint32.toUint8(items.length));
                 data.push(...items);
@@ -116,7 +119,11 @@ class Convertor {
                 case Scheme.Types.object:
                     const objValueLength = Impls.Uint32.fromUint8(buffer.slice(offset, offset + 4));
                     const objValueBytes = buffer.slice(offset - 1, offset + 4 + objValueLength);
-                    paket[propName] = this.decode(objValueBytes);
+                    if (objValueLength > 0) {
+                        paket[propName] = this.decode(objValueBytes);
+                    } else {
+                        paket[propName] = {};
+                    }
                     buffer = buffer.slice(offset + 4 + objValueLength, buffer.length);
                     break;
                 case Scheme.Types.array:
@@ -124,43 +131,45 @@ class Convertor {
                     const arrayLength = Impls.Uint32.fromUint8(buffer.slice(offset + 1, offset + 4 + 1));
                     let arrayBytes = buffer.slice(offset + 4 + 1, offset + 4 + 1 + arrayLength);
                     const items: any[] = [];
-                    if (this._isPrimitive(itemType)) {
-                        if ([Scheme.Types.asciiString, Scheme.Types.utf8String].indexOf(itemType) !== -1) {
-                            let strLength;
-                            let strValue;
+                    if (arrayLength > 0) {
+                        if (this._isPrimitive(itemType)) {
+                            if ([Scheme.Types.asciiString, Scheme.Types.utf8String].indexOf(itemType) !== -1) {
+                                let strLength;
+                                let strValue;
+                                do {
+                                    strLength = Impls.Uint32.fromUint8(arrayBytes.slice(0, 4));
+                                    strValue = arrayBytes.slice(4, 4 + strLength);
+                                    switch (itemType) {
+                                        case Scheme.Types.asciiString:
+                                            items.push(Impls.Uint8.toAsciiStr(strValue));
+                                            break;
+                                        case Scheme.Types.utf8String:
+                                            items.push(Impls.Uint8.toUtf8Str(strValue));
+                                            break;
+                                    }
+                                    arrayBytes = arrayBytes.slice(4 + strLength, arrayBytes.length);
+                                } while (arrayBytes.length > 0);
+                            } else {
+                                do {
+                                    items.push(Scheme.TypesProviders[itemType].fromUint8(arrayBytes.slice(0, Scheme.TypesSizes[itemType])));
+                                    arrayBytes = arrayBytes.slice(Scheme.TypesSizes[itemType], arrayBytes.length);
+                                } while (arrayBytes.length > 0);
+                            }
+                        } else if (itemType === Scheme.Types.object) {
+                            let objType;
+                            let objLength;
+                            let objBody;
                             do {
-                                strLength = Impls.Uint32.fromUint8(arrayBytes.slice(0, 4));
-                                strValue = arrayBytes.slice(4, 4 + strLength);
-                                switch (itemType) {
-                                    case Scheme.Types.asciiString:
-                                        items.push(Impls.Uint8.toAsciiStr(strValue));
-                                        break;
-                                    case Scheme.Types.utf8String:
-                                        items.push(Impls.Uint8.toUtf8Str(strValue));
-                                        break;
+                                objType = Impls.Uint8.fromUint8(arrayBytes.slice(0, 1));
+                                if (objType !== Scheme.Types.object) {
+                                    throw new Error(`Expecting to have as an item of array object, but found type = ${Scheme.TypesNames[objType]} / ${objType}`);
                                 }
-                                arrayBytes = arrayBytes.slice(4 + strLength, arrayBytes.length);
-                            } while (arrayBytes.length > 0);
-                        } else {
-                            do {
-                                items.push(Scheme.TypesProviders[itemType].fromUint8(arrayBytes.slice(0, Scheme.TypesSizes[itemType])));
-                                arrayBytes = arrayBytes.slice(Scheme.TypesSizes[itemType], arrayBytes.length);
+                                objLength = Impls.Uint32.fromUint8(arrayBytes.slice(1, 5));
+                                objBody = arrayBytes.slice(0, objLength + 5);
+                                items.push(this.decode(objBody));
+                                arrayBytes = arrayBytes.slice(5 + objLength, arrayBytes.length);
                             } while (arrayBytes.length > 0);
                         }
-                    } else if (itemType === Scheme.Types.object) {
-                        let objType;
-                        let objLength;
-                        let objBody;
-                        do {
-                            objType = Impls.Uint8.fromUint8(arrayBytes.slice(0, 1));
-                            if (objType !== Scheme.Types.object) {
-                                throw new Error(`Expecting to have as an item of array object, but found type = ${Scheme.TypesNames[objType]} / ${objType}`);
-                            }
-                            objLength = Impls.Uint32.fromUint8(arrayBytes.slice(1, 5));
-                            objBody = arrayBytes.slice(0, objLength + 5);
-                            items.push(this.decode(objBody));
-                            arrayBytes = arrayBytes.slice(5 + objLength, arrayBytes.length);
-                        } while (arrayBytes.length > 0);
                     }
                     paket[propName] = items;
                     buffer = buffer.slice(offset + 4 + 1 + arrayLength, buffer.length);
@@ -247,6 +256,16 @@ class Convertor {
                 return true;
             default:
                 return false;
+        }
+    }
+
+    private static _getPrimitiveType(type: any): any {
+        if (typeof type === 'number') {
+            return type;
+        } else if (typeof type === 'string') {
+            return (Scheme.Types as any)[type];
+        } else {
+            return type;
         }
     }
 }

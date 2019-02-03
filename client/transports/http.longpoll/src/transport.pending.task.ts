@@ -17,7 +17,7 @@ export class Pending {
      * Create pending connection
      * @returns {Promise<TransportProtocol.Message.Pending.Response>}
      */
-    public create(url: string, clientGUID: string, token: Token): Promise<TransportProtocol.Message.Pending.Response | TransportProtocol.Disconnect> {
+    public create(url: string, clientGUID: string, token: Token): Promise<Protocol.Message.ToConsumer | TransportProtocol.Message.Pending.Response | TransportProtocol.Disconnect> {
         this._url = url;
         return new Promise((resolve, reject) => {
             if (this._request !== null) {
@@ -29,22 +29,21 @@ export class Pending {
             });
             this._request = new Request(url, instance.stringify());
             const requestId = this._request.getId();
-            this._request.send()
-                .then((response: string) => {
-                    this._request = null;
-                    const message: TMessage = TransportProtocol.parseFrom(response, [TransportProtocol, Protocol]) as TMessage;
-                    if (message instanceof Error) {
-                        return reject(message);
-                    }
-                    if (!(message instanceof Protocol.Message.ToConsumer) && !(message instanceof TransportProtocol.Message.Pending.Response) && !(message instanceof TransportProtocol.Disconnect)) {
-                        return reject(new Error(`Unexpected response: ${message.constructor.name}: ${Tools.inspect(message)}`));
-                    }
-                    resolve(message);
-                })
-                .catch((error: Error) => {
-                    this._request = null;
-                    reject(new Error(`Pending request guid "${requestId}" finished within error: ${error.message}`));
-                });
+            this._request.send().then((response: string | Uint8Array) => {
+                this._request = null;
+                const message: TMessage = TransportProtocol.parseFrom(response, [TransportProtocol, Protocol]) as TMessage;
+                if (message instanceof Error) {
+                    return reject(message);
+                }
+                if (!(message instanceof Protocol.Message.ToConsumer) && !(message instanceof TransportProtocol.Message.Pending.Response) && !(message instanceof TransportProtocol.Disconnect)) {
+                    return reject(new Error(`Unexpected response: ${message.constructor.name}: ${Tools.inspect(message)}`));
+                }
+                resolve(message);
+            })
+            .catch((error: Error) => {
+                this._request = null;
+                reject(new Error(`Pending request guid "${requestId}" finished within error: ${error.message}`));
+            });
         });
     }
 

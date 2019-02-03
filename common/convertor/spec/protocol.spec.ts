@@ -1,5 +1,6 @@
 // tslint:disable:ban-types
 // tslint:disable:object-literal-sort-keys
+// tslint:disable:no-console
 
 /// <reference path="../node_modules/@types/jasmine/index.d.ts" />
 /// <reference path="../node_modules/@types/node/index.d.ts" />
@@ -17,6 +18,9 @@ const EXAMPLE = {
     b: 200,
     a1: 10000,
     b1: 20000,
+    emptyObj: {
+        a2: 1234,
+    },
     nested: {
         a2: 10000,
         b2: 20000,
@@ -66,6 +70,9 @@ const EXAMPLE_SCHEME = {
     b: Scheme.Types.uint8,
     a1: Scheme.Types.uint16,
     b1: Scheme.Types.uint16,
+    emptyObj: {
+        a2: Scheme.Types.uint16,
+    },
     nested: {
         a2: Scheme.Types.uint16,
         b2: Scheme.Types.uint16,
@@ -94,9 +101,32 @@ const EXAMPLE_SCHEME = {
 describe('[Test][platform][convertor]', () => {
 
     it('[Converting]', (done: Function) => {
-        const converted = Convertor.encode(EXAMPLE, EXAMPLE_SCHEME);
+        console.log(`Testing fully defined object`);
+        let converted = Convertor.encode(EXAMPLE, EXAMPLE_SCHEME);
         expect(converted instanceof Uint8Array).toBe(true);
-        const decoded = Convertor.decode(converted);
+        let decoded = Convertor.decode(converted);
+        expect(typeof decoded).toBe('object');
+        Object.keys(EXAMPLE).forEach((key: string) => {
+            expect((typeof (decoded as any)[key]) === (typeof (EXAMPLE as any)[key])).toBe(true);
+            if ((EXAMPLE as any)[key] instanceof Array) {
+                expect((EXAMPLE as any)[key].length === (decoded as any)[key].length).toBe(true);
+                (EXAMPLE as any)[key].forEach((item: any, index: number) => {
+                    if (typeof item !== 'object') {
+                        expect(item === (decoded as any)[key][index]).toBe(true);
+                    }
+                });
+            }
+        });
+        console.log(`Testing partly defined object`);
+        delete EXAMPLE.emptyObj.a2;
+        delete EXAMPLE.bool2;
+        delete EXAMPLE.utf8;
+        EXAMPLE.arr0 = [];
+        EXAMPLE.arrObj = [];
+        EXAMPLE.nested.arr1 = [];
+        converted = Convertor.encode(EXAMPLE, EXAMPLE_SCHEME);
+        expect(converted instanceof Uint8Array).toBe(true);
+        decoded = Convertor.decode(converted);
         expect(typeof decoded).toBe('object');
         Object.keys(EXAMPLE).forEach((key: string) => {
             expect((typeof (decoded as any)[key]) === (typeof (EXAMPLE as any)[key])).toBe(true);

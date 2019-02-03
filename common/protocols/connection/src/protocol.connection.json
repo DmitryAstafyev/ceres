@@ -140,13 +140,15 @@
     "EventDefinition": {
         "protocol": "string",
         "event": "string",
-        "body": "string"
+        "bodyStr": "string",
+        "bodyBinary": "array<uint8>"
     },
     "DemandDefinition": {
         "id": "string",
         "protocol": "string",
         "demand": "string",
-        "body": "string",
+        "bodyStr": "string",
+        "bodyBinary": "array<uint8>",
         "expected": "string",
         "error?": "string",
         "pending?": "boolean"

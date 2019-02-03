@@ -33,7 +33,7 @@ export class MessageEventProcessor extends MessageProcessor<Protocol.Message.Eve
             this.state.events.emitAll(
                 message.event.protocol,
                 message.event.event,
-                message.event.body,
+                message.event.bodyStr === '' ? new Uint8Array(message.event.bodyBinary) : message.event.bodyStr,
                 message.options,
                 message.aliases,
             ).then((count: number) => {
