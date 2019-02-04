@@ -1,6 +1,6 @@
 /* tslint:disable */
 /*
-* This file generated automaticaly (Mon Feb 04 2019 00:20:13 GMT+0100 (CET))
+* This file generated automaticaly (Mon Feb 04 2019 22:28:46 GMT+0100 (CET))
 * Do not remove or change this code.
 * Protocol version: 0.0.1
 */
@@ -637,7 +637,7 @@ export namespace Protocol {
 	            // Return value
 	            return new Uint8Array(paket);
 	        }
-	    
+	
 	        public static decode(target: Uint8Array, maxInteractionsCount = MAX_INTERACTIONS_COUNT): any {
 	            const paket: any = {};
 	            const type = target[0];
@@ -746,7 +746,7 @@ export namespace Protocol {
 	            } while (buffer.length > 0);
 	            return paket;
 	        }
-	    
+	
 	        private static _encodePrimitive(value: any, type: number, validation: boolean): number[] | Error {
 	            const encoded: number[] = [];
 	            // Get value of property
@@ -777,7 +777,7 @@ export namespace Protocol {
 	            }
 	            return encoded;
 	        }
-	    
+	
 	        private static _isPrimitive(type: number): boolean {
 	            switch (type) {
 	                case Scheme.Types.uint8:
@@ -796,7 +796,7 @@ export namespace Protocol {
 	                    return false;
 	            }
 	        }
-	    
+	
 	        private static _getPrimitiveType(type: any): any {
 	            if (typeof type === 'number') {
 	                return type;
@@ -823,7 +823,10 @@ export namespace Protocol {
 	// declare var ConvertedTypedEntitiesMap: {[key: string]: any};
 	// declare var ConvertedTypedEntitiesMinMap: {[key: string]: any};
 	// declare var Json: any;
+	
 	// declare type TTypes = any;
+	
+	export type TIncomeData = string | object | ArrayBuffer | number[] | Uint8Array;
 	
 	export class ProtocolState {
 	
@@ -892,23 +895,11 @@ export namespace Protocol {
 	    return KeysMapRight[signature][alias];
 	}
 	
-	export function _parse(json: any, target?: any): TTypes | Error[] {
+	export function _parse(source: TIncomeData, target?: any): TTypes | Error[] {
 	    const types: {[key: string]: any} = getTypes();
-	    if (typeof json === 'string' || json instanceof Uint8Array) {
-	        if (typeof json === 'string') {
-	            json = getJSONFromStr(json);
-	            if (json instanceof Error) {
-	                return [new Error(`Extract function can be applied only to object. Error: ${json.message}.`)];
-	            }
-	        } else if (json instanceof Uint8Array) {
-	            json = _JSONFromBinary(json);
-	            if (json instanceof Error) {
-	                return [new Error(`Fail to extract object from binary due error: ${json.message}.`)];
-	            }
-	        }
-	    }
-	    if (typeof json !== 'object' || json === null) {
-	        return [new Error(`Extract function can be applied only to object.`)];
+	    const json: any = getJSONFromIncomeData(source);
+	    if (json instanceof Error) {
+	        return [json];
 	    }
 	    if (typeof json.__signature !== 'string' || json.__signature.trim() === '') {
 	        return [new Error(`Cannot find signature of entity.`)];
@@ -1147,6 +1138,22 @@ export namespace Protocol {
 	    }
 	}
 	
+	export function getJSONFromIncomeData(income: TIncomeData): {} | Error {
+	    if (typeof income === 'string') {
+	        return getJSONFromStr(income);
+	    } else if (income instanceof Uint8Array) {
+	        return _JSONFromBinary(income);
+	    } else if (income instanceof ArrayBuffer) {
+	        return _JSONFromBinary(new Uint8Array(income));
+	    } else if (income instanceof Array) {
+	        return _JSONFromBinary(new Uint8Array(income));
+	    } else if (typeof income === 'object' && income !== null) {
+	        return income;
+	    } else {
+	        return new Error(`Unsupported format of income data. Type: ${typeof income}`);
+	    }
+	}
+	
 	export function stringify(target: any, classRef: any): string | Uint8Array | Error {
 	    const result = _stringify(target, classRef);
 	    if (result instanceof Array) {
@@ -1159,17 +1166,8 @@ export namespace Protocol {
 	    return _JSONToBinary(result, classRef.getSignature());
 	}
 	
-	export function parse(source: string | object | Uint8Array, target?: any): TTypes | Error {
-	    let json: any;
-	    if (typeof source === 'string') {
-	        json = getJSONFromStr(source);
-	    } else if (source instanceof Uint8Array) {
-	        json = _JSONFromBinary(source);
-	    } else if (typeof source !== 'object' || source === null) {
-	        return new Error(`Expecting string or object.`);
-	    } else {
-	        json = source;
-	    }
+	export function parse(source: TIncomeData, target?: any): TTypes | Error {
+	    const json: {} | Error = getJSONFromIncomeData(source);
 	    if (json instanceof Error) {
 	        return json;
 	    }
@@ -1181,17 +1179,10 @@ export namespace Protocol {
 	    return result;
 	}
 	
-	export function parseFrom(str: string | object, protocols: any | any[]): any {
-	    let json: any;
-	    if (typeof str === 'string') {
-	        json = getJSONFromStr(str);
-	        if (json instanceof Error) {
-	            return json;
-	        }
-	    } else if (typeof str !== 'object' || str === null) {
-	        return new Error(`Expecting string or object.`);
-	    } else {
-	        json = str;
+	export function parseFrom(source: TIncomeData, protocols: any | any[]): any {
+	    const json: {} | Error = getJSONFromIncomeData(source);
+	    if (json instanceof Error) {
+	        return json;
 	    }
 	    protocols = protocols instanceof Array ? protocols : [protocols];
 	    let result: any;

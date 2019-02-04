@@ -405,7 +405,7 @@ export namespace Json {
             // Return value
             return new Uint8Array(paket);
         }
-    
+
         public static decode(target: Uint8Array, maxInteractionsCount = MAX_INTERACTIONS_COUNT): any {
             const paket: any = {};
             const type = target[0];
@@ -514,7 +514,7 @@ export namespace Json {
             } while (buffer.length > 0);
             return paket;
         }
-    
+
         private static _encodePrimitive(value: any, type: number, validation: boolean): number[] | Error {
             const encoded: number[] = [];
             // Get value of property
@@ -545,7 +545,7 @@ export namespace Json {
             }
             return encoded;
         }
-    
+
         private static _isPrimitive(type: number): boolean {
             switch (type) {
                 case Scheme.Types.uint8:
@@ -564,7 +564,7 @@ export namespace Json {
                     return false;
             }
         }
-    
+
         private static _getPrimitiveType(type: any): any {
             if (typeof type === 'number') {
                 return type;
