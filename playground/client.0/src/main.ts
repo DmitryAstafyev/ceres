@@ -19,7 +19,6 @@ const PARAMS = {
         port: 3005,
         wsHost: 'ws://localhost',
         wsPort: 3005,
-        wsPackageMaxSize: 100
     },
     longpoll: {
         host: 'http://{sub1,sub2,sub3}.localhost',

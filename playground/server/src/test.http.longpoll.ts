@@ -8,7 +8,7 @@ export default function test(){
     const logger = new Tools.Logger('HTTPLongpollServerTest');
     logger.info(`Create parameters for test.`)
     const parameters = new ConnectionParameters({
-        port: 3005
+        port: 3005,
     });
     const transport = new Transport(parameters);
     logger.info(`Creating server with:`, parameters);
