@@ -39,8 +39,7 @@ export class Pending {
                     return reject(new Error(`Unexpected response: ${message.constructor.name}: ${Tools.inspect(message)}`));
                 }
                 resolve(message);
-            })
-            .catch((error: Error) => {
+            }).catch((error: Error) => {
                 this._request = null;
                 reject(new Error(`Pending request guid "${requestId}" finished within error: ${error.message}`));
             });

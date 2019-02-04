@@ -1,5 +1,5 @@
-import Transport from 'ceres.server.transport.ws';
-import { ConnectionParameters } from 'ceres.server.transport.ws';
+import Transport from 'ceres.server.transport.httplongpoll';
+import { ConnectionParameters } from 'ceres.server.transport.httplongpoll';
 import Provider from 'ceres.server.provider';
 import * as Tools from '../../../common/platform/tools/index';
 import * as Protocol from '../../protocol/protocol.playground';

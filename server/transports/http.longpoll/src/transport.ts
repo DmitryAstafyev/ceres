@@ -108,7 +108,7 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
         });
     }
 
-    public send(clientId: string, data: string): Promise<void> {
+    public send(clientId: string, data: string | Uint8Array): Promise<void> {
         return this._connections.send(clientId, data);
     }
 

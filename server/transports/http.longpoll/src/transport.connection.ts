@@ -76,15 +76,19 @@ export class Connection extends Tools.EventEmitter {
             if (typeof response !== 'string' && !(response instanceof Uint8Array)) {
                 return reject(new Error(`To client can be sent only {string} or {Uint8Array}, but here is attempt to send: ${typeof response}.`));
             }
-            this._setHeaders();
-            this._response.write(response instanceof Uint8Array ? new Buffer(response) : response, (error: Error | null | undefined) => {
-                if (error) {
-                    return reject();
-                }
-                this._response.end(() => {
-                    resolve();
-                });
-            });
+            this._setHeaders(response instanceof Uint8Array ? true : false);
+            this._response.write(
+                (response instanceof Uint8Array ? new Buffer(response) : response),
+                (response instanceof Uint8Array ? 'binary' : 'utf8'),
+                (error: Error | null | undefined) => {
+                    if (error) {
+                        return reject();
+                    }
+                    this._response.end(() => {
+                        resolve();
+                    }, (response instanceof Uint8Array ? 'binary' : 'utf8'));
+                },
+            );
         });
     }
 
@@ -92,9 +96,9 @@ export class Connection extends Tools.EventEmitter {
         this.emit(Connection.EVENTS.onAborted, this);
     }
 
-    private _setHeaders() {
+    private _setHeaders(binary: boolean = false) {
         const headers: THeaders = {
-            "Content-Type": "text/plain" ,
+            "Content-Type": binary ? "application/octet-stream" : "text/plain",
         };
         if (this._CORS) {
             headers['Access-Control-Allow-Origin'] = '*';

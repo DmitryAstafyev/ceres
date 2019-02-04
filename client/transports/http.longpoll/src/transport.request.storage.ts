@@ -7,23 +7,21 @@ export class Requests {
 
     private _requests: Map<string, Request> = new Map();
 
-    public send(url: string, body: string): Promise<TransportProtocol.TProtocolTypes> {
+    public send(url: string, body: string | Uint8Array): Promise<TransportProtocol.TProtocolTypes> {
         return new Promise((resolve, reject) => {
             const request = new Request(url, body);
             this._requests.set(request.getId(), request);
-            request.send()
-                .then((response: string) => {
-                    this._requests.delete(request.getId());
-                    const message = TransportProtocol.parseFrom(response, [TransportProtocol, Protocol]);
-                    if (message instanceof Error) {
-                        return reject(message);
-                    }
-                    resolve(message);
-                })
-                .catch((error: Error) => {
-                    this._requests.delete(request.getId());
-                    reject(error);
-                });
+            request.send().then((response: string | Uint8Array) => {
+                this._requests.delete(request.getId());
+                const message = TransportProtocol.parseFrom(response, [TransportProtocol, Protocol]);
+                if (message instanceof Error) {
+                    return reject(message);
+                }
+                resolve(message);
+            }).catch((error: Error) => {
+                this._requests.delete(request.getId());
+                reject(error);
+            });
         });
     }
 

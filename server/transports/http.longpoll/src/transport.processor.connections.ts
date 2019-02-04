@@ -21,7 +21,7 @@ export class ProcessorConnections extends Tools.EventEmitter {
         this.pending = new Connections();
     }
 
-    public send(clientId: string, data: string): Promise<void> {
+    public send(clientId: string, data: string | Uint8Array): Promise<void> {
         return new Promise((resolve, reject) => {
             const connection: Connection | null = this.pending.get(clientId);
             if (connection === null) {

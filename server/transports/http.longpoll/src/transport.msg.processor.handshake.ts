@@ -17,6 +17,7 @@ export class MessageHandshakeProcessor extends TransportMessageProcessor<Transpo
                 // Connection is accepted
                 connection.close((new TransportProtocol.Message.Handshake.Response({
                     clientId: clientId,
+                    guid: message.guid,
                     token: this.transport.setClientToken(clientId),
                 })).stringify()).then(() => {
                     this._logger.env(`Authorization of connection for ${clientId} is done.`);
@@ -29,6 +30,7 @@ export class MessageHandshakeProcessor extends TransportMessageProcessor<Transpo
                 connection.close((new TransportProtocol.Message.Handshake.Response({
                     clientId: clientId,
                     error: error.message,
+                    guid: message.guid,
                     reason: TransportProtocol.Message.Handshake.Response.Reasons.FAIL_AUTH,
                 })).stringify()).then(() => {
                     rejectProcess(new Error(this._logger.env(`Authorization of connection for ${clientId} is failed die error: ${error.message}`)));
