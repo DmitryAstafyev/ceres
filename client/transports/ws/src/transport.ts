@@ -221,10 +221,6 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
             const guid = message.guid;
             // Store handler
             this._wsResolversHolder.add('ws', guid, resolve);
-            // Check mode
-            if (!TransportProtocol.Protocol.state.isDebugged()) {
-                this._socket.binaryType = "arraybuffer";
-            }
             this._socket.send(data);
         });
     }
@@ -250,6 +246,7 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
             }.bind(self);
             // Create WebSocket connection.
             const socket = new WebSocket(self.parameters.getWSURL(), self._token.get());
+            socket.binaryType = "arraybuffer";
             bind();
         });
     }
