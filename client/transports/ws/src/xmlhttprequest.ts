@@ -157,8 +157,6 @@ export default class ImpXMLHTTPRequest {
                                 new Error(this._logger.env(`Request to url "${this._url}" finished with error: for binary data expected ArrayBuffer, but response has type: ${typeof this._httpRequest.response}`)),
                             ); 
                         }
-                        const bytes = new Uint8Array(this._httpRequest.response);
-                        debugger;
                         this._resolveRequest(new Uint8Array(this._httpRequest.response), this._getResponseHeaders());
                         break;
                     default:

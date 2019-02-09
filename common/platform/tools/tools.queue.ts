@@ -3,7 +3,7 @@ import * as Types from './tools.primitivetypes';
 import Logger from './tools.logger';
 
 const DEFAULT_TIMEOUT = 1000 * 10; // ms
-const DEFAULT_EXECUTE_DELAY = 100; // ms
+const DEFAULT_EXECUTE_DELAY = 10; // ms
 const DEFAULT_EXECUTE_COUNT_WARN = 50;
 const DEFAULT_DROP_COUNT = 100;
 
@@ -115,23 +115,21 @@ export default class Queue {
                 if (task.executed > 0 && moment - task.executed < this._executeDelay) {
                     return;
                 }
-                tasks.push(task.task()
-                    .then(() => {
+                tasks.push(task.task().then(() => {
+                    this._tasks.delete(taskId);
+                }).catch((error: Error) => {
+                    task.executed = moment;
+                    task.counter += 1;
+                    if (task.counter >= this._executeCountWarn) {
+                        this._logger.env(`Tasks is executed too much times: ${task.counter}`);
+                    }
+                    if (task.counter >= this._executeDropCount) {
+                        this._logger.env(`Task was executed ${task.counter} times and will be removed.`);
                         this._tasks.delete(taskId);
-                    })
-                    .catch((error: Error) => {
-                        task.executed = moment;
-                        task.counter += 1;
-                        if (task.counter >= this._executeCountWarn) {
-                            this._logger.env(`Tasks is executed too much times: ${task.counter}`);
-                        }
-                        if (task.counter >= this._executeDropCount) {
-                            this._logger.env(`Task was executed ${task.counter} times and will be removed.`);
-                            this._tasks.delete(taskId);
-                            return;
-                        }
-                        this._tasks.set(taskId, task);
-                    }));
+                        return;
+                    }
+                    this._tasks.set(taskId, task);
+                }));
             });
             const resolver = () => {
                 if (this._destroyResolver !== null) {
