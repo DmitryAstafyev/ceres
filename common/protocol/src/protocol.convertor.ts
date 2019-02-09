@@ -227,6 +227,8 @@ export class Convertor {
         output += 'export const parse = Protocol.parse;\n';
         output += 'export const parseFrom = Protocol.parseFrom;\n';
         output += 'export const stringify = Protocol.stringify;\n';
+        output += 'export const join = Protocol.Packager.join;\n';
+        output += 'export const split = Protocol.Packager.split;\n';
         output += 'export const getSignature = Protocol.getSignature;\n';
         output += 'export interface IClass { getSignature: () => string; parse: (str: string | object) => any; }\n';
         output += 'export interface IImplementation { getSignature: () => string; stringify: () => string | Uint8Array; }\n';

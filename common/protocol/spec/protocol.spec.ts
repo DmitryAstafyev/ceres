@@ -160,13 +160,13 @@ describe('[Test][platform][protocol]', () => {
                                 expect(eventParsed instanceof proto.Message.Event.Request).toBe(true);
 
                                 console.log('Checking packaging. Pack data.');
-                                const packageA = proto.Protocol.Packager.join([
+                                const packageA = proto.join([
                                     eventInst.stringify(),
                                     DataWriteRequest.stringify()
                                 ]);
                                 expect(packageA instanceof Uint8Array).toBe(true);
                                 console.log('Unpack data');
-                                const unpackedA = proto.Protocol.Packager.split(packageA);
+                                const unpackedA = proto.split(packageA);
                                 expect(unpackedA instanceof Array).toBe(true);
                                 expect(unpackedA.length === 2).toBe(true);
                                 expect(proto.parse(unpackedA[0]) instanceof proto.Message.Event.Request).toBe(true);
