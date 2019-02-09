@@ -159,9 +159,35 @@ describe('[Test][platform][protocol]', () => {
                                 const eventParsed = proto.parse(eventConv);
                                 expect(eventParsed instanceof proto.Message.Event.Request).toBe(true);
 
+                                console.log('Checking packaging. Pack data.');
+                                const packageA = proto.Protocol.Packager.join([
+                                    eventInst.stringify(),
+                                    DataWriteRequest.stringify()
+                                ]);
+                                expect(packageA instanceof Uint8Array).toBe(true);
+                                console.log('Unpack data');
+                                const unpackedA = proto.Protocol.Packager.split(packageA);
+                                expect(unpackedA instanceof Array).toBe(true);
+                                expect(unpackedA.length === 2).toBe(true);
+                                expect(proto.parse(unpackedA[0]) instanceof proto.Message.Event.Request).toBe(true);
+                                expect(proto.parse(unpackedA[1]) instanceof proto.Data.Write.Request).toBe(true);
                                 console.log(`Production mode is ok. Checking debug mode`);
-                                
+
                                 proto.Protocol.state.debug(true);
+
+                                console.log('Checking packaging. Pack data.');
+                                const packageB = proto.Protocol.Packager.join([
+                                    eventInst.stringify(),
+                                    DataWriteRequest.stringify()
+                                ]);
+                                expect(typeof packageB === 'string').toBe(true);
+                                console.log('Unpack data');
+                                const unpackedB = proto.Protocol.Packager.split(packageB);
+                                expect(unpackedB instanceof Array).toBe(true);
+                                expect(unpackedB.length === 2).toBe(true);
+                                expect(proto.parse(unpackedB[0]) instanceof proto.Message.Event.Request).toBe(true);
+                                expect(proto.parse(unpackedB[1]) instanceof proto.Data.Write.Request).toBe(true);
+
                                 strDataWriteRequest = DataWriteRequest.stringify();
                                 expect(typeof strDataWriteRequest).toBe('string');
                                 console.log(`[DEBUG]: DataWriteRequest converted to string; length = ${strDataWriteRequest.length}`);

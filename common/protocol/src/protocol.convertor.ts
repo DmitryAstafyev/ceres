@@ -6,6 +6,7 @@ import * as Tools from '../../platform/tools/index';
 
 const DEFAULT_INJECTIONS = [
     './injections/injection.convertor.ts',
+    './injections/injection.packager.ts',
     './injections/injection.root.ts',
     './injections/injection.types.primitive.ts',
 ];
