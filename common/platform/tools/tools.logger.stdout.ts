@@ -114,16 +114,3 @@ export class StdoutController {
         return height;
     }
 }
-
-const stdout = new StdoutController(process.stdout);
-
-setInterval(() => {
-    stdout.out(`[${Math.random().toFixed(8).repeat(Math.round(Math.random() * 10))}] Here is some content income in common area`);
-
-}, Math.random() * 50 + 100);
-setInterval(() => {
-    stdout.out(`a) parameter: ${Math.random().toFixed(8)}\nb) parameter: ${Math.random().toFixed(8)}\nc) parameter: ${Math.random().toFixed(8)}\n`, 'one');
-}, Math.random() * 500 + 300);
-setInterval(() => {
-    stdout.out(`\t1) signal: ${Math.random().toFixed(8)}\n\t2) signal: ${Math.random().toFixed(8)}\n`, 'two');
-}, Math.random() * 300 + 300);

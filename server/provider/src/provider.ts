@@ -323,8 +323,6 @@ export default class Provider {
     }
 
     private _logState() {
-        this._logger.debug(this._state.transport.getInfo());
-
         const i = {
             d: this._state.demands.getInfo(),
             e: this._state.events.getInfo(),
@@ -340,7 +338,7 @@ export default class Provider {
             const repeat = length - str.length;
             return `${str}${repeat > 0 ? (' '.repeat(repeat)) : ''}`;
         }
-        this._logger.debug(`
+        this._logger.area('state').debug(`\n${this._state.transport.getInfo()}\n
 ┌─────────────────┬─────────────────┬──────────────────┐
 │ tasks           │ demands         │ results          │
 ├─────────────────┼─────────────────┼──────────────────┤
@@ -350,7 +348,7 @@ export default class Provider {
 ${Object.keys(events).map((key) => {
     return filler(55, `│ ${key}: ${events[key]}`) + '│';
 }).join('\n')}
-└──────────────────────────────────────────────────────┘`);
+└──────────────────────────────────────────────────────┘\n`);
         setTimeout(() => {
             this._logState();
         }, 3000);

@@ -1,5 +1,6 @@
 import inspect from './tools.inspect';
 import { LoggerParameters } from './tools.logger.parameters';
+import { StdoutController } from './tools.logger.stdout';
 
 export enum ELogLevels {
     INFO = 'INFO',
@@ -13,6 +14,14 @@ export enum ELogLevels {
 let aliasMaxLength = 0;
 const typeMaxLength = 7;
 
+// tslint:disable-next-line:only-arrow-functions
+const stdout: StdoutController | undefined = (function() {
+    if (typeof process !== 'object' || process === null || (process as any).stdout === void 0 ) {
+        return undefined;
+    }
+    return new StdoutController(process.stdout);
+}());
+
 /**
  * @class
  * Logger
@@ -21,7 +30,7 @@ export default class Logger {
 
     private _signature: string = '';
     private _parameters: LoggerParameters = new LoggerParameters({});
-
+    private _area: string | undefined;
     /**
      * @constructor
      * @param {string} signature        - Signature of logger instance
@@ -89,17 +98,43 @@ export default class Logger {
         return this._log(this._getMessage(...args), ELogLevels.ENV);
     }
 
+    /**
+     * Define target area before posting logs
+     * @param {string} area - ID of target area
+     * @returns {Logger} - returns instance of current logger
+     */
+    public area(area: string): Logger {
+        if (typeof area !== 'string' || area.trim() === '') {
+            return this;
+        }
+        this._area = area;
+        return this;
+    }
+
     private _console(message: string, level: ELogLevels) {
         if (!this._parameters.console) {
             return false;
         }
-        /* tslint:disable */
-        this._parameters.allowedConsole[level] && console.log(message);
-        /* tslint:enable */
+        if (!this._parameters.allowedConsole[level]) {
+            return false;
+        }
+        if (stdout) {
+            const area = this._area;
+            this._area = undefined;
+            stdout.out(message, area);
+        } else {
+            /* tslint:disable */
+            console.log(message);
+            /* tslint:enable */
+        }
     }
 
-    private _output(message: string) {
-        typeof this._parameters.output === 'function' && this._parameters.output(message);
+    private _output(message: string): boolean {
+        if (typeof this._parameters.output === 'function') {
+            this._parameters.output(message);
+            return true;
+        }
+        return false;
     }
 
     private _getMessage(...args: any[]) {
@@ -119,8 +154,7 @@ export default class Logger {
 
     private _log(message: string, level: ELogLevels) {
         message = `[${Date.now()}][${this._signature}${' '.repeat(aliasMaxLength - this._signature.length)}][${level}${' '.repeat(typeMaxLength - level.length)}]: ${message}`;
-        this._console(message, level);
-        this._output(message);
+        !this._output(message) && this._console(message, level);
         return message;
     }
 
