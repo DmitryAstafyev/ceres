@@ -69,7 +69,7 @@ export class MessageDemandFromExpectantProcessor extends MessageProcessor<Protoc
                         options: message.options as Protocol.Message.Demand.Options,
                         protocol: message.demand.protocol,
                         query: message.query,
-                        respondemtId: '',
+                        respondentId: '',
                         sent: (new Date()).getTime(),
                     });
                     resolveProcess();

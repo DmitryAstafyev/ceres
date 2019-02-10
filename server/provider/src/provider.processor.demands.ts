@@ -4,7 +4,7 @@ import { ProviderState } from './provider.state';
 
 export type TPendingDemand = {
     body?: string | Uint8Array;
-    respondemtId: string,
+    respondentId: string,
     protocol: string,
     demand: string,
     expected: string,
@@ -142,7 +142,7 @@ export class ProcessorDemands {
                 expectantId: expectantId,
                 expected: expected,
                 protocol: protocol,
-                respondemtId: respondentId,
+                respondentId: respondentId,
                 sent: (new Date()).getTime(),
             });
         }
@@ -325,15 +325,29 @@ export class ProcessorDemands {
     }
 
     public disconnect(clientId: string): Promise<void> {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             this.demands.removeClient(clientId);
             this.pendingDemandRespondent.forEach((demand: TPendingDemand, demandGUID: string) => {
-                if (demand.expectantId === clientId || demand.respondemtId === clientId) {
+                // Note: respondentId is emtry string for pending task always, because pending task doesn't have respondent yet
+                if (demand.expectantId === clientId) {
                     this.pendingDemandRespondent.delete(demandGUID);
                 }
             });
             this.pendingDemandResults.forEach((demand: TPendingDemand, demandGUID: string) => {
-                if (demand.expectantId === clientId || demand.respondemtId === clientId) {
+                if (demand.expectantId === clientId || demand.respondentId === clientId) {
+                    if (demand.respondentId === clientId) {
+                        // Notify expectant respondent was disconnected
+                        this._logger.debug(`Respondent was disconnected before demand was processed.`);
+                        this.sendDemandResponse(
+                            demand.protocol,
+                            demand.demand,
+                            '',
+                            demand.expected,
+                            demand.expectantId,
+                            'Respondent was disconnected',
+                            demandGUID,
+                        );
+                    }
                     this.pendingDemandResults.delete(demandGUID);
                 }
             });
@@ -342,7 +356,7 @@ export class ProcessorDemands {
     }
 
     public drop(): Promise<void> {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             this.demands.clear();
             this.pendingDemandRespondent.clear();
             this.pendingDemandResults.clear();

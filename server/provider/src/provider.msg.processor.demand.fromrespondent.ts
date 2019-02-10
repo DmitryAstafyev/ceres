@@ -24,8 +24,9 @@ export class MessageDemandFromRespondentProcessor extends MessageProcessor<Proto
                     status: false,
                 })).stringify()).then(() => {
                     this._logger.env(`No expectants for demand are found. Responend ${clientId}. Response was sent.`);
+                    resolveProcess();
                 }).catch((error: Error) => {
-                    this._logger.warn(`Fail to close connection ${clientId} due error: ${error.message}`);
+                    rejectProcess(new Error(this._logger.warn(`Fail to close connection ${clientId} due error: ${error.message}`)));
                 });
             }
             // Expectant is found
@@ -61,8 +62,9 @@ export class MessageDemandFromRespondentProcessor extends MessageProcessor<Proto
                 status: true,
             })).stringify()).then(() => {
                 this._logger.env(`Confirmation of sending demand's response sent Responend ${clientId}.`);
+                resolveProcess();
             }).catch((error: Error) => {
-                this._logger.warn(`Fail to close connection ${clientId} due error: ${error.message}`);
+                rejectProcess(new Error(this._logger.warn(`Fail to close connection ${clientId} due error: ${error.message}`)));
             });
         });
     }
