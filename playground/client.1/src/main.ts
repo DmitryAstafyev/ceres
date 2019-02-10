@@ -42,7 +42,7 @@ export default class Test {
 
     private _output: Output = new Output('Client.1');
     private _switcher: Switcher;
-    private _defaultTransport: string = Switcher.Transports.ws;
+    private _defaultTransport: string = Switcher.Transports.longpoll;
     private _transport: TransportWS | TransportLP | undefined;
     private _consumer: Consumer | undefined;
     private _greetingMessageTimer: number = -1;
