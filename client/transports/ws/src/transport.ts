@@ -7,6 +7,7 @@ import { SubdomainsController               } from './subdomains';
 import { ConnectionParameters               } from './transport.parameters.implementation';
 import { PendingTasks                       } from './transport.pending.storage';
 import { Request                            } from './transport.request.connection';
+import { TMessage } from './transport.pending.task';
 
 export { ConnectionParameters, Middleware };
 
@@ -256,22 +257,35 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
             return this._logger.warn(`Server sent via WS not valid data: ${typeof event.data}.`);
         }
         const response = typeof event.data === 'string' ? event.data : new Uint8Array(event.data);
-        const message = TransportProtocol.parseFrom(response, [TransportProtocol, Protocol]);
-        if (message instanceof Error) {
-            return this._logger.warn(`Server sent invalid data with error: ${message.message}. Response body: ${Tools.inspect(response)}`);
+        const errors: Error[] = [];
+        let packets: any[] = [];
+        if (TransportProtocol.isPackage(response)) {
+            const packetError: string[] | Uint8Array[] | Error = TransportProtocol.split(response);
+            if (packetError instanceof Error) {
+                return this._logger.error(`Cannot split packets due error: ${packetError.message}`);
+            }
+            packets = packetError;
+        } else {
+            packets.push(response);
         }
-        if (typeof message.guid !== 'string' || message.guid.trim() === '') {
-            return this._logger.error(`Server sent data without guid: ${Tools.inspect(message)}.`);
-        }
-        const guid = message.guid;
-        // Check waiting resolvers
-        if (this._wsResolversHolder.has('ws', guid)) {
-            const resolver = this._wsResolversHolder.get('ws', guid) as (any: any) => any;
-            this._wsResolversHolder.remove('ws', guid);
-            return resolver(message);
-        }
-        // This is new message and has to be sent
-        this.emit(ATransport.EVENTS.message, message);
+        packets.forEach((packet: string | Uint8Array) => {
+            const message = TransportProtocol.parseFrom(packet, [TransportProtocol, Protocol]);
+            if (message instanceof Error) {
+                return errors.push(new Error(this._logger.warn(`Server sent invalid data with error: ${message.message}. Response body: ${Tools.inspect(packet)}`)));
+            }
+            if (typeof message.guid !== 'string' || message.guid.trim() === '') {
+                return errors.push(new Error(this._logger.error(`Server sent data without guid: ${Tools.inspect(message)}.`)));
+            }
+            const guid = message.guid;
+            // Check waiting resolvers
+            if (this._wsResolversHolder.has('ws', guid)) {
+                const resolver = this._wsResolversHolder.get('ws', guid) as (any: any) => any;
+                this._wsResolversHolder.remove('ws', guid);
+                return resolver(message);
+            }
+            // This is new message and has to be sent
+            this.emit(ATransport.EVENTS.message, message);
+        });
     }
 
     private _onWSClose() {

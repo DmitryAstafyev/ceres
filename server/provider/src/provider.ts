@@ -75,19 +75,16 @@ export default class Provider {
      */
     public destroy(): Promise<void> {
         return new Promise((resolve, reject) => {
-            this._state.tasks.destory().then(() => {
-                this._state.transport.destroy().then(() => {
-                    this._state.events.drop();
-                    this._state.demands.drop();
-                    this._state.aliases.clear();
-                    this._state.unsubscribeAll();
-                    this._state.transport.unsubscribeAll();
-                    resolve();
-                }).catch((transportError: Error) => {
-                    reject(transportError);
-                });
-            }).catch((tasksError: Error) => {
-                reject(tasksError);
+            this._state.tasks.destory();
+            this._state.transport.destroy().then(() => {
+                this._state.events.drop();
+                this._state.demands.drop();
+                this._state.aliases.clear();
+                this._state.unsubscribeAll();
+                this._state.transport.unsubscribeAll();
+                resolve();
+            }).catch((transportError: Error) => {
+                reject(transportError);
             });
         });
     }
@@ -307,7 +304,7 @@ export default class Provider {
     }
 
     private _onClientUpdated(clientId: string) {
-        this._state.tasks.proceed();
+        this._state.tasks.resolve(clientId);
     }
 
     /**
@@ -331,7 +328,7 @@ export default class Provider {
         const i = {
             d: this._state.demands.getInfo(),
             e: this._state.events.getInfo(),
-            t: this._state.tasks.getTasksCount(),
+            t: this._state.tasks.getTasksInfo(),
         };
         const events: any = {};
         i.e.forEach((count, key) => {
@@ -347,7 +344,7 @@ export default class Provider {
 ┌─────────────────┬─────────────────┬──────────────────┐
 │ tasks           │ demands         │ results          │
 ├─────────────────┼─────────────────┼──────────────────┤
-│${filler(' tasks           ', ' ' + i.t)}│${filler(' demands         ', ' ' + i.d.demands)}│${filler(' results          ', ' ' + i.d.results)}│
+│${filler(' tasks           ', ' ' + i.t.summary)}│${filler(' demands         ', ' ' + i.d.demands)}│${filler(' results          ', ' ' + i.d.results)}│
 ├─────────────────┴─────────────────┴──────────────────┤
 │ events                                               │
 ${Object.keys(events).map((key) => {

@@ -71,20 +71,14 @@ export class ProcessorDemands {
                     this._logger.warn(`Fail to proccess server's demand due error: ${error.message}`);
                 });
             } else {
-                // Create task for sending demand
-                this.state.tasks.add(
-                    () => {
-                        return this.sendDemand(
-                            pending.protocol,
-                            pending.demand,
-                            pending.body as string,
-                            pending.expected,
-                            pending.expectantId,
-                            respondents.target as string,
-                            demandGUID,
-                        );
-                    },
-                    respondents.target,
+                this.sendDemand(
+                    pending.protocol,
+                    pending.demand,
+                    pending.body as string,
+                    pending.expected,
+                    pending.expectantId,
+                    respondents.target as string,
+                    demandGUID,
                 );
             }
         });
@@ -137,28 +131,23 @@ export class ProcessorDemands {
         expectantId: string,
         respondentId: string,
         demandGUID: string,
-    ): Promise<void> {
-        return new Promise((resolve, reject) => {
-            if (!this.state.transport.isAvailable(respondentId)) {
-                return reject(new Error(
-                    this._logger.env(`Client (${respondentId}) is subscribed as respondent on "${protocol}/${demand}", but active connection wasn't found. Task will stay in a queue.`),
-                ));
-            }
-            this._logger.env(`Client (${respondentId}) is subscribed as respondent on  "${protocol}/${demand}". Demand will be sent.`);
-            // Remove pending demand info
-            this.pendingDemandRespondent.delete(demandGUID);
-            // Register demand results if expectant still connected
-            if (this.state.transport.isConnected(expectantId)) {
-                this.pendingDemandResults.set(demandGUID, {
-                    demand: demand,
-                    expectantId: expectantId,
-                    expected: expected,
-                    protocol: protocol,
-                    respondemtId: respondentId,
-                    sent: (new Date()).getTime(),
-                });
-            }
-            this.state.transport.send(respondentId, (new Protocol.Message.ToConsumer({
+    ): void {
+        this._logger.env(`Client (${respondentId}) is subscribed as respondent on  "${protocol}/${demand}". Demand will be sent.`);
+        // Remove pending demand info
+        this.pendingDemandRespondent.delete(demandGUID);
+        // Register demand results if expectant still connected
+        if (this.state.transport.isConnected(expectantId)) {
+            this.pendingDemandResults.set(demandGUID, {
+                demand: demand,
+                expectantId: expectantId,
+                expected: expected,
+                protocol: protocol,
+                respondemtId: respondentId,
+                sent: (new Date()).getTime(),
+            });
+        }
+        this.state.tasks.addPacket(respondentId, {
+            data: (new Protocol.Message.ToConsumer({
                 clientId: respondentId,
                 demand: new Protocol.DemandDefinition({
                     bodyBinary: body instanceof Uint8Array ? Array.from(body) : [],
@@ -169,14 +158,14 @@ export class ProcessorDemands {
                     protocol: protocol,
                 }),
                 guid: Tools.guid(),
-            })).stringify()).then(() => {
-                this._logger.env(`Demand to client ${respondentId}: protocol ${protocol}, demand ${demand} was sent.`);
-                resolve();
-            }).catch((error: Error) => {
+            })).stringify(),
+            onReject: (error: Error) => {
                 // TODO: expectant still waiting for response
                 this._logger.warn(`Fail to demand to client ${respondentId}: protocol ${protocol}, demand ${demand} due error: ${error.message}.`);
-                reject();
-            });
+            },
+            onResolve: () => {
+                this._logger.env(`Demand to client ${respondentId}: protocol ${protocol}, demand ${demand} was sent.`);
+            },
         });
     }
 
@@ -188,15 +177,10 @@ export class ProcessorDemands {
         expectantId: string,
         error: string,
         demandRequestId: string,
-    ): Promise<void> {
-        return new Promise((resolve, reject) => {
-            if (!this.state.transport.isAvailable(expectantId)) {
-                return reject(new Error(
-                    this._logger.env(`Client (${expectantId}) is waiting for response on "${protocol}/${demand}", but active connection wasn't found. Task will stay in a queue.`),
-                ));
-            }
-            this._logger.env(`Client (${expectantId}) is waiting for response on  "${protocol}/${demand}". Response will be sent.`);
-            this.state.transport.send(expectantId, (new Protocol.Message.ToConsumer({
+    ): void {
+        this._logger.env(`Client (${expectantId}) is waiting for response on  "${protocol}/${demand}". Response will be sent.`);
+        this.state.tasks.addPacket(expectantId, {
+            data: (new Protocol.Message.ToConsumer({
                 clientId: expectantId,
                 guid: Tools.guid(),
                 return: new Protocol.DemandDefinition({
@@ -208,15 +192,15 @@ export class ProcessorDemands {
                     id: demandRequestId,
                     protocol: protocol,
                 }),
-            })).stringify()).then(() => {
+            })).stringify(),
+            onReject: (errorSending: Error) => {
+                this._logger.warn(`Fail to send response on demand to client ${expectantId}: protocol ${protocol}, demand ${demand} due error: ${errorSending.message}.`);
+            },
+            onResolve: () => {
                 this._logger.env(`Response on demand (id=${demandRequestId}) to client ${expectantId}: protocol ${protocol}, demand ${demand} was sent.`);
                 this.pendingDemandRespondent.delete(demandRequestId);
                 this.pendingDemandResults.delete(demandRequestId);
-                resolve();
-            }).catch((errorSending: Error) => {
-                this._logger.warn(`Fail to send response on demand to client ${expectantId}: protocol ${protocol}, demand ${demand} due error: ${errorSending.message}.`);
-                reject();
-            });
+            },
         });
     }
 
@@ -275,35 +259,25 @@ export class ProcessorDemands {
                 expected,
                 respondentId,
             ).then((response: string) => {
-                this.state.tasks.add(
-                    () => {
-                        return this.sendDemandResponse(
-                            protocol,
-                            demand,
-                            response,
-                            expected,
-                            expectantId,
-                            '',
-                            demandGUID,
-                        );
-                    },
-                    respondentId,
+                this.sendDemandResponse(
+                    protocol,
+                    demand,
+                    response,
+                    expected,
+                    expectantId,
+                    '',
+                    demandGUID,
                 );
                 resolve();
             }).catch((processingError: Error) => {
-                this.state.tasks.add(
-                    () => {
-                        return this.sendDemandResponse(
-                            protocol,
-                            demand,
-                            '',
-                            expected,
-                            expectantId,
-                            processingError.message,
-                            demandGUID,
-                        );
-                    },
-                    respondentId,
+                this.sendDemandResponse(
+                    protocol,
+                    demand,
+                    '',
+                    expected,
+                    expectantId,
+                    processingError.message,
+                    demandGUID,
                 );
                 resolve();
             });

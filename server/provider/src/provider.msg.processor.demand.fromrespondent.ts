@@ -32,37 +32,27 @@ export class MessageDemandFromRespondentProcessor extends MessageProcessor<Proto
             if (message.error !== void 0 && message.error !== '') {
                 // Some error during proccessing demand
                 // Create task for sending demand's error
-                this.state.tasks.add(
-                    () => {
-                        return this.state.demands.sendDemandResponse(
-                            pendingDemand.protocol,
-                            pendingDemand.demand,
-                            '',
-                            pendingDemand.expected,
-                            pendingDemand.expectantId,
-                            message.error as string,
-                            message.id,
-                        );
-                    },
+                this.state.demands.sendDemandResponse(
+                    pendingDemand.protocol,
+                    pendingDemand.demand,
+                    '',
+                    pendingDemand.expected,
                     pendingDemand.expectantId,
+                    message.error as string,
+                    message.id,
                 );
             }
             if (message.error === '' && message.demand !== void 0) {
                 // Demand proccessed successfully
                 // Create task for sending demand's response
-                this.state.tasks.add(
-                    () => {
-                        return this.state.demands.sendDemandResponse(
-                            (message.demand as Protocol.DemandDefinition).protocol,
-                            (message.demand as Protocol.DemandDefinition).demand,
-                            (message.demand as Protocol.DemandDefinition).bodyStr === '' ? new Uint8Array((message.demand as Protocol.DemandDefinition).bodyBinary) : (message.demand as Protocol.DemandDefinition).bodyStr,
-                            (message.demand as Protocol.DemandDefinition).expected,
-                            pendingDemand.expectantId,
-                            '',
-                            message.id,
-                        );
-                    },
+                this.state.demands.sendDemandResponse(
+                    (message.demand as Protocol.DemandDefinition).protocol,
+                    (message.demand as Protocol.DemandDefinition).demand,
+                    (message.demand as Protocol.DemandDefinition).bodyStr === '' ? new Uint8Array((message.demand as Protocol.DemandDefinition).bodyBinary) : (message.demand as Protocol.DemandDefinition).bodyStr,
+                    (message.demand as Protocol.DemandDefinition).expected,
                     pendingDemand.expectantId,
+                    '',
+                    message.id,
                 );
             }
             return sender((new Protocol.Message.Demand.FromRespondent.Response({

@@ -1,6 +1,6 @@
-import { Tools, Token, Protocol } from 'ceres.client.consumer';
+import { Tools, Token } from 'ceres.client.consumer';
 import * as TransportProtocol from './protocols/protocol.transport.longpoll';
-import { Pending } from './transport.pending.task';
+import { Pending, TPandingExpectedMessage } from './transport.pending.task';
 
 type THandler = (...args: any[]) => any;
 
@@ -48,22 +48,26 @@ export class PendingTasks extends Tools.EventEmitter {
         const pending = new Pending();
         const guid = pending.getGUID();
         const url = this._urlGet();
-        pending.create(url, this._clientGUID, this._token).then((response: Protocol.Message.ToConsumer | TransportProtocol.Message.Pending.Response | TransportProtocol.Disconnect) => {
+        pending.create(url, this._clientGUID, this._token).then((messages: TPandingExpectedMessage[]) => {
             (this._urlFree as THandler)(url);
-            // Add new pending imedeately, while current in process
-            this._add();
-            // Check income task
-            if (response instanceof TransportProtocol.Disconnect) {
-                return this.emit(PendingTasks.EVENTS.onDisconnect, response);
-            }
             // Remove current
             this._pending.delete(guid);
-            // Trigger event
-            this.emit(PendingTasks.EVENTS.onTask, response);
+            // Add new pending imedeately, while current in process
+            this._add();
+            messages.forEach((message: TPandingExpectedMessage) => {
+                // Check income task
+                if (message instanceof TransportProtocol.Disconnect) {
+                    return this.emit(PendingTasks.EVENTS.onDisconnect, message);
+                }
+                // Trigger event
+                this.emit(PendingTasks.EVENTS.onTask, message);
+            });
         })
-        .catch((error: Error) => {
+        .catch((errors: Error[]) => {
             (this._urlFree as THandler)(url);
-            return this.emit(PendingTasks.EVENTS.onError, error);
+            errors.forEach((error: Error) => {
+                this.emit(PendingTasks.EVENTS.onError, error);
+            });
         });
         this._pending.set(guid, pending);
     }

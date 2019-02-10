@@ -3,6 +3,7 @@ import * as Protocol from './protocols/connection/protocol.connection';
 import { Aliases, TAlias } from './provider.aliases';
 import { ProcessorDemands } from './provider.processor.demands';
 import { ProcessorEvents } from './provider.processor.events';
+import { Queue } from './provider.queue';
 import ATransport from './transports/transport.abstract';
 
 export class ProviderState extends Tools.EventEmitter {
@@ -11,7 +12,7 @@ export class ProviderState extends Tools.EventEmitter {
     private _protocols: Tools.ProtocolsHolder;
     private _demands: ProcessorDemands;
     private _events: ProcessorEvents;
-    private _tasks: Tools.Queue;
+    private _tasks: Queue;
     private _aliases: Aliases;
 
     public get transport(): ATransport<any, any> {
@@ -30,7 +31,7 @@ export class ProviderState extends Tools.EventEmitter {
         return this._events;
     }
 
-    public get tasks(): Tools.Queue {
+    public get tasks(): Queue {
         return this._tasks;
     }
 
@@ -44,7 +45,7 @@ export class ProviderState extends Tools.EventEmitter {
         this._protocols = new Tools.ProtocolsHolder();
         this._demands = new ProcessorDemands(this);
         this._events = new ProcessorEvents(this);
-        this._tasks = new Tools.Queue('ProviderTasks');
+        this._tasks = new Queue(transport);
         this._aliases = new Aliases();
     }
 

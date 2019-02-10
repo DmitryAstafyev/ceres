@@ -49,15 +49,10 @@ export class ProcessorEvents {
         event: string,
         body: string | Uint8Array,
         clientId: string,
-    ): Promise<void> {
-        return new Promise((resolve, reject) => {
-            if (!this.state.transport.isAvailable(clientId)) {
-                return reject(new Error(
-                    this._logger.env(`Client (${clientId}) is subscribed on "${protocol}/${event}", but active connection wasn't found. Task will stay in a queue.`),
-                ));
-            }
-            this._logger.env(`Client (${clientId}) is subscribed on "${protocol}/${event}". Event will be sent.`);
-            this.state.transport.send(clientId, (new Protocol.Message.ToConsumer({
+    ): void {
+        this._logger.env(`Client (${clientId}) is subscribed on "${protocol}/${event}". Event will be sent.`);
+        this.state.tasks.addPacket(clientId, {
+            data: (new Protocol.Message.ToConsumer({
                 clientId: clientId,
                 event: new Protocol.EventDefinition({
                     bodyBinary: body instanceof Uint8Array ? Array.from(body) : [],
@@ -66,13 +61,13 @@ export class ProcessorEvents {
                     protocol: protocol,
                 }),
                 guid: Tools.guid(),
-            })).stringify()).then(() => {
-                this._logger.env(`Emit event for client ${clientId}: protocol ${protocol}, event ${event} is done.`);
-                resolve();
-            }).catch((error: Error) => {
+            })).stringify(),
+            onReject: (error: Error) => {
                 this._logger.warn(`Fail to emit event for client ${clientId}: protocol ${protocol}, event ${event} due error: ${error.message}.`);
-                reject();
-            });
+            },
+            onResolve: () => {
+                this._logger.env(`Emit event for client ${clientId}: protocol ${protocol}, event ${event} is done.`);
+            },
         });
     }
 
@@ -195,20 +190,10 @@ export class ProcessorEvents {
             }
             // Add tasks
             subscribers.forEach((subscriberId: string) => {
-                this.state.tasks.add(
-                    () => {
-                        return this.emit(
-                            protocolSignature,
-                            eventSignature,
-                            body,
-                            subscriberId,
-                        );
-                    },
-                    subscriberId,
-                );
+                this.emit(protocolSignature, eventSignature, body, subscriberId);
             });
             // Execute tasks
-            this.state.tasks.proceed();
+            this.state.tasks.resolve();
             resolve(subscribers.length);
         });
     }

@@ -98,19 +98,14 @@ export class MessageDemandFromExpectantProcessor extends MessageProcessor<Protoc
                     );
                 } else {
                     // Respondent is client: create task for sending demand
-                    this.state.tasks.add(
-                        () => {
-                            return this.state.demands.sendDemand(
-                                message.demand.protocol,
-                                message.demand.demand,
-                                message.demand.bodyStr === '' ? new Uint8Array(message.demand.bodyBinary) : message.demand.bodyStr,
-                                message.demand.expected,
-                                clientId,
-                                respondents.target as string,
-                                demandGUID,
-                            );
-                        },
+                    this.state.demands.sendDemand(
+                        message.demand.protocol,
+                        message.demand.demand,
+                        message.demand.bodyStr === '' ? new Uint8Array(message.demand.bodyBinary) : message.demand.bodyStr,
+                        message.demand.expected,
+                        clientId,
                         respondents.target as string,
+                        demandGUID,
                     );
                 }
                 resolveProcess();

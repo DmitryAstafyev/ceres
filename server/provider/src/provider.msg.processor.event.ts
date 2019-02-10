@@ -37,7 +37,7 @@ export class MessageEventProcessor extends MessageProcessor<Protocol.Message.Eve
                 message.options,
                 message.aliases,
             ).then((count: number) => {
-                this.state.tasks.proceed();
+                this.state.tasks.resolve();
                 return sender((new Protocol.Message.Event.Response({
                     clientId: clientId,
                     guid: message.guid,
