@@ -7,9 +7,10 @@ import { SubdomainsController               } from './subdomains';
 import { ConnectionParameters               } from './transport.parameters.implementation';
 import { PendingTasks                       } from './transport.pending.storage';
 import { Request                            } from './transport.request.connection';
-import { TMessage } from './transport.pending.task';
 
 export { ConnectionParameters, Middleware };
+
+const MAX_LIFE_WS_RESOLVER = 1000 * 60 * 10; //ms
 
 export default class LongpollTransport extends ATransport<ConnectionParameters, Middleware> {
     public static Middleware = Middleware;
@@ -222,7 +223,10 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
             const guid = message.guid;
             // Store handler
             this._wsResolversHolder.add('ws', guid, resolve);
+            // Send data
             this._socket.send(data);
+            // Cleanup all resolvers
+            this._wsResolversHolder.removeOlderThen(MAX_LIFE_WS_RESOLVER);
         });
     }
 

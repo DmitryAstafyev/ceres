@@ -1,6 +1,6 @@
 /* tslint:disable */
 /*
-* This file generated automaticaly (Mon Feb 11 2019 17:54:05 GMT+0100 (CET))
+* This file generated automaticaly (Mon Feb 11 2019 21:03:58 GMT+0100 (CET))
 * Do not remove or change this code.
 * Protocol version: 0.0.1
 */
@@ -166,6 +166,95 @@ export namespace Protocol {
 	};
 
 	export const AdvancedTypes: {[key: string]: any} = {};
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	* Injection: injection.packager.ts
+	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	// tslint:disable:no-namespace
+	// tslint:disable:max-classes-per-file
+	// tslint:disable:object-literal-sort-keys
+	
+	// declare var Json: any;
+	
+	export namespace Packager {
+	
+	    export function join(...items: any[]): string | Uint8Array | Error {
+	        if (items instanceof Array && items.length === 1 && items[0] instanceof Array) {
+	            items = items[0];
+	        }
+	        if (!(items instanceof Array) || items.length === 0) {
+	            return new Error(`No arguments provided to join`);
+	        }
+	        const strs: any[] = [];
+	        const bytes: number[] = [];
+	        let isBinary: boolean | undefined;
+	        try {
+	            items.forEach((item: any, i: number) => {
+	                if (item instanceof Uint8Array && (isBinary === undefined || isBinary === true)) {
+	                    isBinary = true;
+	                    if (i === 0) {
+	                        // Set type as array
+	                        bytes.push(Json.Scheme.Types.array);
+	                    }
+	                    // Set length of item
+	                    bytes.push(...Json.Impls.Uint32.toUint8(item.length));
+	                    // Put item
+	                    bytes.push(...item);
+	                } else if (typeof item === 'string' && (isBinary === undefined || isBinary === false)) {
+	                    isBinary = false;
+	                    strs.push(item);
+	                } else {
+	                    throw new Error(`Only strings or Uint8Array can be joined. Each array item should be same type.`);
+	                }
+	            });
+	            if (isBinary) {
+	                return new Uint8Array(bytes);
+	            }
+	        } catch (error) {
+	            return error;
+	        }
+	        return JSON.stringify(strs);
+	    }
+	
+	    export function split(source: string | Uint8Array): string[] | Uint8Array[] | Error {
+	        if (!isPackage(source)) {
+	            return new Error(`Source isn't a package of protocol data.`);
+	        }
+	        if (source instanceof Buffer) {
+	            source = new Uint8Array(source);
+	        }
+	        if (source instanceof Uint8Array) {
+	            let buffer = source.slice(1, source.length);
+	            const items: Uint8Array[] = [];
+	            do {
+	                const itemLength = Json.Impls.Uint32.fromUint8(buffer.slice(0, 4));
+	                items.push(buffer.slice(4, 4 + itemLength));
+	                buffer = buffer.slice(4 + itemLength, buffer.length);
+	            } while (buffer.length > 0);
+	            return items;
+	        } else {
+	            return JSON.parse(source) as string[];
+	        }
+	    }
+	
+	    export function isPackage(source: any): boolean {
+	        if (source instanceof Uint8Array) {
+	            return source[0] === Json.Scheme.Types.array;
+	        } else if (source instanceof Buffer) {
+	            const uint8array: Uint8Array = new Uint8Array(source);
+	            return uint8array.length > 0 ? (uint8array[0] === Json.Scheme.Types.array) : false;
+	        } else if (typeof source === 'string') {
+	            try {
+	                return JSON.parse(source) instanceof Array;
+	            } catch (error) {
+	                return false;
+	            }
+	        } else {
+	            return false;
+	        }
+	    }
+	
+	}
+	
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	* Injection: injection.convertor.ts
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -749,6 +838,317 @@ export namespace Protocol {
 	}
 	
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	* Injection: injection.types.primitive.ts
+	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	
+	export interface IPrimitiveType<T> {
+	    tsType: string;
+	    binaryType: string;
+	    init: string;
+	    parse: (value: string | number | T) => T;
+	    serialize: (value: T) => string | number | boolean | T;
+	    validate: (value: string | number | T) => boolean;
+	    implementation?: () => {};
+	}
+	
+	export const PrimitiveTypes:  { [key: string]: IPrimitiveType<any> } = {
+	
+	    uint8     : {
+	        binaryType  : 'uint8',
+	        init        : '0',
+	        parse       : (value: number) => value,
+	        serialize   : (value: number) => value,
+	        tsType      : 'number',
+	        validate    : (value: number) => {
+	            if (typeof value !== 'number') {
+	                return false;
+	            }
+	            if (isNaN(value)) {
+	                return false;
+	            }
+	            if (!Number.isInteger(value)) {
+	                return false;
+	            }
+	            if (value < 0) {
+	                return false;
+	            }
+	            return true;
+	        },
+	    } as IPrimitiveType<number>,
+	
+	    uint16     : {
+	        binaryType  : 'uint16',
+	        init        : '0',
+	        parse       : (value: number) => value,
+	        serialize   : (value: number) => value,
+	        tsType      : 'number',
+	        validate    : (value: number) => {
+	            if (typeof value !== 'number') {
+	                return false;
+	            }
+	            if (isNaN(value)) {
+	                return false;
+	            }
+	            if (!Number.isInteger(value)) {
+	                return false;
+	            }
+	            if (value < 0) {
+	                return false;
+	            }
+	            return true;
+	        },
+	    } as IPrimitiveType<number>,
+	
+	    uint32     : {
+	        binaryType  : 'uint32',
+	        init        : '0',
+	        parse       : (value: number) => value,
+	        serialize   : (value: number) => value,
+	        tsType      : 'number',
+	        validate    : (value: number) => {
+	            if (typeof value !== 'number') {
+	                return false;
+	            }
+	            if (isNaN(value)) {
+	                return false;
+	            }
+	            if (!Number.isInteger(value)) {
+	                return false;
+	            }
+	            if (value < 0) {
+	                return false;
+	            }
+	            return true;
+	        },
+	    } as IPrimitiveType<number>,
+	
+	    int8     : {
+	        binaryType  : 'int8',
+	        init        : '-1',
+	        parse       : (value: number) => value,
+	        serialize   : (value: number) => value,
+	        tsType      : 'number',
+	        validate    : (value: number) => {
+	            if (typeof value !== 'number') {
+	                return false;
+	            }
+	            if (isNaN(value)) {
+	                return false;
+	            }
+	            if (!Number.isInteger(value)) {
+	                return false;
+	            }
+	            return true;
+	        },
+	    } as IPrimitiveType<number>,
+	
+	    int16     : {
+	        binaryType  : 'int16',
+	        init        : '-1',
+	        parse       : (value: number) => value,
+	        serialize   : (value: number) => value,
+	        tsType      : 'number',
+	        validate    : (value: number) => {
+	            if (typeof value !== 'number') {
+	                return false;
+	            }
+	            if (isNaN(value)) {
+	                return false;
+	            }
+	            if (!Number.isInteger(value)) {
+	                return false;
+	            }
+	            return true;
+	        },
+	    } as IPrimitiveType<number>,
+	
+	    int32     : {
+	        binaryType  : 'int32',
+	        init        : '-1',
+	        parse       : (value: number) => value,
+	        serialize   : (value: number) => value,
+	        tsType      : 'number',
+	        validate    : (value: number) => {
+	            if (typeof value !== 'number') {
+	                return false;
+	            }
+	            if (isNaN(value)) {
+	                return false;
+	            }
+	            if (!Number.isInteger(value)) {
+	                return false;
+	            }
+	            return true;
+	        },
+	    } as IPrimitiveType<number>,
+	
+	    float32     : {
+	        binaryType  : 'float32',
+	        init        : '-1',
+	        parse       : (value: number) => value,
+	        serialize   : (value: number) => value,
+	        tsType      : 'number',
+	        validate    : (value: number) => {
+	            if (typeof value !== 'number') {
+	                return false;
+	            }
+	            if (isNaN(value)) {
+	                return false;
+	            }
+	            if (!Number.isInteger(value)) {
+	                return false;
+	            }
+	            return true;
+	        },
+	    } as IPrimitiveType<number>,
+	
+	    float64     : {
+	        binaryType  : 'float64',
+	        init        : '-1',
+	        parse       : (value: number) => value,
+	        serialize   : (value: number) => value,
+	        tsType      : 'number',
+	        validate    : (value: number) => {
+	            if (typeof value !== 'number') {
+	                return false;
+	            }
+	            if (isNaN(value)) {
+	                return false;
+	            }
+	            if (!Number.isInteger(value)) {
+	                return false;
+	            }
+	            return true;
+	        },
+	    } as IPrimitiveType<number>,
+	
+	    string      : {
+	        binaryType  : 'utf8String',
+	        init        : '""',
+	        parse       : (value: string) => value,
+	        serialize   : (value: string) => value,
+	        tsType      : 'string',
+	        validate    : (value: string) => {
+	            if (typeof value !== 'string') {
+	                return false;
+	            }
+	            return true;
+	        },
+	    } as IPrimitiveType<string>,
+	
+	    integer     : {
+	        binaryType  : 'int32',
+	        init        : '-1',
+	        parse       : (value: number) => value,
+	        serialize   : (value: number) => value,
+	        tsType      : 'number',
+	        validate    : (value: number) => {
+	            if (typeof value !== 'number') {
+	                return false;
+	            }
+	            if (isNaN(value)) {
+	                return false;
+	            }
+	            if (!Number.isInteger(value)) {
+	                return false;
+	            }
+	            return true;
+	        },
+	    } as IPrimitiveType<number>,
+	
+	    float     : {
+	        binaryType  : 'float64',
+	        init        : '-1',
+	        parse       : (value: number) => value,
+	        serialize   : (value: number) => value,
+	        tsType      : 'number',
+	        validate    : (value: number) => {
+	            if (typeof value !== 'number') {
+	                return false;
+	            }
+	            if (isNaN(value)) {
+	                return false;
+	            }
+	            return true;
+	        },
+	    } as IPrimitiveType<number>,
+	
+	    boolean     : {
+	        binaryType  : 'boolean',
+	        init        : 'false',
+	        parse       : (value: boolean) => value,
+	        serialize   : (value: boolean) => value,
+	        tsType      : 'boolean',
+	        validate    : (value: boolean) => {
+	            if (typeof value !== 'boolean') {
+	                return false;
+	            }
+	            return true;
+	        },
+	    } as IPrimitiveType<boolean>,
+	
+	    datetime    : {
+	        binaryType  : 'float64',
+	        init        : 'new Date()',
+	        parse       : (value: number) => {
+	            return new Date(value);
+	        },
+	        serialize   : (value: Date) => value.getTime(),
+	        tsType      : 'Date',
+	        validate    : (value: number | Date) => {
+	            if (value instanceof Date) {
+	                return true;
+	            }
+	            if (typeof value !== 'number') {
+	                return false;
+	            }
+	            if (isNaN(value)) {
+	                return false;
+	            }
+	            if (!Number.isInteger(value)) {
+	                return false;
+	            }
+	            const date = new Date(value);
+	            if (!(date instanceof Date)) {
+	                return false;
+	            }
+	            if (date.toString().toLowerCase().indexOf('invalid date') !== -1) {
+	                return false;
+	            }
+	            return !isNaN(date.getTime());
+	        },
+	    } as IPrimitiveType<Date>,
+	
+	    guid     : {
+	        binaryType  : 'asciiString',
+	        implementation  : function guid() {
+	            const lengths = [4, 4, 4, 8];
+	            let resultGuid = '';
+	            for (let i = lengths.length - 1; i >= 0; i -= 1) {
+	                resultGuid += (Math.round(Math.random() * Math.random() * Math.pow(10, lengths[i] * 2))
+	                            .toString(16)
+	                            .substr(0, lengths[i])
+	                            .toUpperCase() + '-');
+	            }
+	            resultGuid += ((new Date()).getTime() * (Math.random() * 100))
+	                        .toString(16)
+	                        .substr(0, 12)
+	                        .toUpperCase();
+	            return resultGuid;
+	        },
+	        init            : 'guid()',
+	        parse           : (value: string) => value,
+	        serialize       : (value: string) => value,
+	        tsType          : 'string',
+	        validate        : (value: string) => {
+	            return typeof value === 'string' ? (value.trim() !== '' ? true : false) : false;
+	        },
+	
+	    } as IPrimitiveType<string>,
+	
+	};
+	
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	* Injection: injection.root.ts
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 	// tslint:disable:max-classes-per-file
@@ -1279,406 +1679,6 @@ export namespace Protocol {
 	export class Root {
 	
 	}
-	
-	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	* Injection: injection.packager.ts
-	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-	// tslint:disable:no-namespace
-	// tslint:disable:max-classes-per-file
-	// tslint:disable:object-literal-sort-keys
-	
-	// declare var Json: any;
-	
-	export namespace Packager {
-	
-	    export function join(...items: any[]): string | Uint8Array | Error {
-	        if (items instanceof Array && items.length === 1 && items[0] instanceof Array) {
-	            items = items[0];
-	        }
-	        if (!(items instanceof Array) || items.length === 0) {
-	            return new Error(`No arguments provided to join`);
-	        }
-	        const strs: any[] = [];
-	        const bytes: number[] = [];
-	        let isBinary: boolean | undefined;
-	        try {
-	            items.forEach((item: any, i: number) => {
-	                if (item instanceof Uint8Array && (isBinary === undefined || isBinary === true)) {
-	                    isBinary = true;
-	                    if (i === 0) {
-	                        // Set type as array
-	                        bytes.push(Json.Scheme.Types.array);
-	                    }
-	                    // Set length of item
-	                    bytes.push(...Json.Impls.Uint32.toUint8(item.length));
-	                    // Put item
-	                    bytes.push(...item);
-	                } else if (typeof item === 'string' && (isBinary === undefined || isBinary === false)) {
-	                    isBinary = false;
-	                    strs.push(item);
-	                } else {
-	                    throw new Error(`Only strings or Uint8Array can be joined. Each array item should be same type.`);
-	                }
-	            });
-	            if (isBinary) {
-	                return new Uint8Array(bytes);
-	            }
-	        } catch (error) {
-	            return error;
-	        }
-	        return JSON.stringify(strs);
-	    }
-	
-	    export function split(source: string | Uint8Array): string[] | Uint8Array[] | Error {
-	        if (!isPackage(source)) {
-	            return new Error(`Source isn't a package of protocol data.`);
-	        }
-	        if (source instanceof Buffer) {
-	            source = new Uint8Array(source);
-	        }
-	        if (source instanceof Uint8Array) {
-	            let buffer = source.slice(1, source.length);
-	            const items: Uint8Array[] = [];
-	            do {
-	                const itemLength = Json.Impls.Uint32.fromUint8(buffer.slice(0, 4));
-	                items.push(buffer.slice(4, 4 + itemLength));
-	                buffer = buffer.slice(4 + itemLength, buffer.length);
-	            } while (buffer.length > 0);
-	            return items;
-	        } else {
-	            return JSON.parse(source) as string[];
-	        }
-	    }
-	
-	    export function isPackage(source: any): boolean {
-	        if (source instanceof Uint8Array) {
-	            return source[0] === Json.Scheme.Types.array;
-	        } else if (source instanceof Buffer) {
-	            const uint8array: Uint8Array = new Uint8Array(source);
-	            return uint8array.length > 0 ? (uint8array[0] === Json.Scheme.Types.array) : false;
-	        } else if (typeof source === 'string') {
-	            try {
-	                return JSON.parse(source) instanceof Array;
-	            } catch (error) {
-	                return false;
-	            }
-	        } else {
-	            return false;
-	        }
-	    }
-	
-	}
-	
-	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	* Injection: injection.types.primitive.ts
-	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-	
-	export interface IPrimitiveType<T> {
-	    tsType: string;
-	    binaryType: string;
-	    init: string;
-	    parse: (value: string | number | T) => T;
-	    serialize: (value: T) => string | number | boolean | T;
-	    validate: (value: string | number | T) => boolean;
-	    implementation?: () => {};
-	}
-	
-	export const PrimitiveTypes:  { [key: string]: IPrimitiveType<any> } = {
-	
-	    uint8     : {
-	        binaryType  : 'uint8',
-	        init        : '0',
-	        parse       : (value: number) => value,
-	        serialize   : (value: number) => value,
-	        tsType      : 'number',
-	        validate    : (value: number) => {
-	            if (typeof value !== 'number') {
-	                return false;
-	            }
-	            if (isNaN(value)) {
-	                return false;
-	            }
-	            if (!Number.isInteger(value)) {
-	                return false;
-	            }
-	            if (value < 0) {
-	                return false;
-	            }
-	            return true;
-	        },
-	    } as IPrimitiveType<number>,
-	
-	    uint16     : {
-	        binaryType  : 'uint16',
-	        init        : '0',
-	        parse       : (value: number) => value,
-	        serialize   : (value: number) => value,
-	        tsType      : 'number',
-	        validate    : (value: number) => {
-	            if (typeof value !== 'number') {
-	                return false;
-	            }
-	            if (isNaN(value)) {
-	                return false;
-	            }
-	            if (!Number.isInteger(value)) {
-	                return false;
-	            }
-	            if (value < 0) {
-	                return false;
-	            }
-	            return true;
-	        },
-	    } as IPrimitiveType<number>,
-	
-	    uint32     : {
-	        binaryType  : 'uint32',
-	        init        : '0',
-	        parse       : (value: number) => value,
-	        serialize   : (value: number) => value,
-	        tsType      : 'number',
-	        validate    : (value: number) => {
-	            if (typeof value !== 'number') {
-	                return false;
-	            }
-	            if (isNaN(value)) {
-	                return false;
-	            }
-	            if (!Number.isInteger(value)) {
-	                return false;
-	            }
-	            if (value < 0) {
-	                return false;
-	            }
-	            return true;
-	        },
-	    } as IPrimitiveType<number>,
-	
-	    int8     : {
-	        binaryType  : 'int8',
-	        init        : '-1',
-	        parse       : (value: number) => value,
-	        serialize   : (value: number) => value,
-	        tsType      : 'number',
-	        validate    : (value: number) => {
-	            if (typeof value !== 'number') {
-	                return false;
-	            }
-	            if (isNaN(value)) {
-	                return false;
-	            }
-	            if (!Number.isInteger(value)) {
-	                return false;
-	            }
-	            return true;
-	        },
-	    } as IPrimitiveType<number>,
-	
-	    int16     : {
-	        binaryType  : 'int16',
-	        init        : '-1',
-	        parse       : (value: number) => value,
-	        serialize   : (value: number) => value,
-	        tsType      : 'number',
-	        validate    : (value: number) => {
-	            if (typeof value !== 'number') {
-	                return false;
-	            }
-	            if (isNaN(value)) {
-	                return false;
-	            }
-	            if (!Number.isInteger(value)) {
-	                return false;
-	            }
-	            return true;
-	        },
-	    } as IPrimitiveType<number>,
-	
-	    int32     : {
-	        binaryType  : 'int32',
-	        init        : '-1',
-	        parse       : (value: number) => value,
-	        serialize   : (value: number) => value,
-	        tsType      : 'number',
-	        validate    : (value: number) => {
-	            if (typeof value !== 'number') {
-	                return false;
-	            }
-	            if (isNaN(value)) {
-	                return false;
-	            }
-	            if (!Number.isInteger(value)) {
-	                return false;
-	            }
-	            return true;
-	        },
-	    } as IPrimitiveType<number>,
-	
-	    float32     : {
-	        binaryType  : 'float32',
-	        init        : '-1',
-	        parse       : (value: number) => value,
-	        serialize   : (value: number) => value,
-	        tsType      : 'number',
-	        validate    : (value: number) => {
-	            if (typeof value !== 'number') {
-	                return false;
-	            }
-	            if (isNaN(value)) {
-	                return false;
-	            }
-	            if (!Number.isInteger(value)) {
-	                return false;
-	            }
-	            return true;
-	        },
-	    } as IPrimitiveType<number>,
-	
-	    float64     : {
-	        binaryType  : 'float64',
-	        init        : '-1',
-	        parse       : (value: number) => value,
-	        serialize   : (value: number) => value,
-	        tsType      : 'number',
-	        validate    : (value: number) => {
-	            if (typeof value !== 'number') {
-	                return false;
-	            }
-	            if (isNaN(value)) {
-	                return false;
-	            }
-	            if (!Number.isInteger(value)) {
-	                return false;
-	            }
-	            return true;
-	        },
-	    } as IPrimitiveType<number>,
-	
-	    string      : {
-	        binaryType  : 'utf8String',
-	        init        : '""',
-	        parse       : (value: string) => value,
-	        serialize   : (value: string) => value,
-	        tsType      : 'string',
-	        validate    : (value: string) => {
-	            if (typeof value !== 'string') {
-	                return false;
-	            }
-	            return true;
-	        },
-	    } as IPrimitiveType<string>,
-	
-	    integer     : {
-	        binaryType  : 'int32',
-	        init        : '-1',
-	        parse       : (value: number) => value,
-	        serialize   : (value: number) => value,
-	        tsType      : 'number',
-	        validate    : (value: number) => {
-	            if (typeof value !== 'number') {
-	                return false;
-	            }
-	            if (isNaN(value)) {
-	                return false;
-	            }
-	            if (!Number.isInteger(value)) {
-	                return false;
-	            }
-	            return true;
-	        },
-	    } as IPrimitiveType<number>,
-	
-	    float     : {
-	        binaryType  : 'float64',
-	        init        : '-1',
-	        parse       : (value: number) => value,
-	        serialize   : (value: number) => value,
-	        tsType      : 'number',
-	        validate    : (value: number) => {
-	            if (typeof value !== 'number') {
-	                return false;
-	            }
-	            if (isNaN(value)) {
-	                return false;
-	            }
-	            return true;
-	        },
-	    } as IPrimitiveType<number>,
-	
-	    boolean     : {
-	        binaryType  : 'boolean',
-	        init        : 'false',
-	        parse       : (value: boolean) => value,
-	        serialize   : (value: boolean) => value,
-	        tsType      : 'boolean',
-	        validate    : (value: boolean) => {
-	            if (typeof value !== 'boolean') {
-	                return false;
-	            }
-	            return true;
-	        },
-	    } as IPrimitiveType<boolean>,
-	
-	    datetime    : {
-	        binaryType  : 'float64',
-	        init        : 'new Date()',
-	        parse       : (value: number) => {
-	            return new Date(value);
-	        },
-	        serialize   : (value: Date) => value.getTime(),
-	        tsType      : 'Date',
-	        validate    : (value: number | Date) => {
-	            if (value instanceof Date) {
-	                return true;
-	            }
-	            if (typeof value !== 'number') {
-	                return false;
-	            }
-	            if (isNaN(value)) {
-	                return false;
-	            }
-	            if (!Number.isInteger(value)) {
-	                return false;
-	            }
-	            const date = new Date(value);
-	            if (!(date instanceof Date)) {
-	                return false;
-	            }
-	            if (date.toString().toLowerCase().indexOf('invalid date') !== -1) {
-	                return false;
-	            }
-	            return !isNaN(date.getTime());
-	        },
-	    } as IPrimitiveType<Date>,
-	
-	    guid     : {
-	        binaryType  : 'asciiString',
-	        implementation  : function guid() {
-	            const lengths = [4, 4, 4, 8];
-	            let resultGuid = '';
-	            for (let i = lengths.length - 1; i >= 0; i -= 1) {
-	                resultGuid += (Math.round(Math.random() * Math.random() * Math.pow(10, lengths[i] * 2))
-	                            .toString(16)
-	                            .substr(0, lengths[i])
-	                            .toUpperCase() + '-');
-	            }
-	            resultGuid += ((new Date()).getTime() * (Math.random() * 100))
-	                        .toString(16)
-	                        .substr(0, 12)
-	                        .toUpperCase();
-	            return resultGuid;
-	        },
-	        init            : 'guid()',
-	        parse           : (value: string) => value,
-	        serialize       : (value: string) => value,
-	        tsType          : 'string',
-	        validate        : (value: string) => {
-	            return typeof value === 'string' ? (value.trim() !== '' ? true : false) : false;
-	        },
-	
-	    } as IPrimitiveType<string>,
-	
-	};
 	
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
