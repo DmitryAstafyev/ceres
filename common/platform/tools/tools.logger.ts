@@ -15,11 +15,17 @@ let aliasMaxLength = 0;
 const typeMaxLength = 7;
 
 // tslint:disable-next-line:only-arrow-functions
-const stdout: StdoutController | undefined = (function() {
+(function() {
     if (typeof process !== 'object' || process === null || (process as any).stdout === void 0 ) {
         return undefined;
     }
-    return new StdoutController(process.stdout);
+    if (typeof global !== 'object' || global === null) {
+        return undefined;
+    }
+    if ((global as any).logStdout !== undefined) {
+        return;
+    }
+    (global as any).logStdout = new StdoutController(process.stdout);
 }());
 
 /**
@@ -118,10 +124,10 @@ export default class Logger {
         if (!this._parameters.allowedConsole[level]) {
             return false;
         }
-        if (stdout) {
+        if ((global as any).logStdout) {
             const area = this._area;
             this._area = undefined;
-            stdout.out(message, area);
+            (global as any).logStdout.out(message, area);
         } else {
             /* tslint:disable */
             console.log(message);

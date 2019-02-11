@@ -8,9 +8,9 @@ export interface IArea {
     last: string;
 }
 
-const MOVE_UP = new Buffer('1b5b3141', 'hex').toString();
 const MOVE_LEFT = new Buffer('1b5b3130303044', 'hex').toString();
-const CLEAR_LINE = new Buffer('1b5b304b', 'hex').toString();
+const MOVE_UP_TO = '\u001b[_n_A';
+const CLEAR_AFTER = '\u001b[J';
 
 export class StdoutController {
 
@@ -36,7 +36,7 @@ export class StdoutController {
         const areasHeight: number = this._getAreasHeight();
         let clean: string = '';
         if (areasHeight > 0) {
-            clean += (MOVE_LEFT + (MOVE_UP + CLEAR_LINE).repeat(areasHeight));
+            clean += (MOVE_LEFT + MOVE_UP_TO.replace('_n_', areasHeight.toString()) + CLEAR_AFTER);
         }
         this._stream.write(`${clean}${content}`);
         if (areasHeight > 0) {
@@ -54,12 +54,14 @@ export class StdoutController {
         }
         const heightAfter: number = this._getHeightAfterArea(areaId);
         let clean: string = '';
+        clean += MOVE_LEFT;
         if (heightAfter > 0) {
-            clean += (MOVE_UP + CLEAR_LINE).repeat(heightAfter);
+            clean += MOVE_UP_TO.replace('_n_', heightAfter.toString());
         }
         if (last.count > 0) {
-            clean += (MOVE_LEFT + (MOVE_UP + CLEAR_LINE).repeat(last.count - 1));
+            clean += MOVE_UP_TO.replace('_n_', (last.count - 1).toString());
         }
+        clean += CLEAR_AFTER;
         this._stream.write(`${clean}${content}`);
         if (heightAfter > 0) {
             this._redrawAreasAfter(areaId);

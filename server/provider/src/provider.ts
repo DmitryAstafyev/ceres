@@ -338,17 +338,26 @@ export default class Provider {
             const repeat = length - str.length;
             return `${str}${repeat > 0 ? (' '.repeat(repeat)) : ''}`;
         }
-        this._logger.area('state').debug(`\n${this._state.transport.getInfo()}\n
+        let eventsInfo: string = Object.keys(events).length === 0 ? (filler(55, `│ No any subscriptions yet`) + '│') : '';
+        if (Object.keys(events).length > 0) {
+            eventsInfo = Object.keys(events).map((key) => {
+                return filler(55, `│ ${key}: ${events[key]}`) + '│';
+            }).join('\n');
+        }
+        const info: string = `
 ┌─────────────────┬─────────────────┬──────────────────┐
 │ tasks           │ demands         │ results          │
 ├─────────────────┼─────────────────┼──────────────────┤
 │${filler(' tasks           ', ' ' + i.t.summary)}│${filler(' demands         ', ' ' + i.d.demands)}│${filler(' results          ', ' ' + i.d.results)}│
 ├─────────────────┴─────────────────┴──────────────────┤
 │ events                                               │
-${Object.keys(events).map((key) => {
-    return filler(55, `│ ${key}: ${events[key]}`) + '│';
-}).join('\n')}
-└──────────────────────────────────────────────────────┘\n`);
+${eventsInfo}
+└──────────────────────────────────────────────────────┘\n`;
+        const transportInfo: string[] = this._state.transport.getInfo().split(/[\n\r]/gi);
+        const infoParts: string[] = info.split(/[\n\r]/gi).map((line: string, index: number) => {
+            return `${line}${transportInfo[index] !== void 0 ? transportInfo[index] : ''}`;
+        });
+        this._logger.area('state').debug(infoParts.join('\n'));
         setTimeout(() => {
             this._logState();
         }, 3000);

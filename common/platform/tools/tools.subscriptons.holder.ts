@@ -76,7 +76,11 @@ export default class SubscriptionsHolder {
             events.forEach((storedIDs: TClientIdStorage, event: TEvent) => {
                 if (storedIDs.indexOf(clientID) !== -1) {
                     storedIDs.splice(storedIDs.indexOf(clientID), 1);
-                    events.set(event, storedIDs);
+                    if (storedIDs.length > 0) {
+                        events.set(event, storedIDs);
+                    } else {
+                        events.delete(event);
+                    }
                     this._subscriptions.set(protocol, events);
                 }
             });
