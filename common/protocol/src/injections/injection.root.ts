@@ -359,7 +359,6 @@ export function parse(source: TIncomeData, target?: any): TTypes | Error {
     }
     const result = _parse(json, target);
     if (result instanceof Array) {
-        (global as any).__json = json;
         return new Error(`Cannot parse due errors:\n ${result.map((error: Error) => error.message).join('\n')}`);
     }
     return result;
