@@ -48,7 +48,7 @@ export namespace Packager {
         if (!isPackage(source)) {
             return new Error(`Source isn't a package of protocol data.`);
         }
-        if (source instanceof Buffer) {
+        if (source instanceof ArrayBuffer) {
             source = new Uint8Array(source);
         }
         if (source instanceof Uint8Array) {
@@ -68,7 +68,7 @@ export namespace Packager {
     export function isPackage(source: any): boolean {
         if (source instanceof Uint8Array) {
             return source[0] === Json.Scheme.Types.array;
-        } else if (source instanceof Buffer) {
+        } else if (source instanceof ArrayBuffer) {
             const uint8array: Uint8Array = new Uint8Array(source);
             return uint8array.length > 0 ? (uint8array[0] === Json.Scheme.Types.array) : false;
         } else if (typeof source === 'string') {
