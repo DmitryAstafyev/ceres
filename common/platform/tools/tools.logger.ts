@@ -2,6 +2,9 @@ import inspect from './tools.inspect';
 import { LoggerParameters } from './tools.logger.parameters';
 import { StdoutController } from './tools.logger.stdout';
 
+declare var process: any;
+declare var global: any;
+
 export enum ELogLevels {
     INFO = 'INFO',
     DEBUG = 'DEBUG',
@@ -16,16 +19,16 @@ const typeMaxLength = 7;
 
 // tslint:disable-next-line:only-arrow-functions
 (function() {
-    if (typeof process !== 'object' || process === null || (process as any).stdout === void 0 ) {
+    if (typeof process !== 'object' || process === null || process.stdout === void 0 ) {
         return undefined;
     }
     if (typeof global !== 'object' || global === null) {
         return undefined;
     }
-    if ((global as any).logStdout !== undefined) {
+    if (global.logStdout !== undefined) {
         return;
     }
-    (global as any).logStdout = new StdoutController(process.stdout);
+    global.logStdout = new StdoutController(process.stdout);
 }());
 
 /**
