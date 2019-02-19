@@ -1,4 +1,4 @@
-import { ATransport, Tools, Protocol, Token } from 'ceres.client.consumer';
+import { ATransport, Tools, Protocol, Token } from 'ceres.consumer';
 import Middleware from './consumer.middleware.implementation';
 
 import * as TransportProtocol from './protocols/protocol.transport.longpoll';
@@ -64,8 +64,8 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
             this.state.set(ATransport.STATES.connecting);
             this.send((new TransportProtocol.Message.Handshake.Request({
                 clientId: this._clientGUID,
-            })).stringify(), true).then((message: Protocol.TProtocolTypes | TransportProtocol.TProtocolTypes) => {
-                if (!(message instanceof TransportProtocol.Message.Handshake.Response)) {
+            })).stringify() as Protocol.Protocol.TStringifyOutput, true).then((message: any) => {
+                if (!(TransportProtocol.Message.Handshake.Response.instanceOf(message))) {
                     const error: Error = new Error(this._logger.warn(`On this state (${this.state.get()}) expected authorization confirmation, but gotten: ${Tools.inspect(message)}.`));
                     return reject(error);
                 }
@@ -196,10 +196,10 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
         this._hook.create(url, this._clientGUID, this._token).then((message: Protocol.ConnectionError | Protocol.Disconnect) => {
             this._setUrlFree(url);
             let error: Error;
-            if (message instanceof Protocol.ConnectionError) {
+            if (Protocol.ConnectionError.instanceOf(message)) {
                 error = new Error(this._logger.warn(`Hook connection is finished because connection error. Reason: ${message.reason} (error: ${message.message}). Initialize hard reconnection.`));
             }
-            if (message instanceof Protocol.Disconnect) {
+            if (Protocol.Disconnect.instanceOf(message)) {
                 error = new Error(this._logger.env(`Hook connection is finished because server disconnected. Reason: ${message.reason} (message: ${message.message}). Initialize hard reconnection.`));
             }
             this._drop().then(() => {

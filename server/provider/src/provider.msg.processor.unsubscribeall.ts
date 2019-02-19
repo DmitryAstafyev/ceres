@@ -22,7 +22,7 @@ export class MessageUnsubscribeAllProcessor extends MessageProcessor<Protocol.Me
                 error: status instanceof Error ? status.message : undefined,
                 guid: message.guid,
                 status: status instanceof Error ? false : status,
-            })).stringify()).then(() => {
+            })).stringify() as Protocol.Protocol.TStringifyOutput).then(() => {
                 this._logger.env(`Unsubscription for client ${clientId} to protocol ${message.subscription.protocol}, all events is done.`);
                 resolveProcess();
             }).catch((error: Error) => {

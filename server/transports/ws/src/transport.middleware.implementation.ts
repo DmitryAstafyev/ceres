@@ -1,4 +1,4 @@
-import { Tools } from 'ceres.server.provider';
+import { Tools } from 'ceres.provider';
 
 export interface IMiddleware<TConnection> {
     auth?:      (clientId: string, request: TConnection) => Promise<void>;

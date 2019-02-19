@@ -1,4 +1,4 @@
-import { Tools } from 'ceres.server.provider';
+import { Tools } from 'ceres.provider';
 import * as TransportProtocol from './protocols/protocol.transport.ws';
 import Transport from './transport';
 import { Connection } from './transport.connection';

@@ -1,4 +1,4 @@
-import { Tools, Token } from 'ceres.client.consumer';
+import { Tools, Token } from 'ceres.consumer';
 import * as TransportProtocol from './protocols/protocol.transport.ws';
 import { Pending, TPandingExpectedMessage } from './transport.pending.task';
 
@@ -56,7 +56,7 @@ export class PendingTasks extends Tools.EventEmitter {
             this._add();
             messages.forEach((message: TPandingExpectedMessage) => {
                 // Check income task
-                if (message instanceof TransportProtocol.Disconnect) {
+                if (TransportProtocol.Disconnect.instanceOf(message)) {
                     return this.emit(PendingTasks.EVENTS.onDisconnect, message);
                 }
                 // Trigger event
@@ -65,6 +65,9 @@ export class PendingTasks extends Tools.EventEmitter {
         })
         .catch((errors: Error[]) => {
             (this._urlFree as THandler)(url);
+            if (!(errors instanceof Array)) {
+                errors = [errors];
+            }
             errors.forEach((error: Error) => {
                 this.emit(PendingTasks.EVENTS.onError, error);
             });

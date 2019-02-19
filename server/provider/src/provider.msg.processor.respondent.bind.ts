@@ -23,7 +23,7 @@ export class MessageRespondentBindProcessor extends MessageProcessor<Protocol.Me
                 error: status instanceof Error ? status.message : undefined,
                 guid: message.guid,
                 status: status instanceof Error ? false : true,
-            })).stringify()).then(() => {
+            })).stringify() as Protocol.Protocol.TStringifyOutput).then(() => {
                 this._logger.env(`Binding client ${clientId} with demand "${message.protocol}/${message.demand}" with query as "${message.query.map((alias: Protocol.KeyValue) => {
                     return `${alias.key}: ${alias.value}`;
                 }).join(', ')}" is done.`);

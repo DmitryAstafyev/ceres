@@ -1,4 +1,4 @@
-import { ATransport, Protocol, TClientRequests, Tools } from 'ceres.server.provider';
+import { ATransport, Protocol, TClientRequests, Tools } from 'ceres.provider';
 
 import { Connection } from './transport.connection';
 import { Middleware } from './transport.middleware.implementation';
@@ -42,7 +42,7 @@ interface IWSConnectionInfo {
 
 export { Middleware, ConnectionParameters };
 
-export default class LongpollTransport extends ATransport<ConnectionParameters, Middleware<Connection>> {
+export default class WebsocketTransport extends ATransport<ConnectionParameters, Middleware<Connection>> {
     public static Middleware = Middleware;
     public static Parameters = ConnectionParameters;
 
@@ -225,7 +225,7 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
             return;
         }
         // Not expected requests
-        if (message instanceof TransportProtocol.Message.Handshake.Request || message instanceof TransportProtocol.Message.Pending.Request) {
+        if (TransportProtocol.Message.Handshake.Request.instanceOf(message) || TransportProtocol.Message.Pending.Request.instanceOf(message)) {
             this._logger.warn(`Request from client ${clientId} has not expected type: ${typeof message}`);
             return;
         }
@@ -259,7 +259,7 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
                 });
             }
             // Exctract message
-            const message = TransportProtocol.parseFrom(post, [TransportProtocol, Protocol]) as TRequests;
+            const message = TransportProtocol.parseFrom(post, [TransportProtocol, Protocol]) as any;
             if (message instanceof Error) {
                 return connection.close(this._logger.warn(`Fail to get message from post data due error: ${message.message}`)).catch((closeError: Error) => {
                     this._logger.warn(`Fail to close connection due error: ${closeError.message}`);
@@ -274,13 +274,13 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
                 });
             }
             // Authorization
-            if (message instanceof TransportProtocol.Message.Handshake.Request) {
+            if (TransportProtocol.Message.Handshake.Request.instanceOf(message)) {
                 return this._messageHandshakeProcessor.process(connection, message).catch((connectionError: Error) => {
                     this._logger.env(`Authorization of connection for ${message.clientId} is failed die error: ${connectionError.message}`);
                 });
             }
             // Pending connnection
-            if (message instanceof TransportProtocol.Message.Pending.Request) {
+            if (TransportProtocol.Message.Pending.Request.instanceOf(message)) {
                 return this._messagePendingProcessor.process(connection, message).then(() => {
                     this._logger.env(`Pending connection for ${message.clientId} is accepted.`);
                 });
@@ -299,7 +299,7 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
         });
     }
 
-    private _getMessageErrors(message: TRequests): { error: Error, response: string } | null {
+    private _getMessageErrors(message: any): { error: Error, response: string | Uint8Array } | null {
         // Check type of message
         let isCorrectType: boolean = false;
         ClientRequestsTypes.forEach((TTypeRef) => {
@@ -317,7 +317,7 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
                 response: (new TransportProtocol.ConnectionError({
                     message: `Request is rejected, because it has unexpected type: ${message.stringify()}`,
                     reason: TransportProtocol.ConnectionError.Reasons.UNEXPECTED_REQUEST,
-                })).stringify(),
+                })).stringify() as Protocol.Protocol.TStringifyOutput,
             };
         }
         // Check clientId
@@ -329,11 +329,11 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
                 response: (new TransportProtocol.ConnectionError({
                     message: `Client Id isn't found in request: ${message.stringify()}`,
                     reason: TransportProtocol.ConnectionError.Reasons.NO_CLIENT_ID_FOUND,
-                })).stringify(),
+                })).stringify() as Protocol.Protocol.TStringifyOutput,
             };
         }
         // Check token
-        if (message instanceof TransportProtocol.Message.Handshake.Request) {
+        if ( TransportProtocol.Message.Handshake.Request.instanceOf(message)) {
             return null;
         }
         const token: string = message.token;
@@ -344,7 +344,7 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
                 response: (new TransportProtocol.ConnectionError({
                     message: `Token isn't found in request: ${message.stringify()}`,
                     reason: TransportProtocol.ConnectionError.Reasons.NO_TOKEN_PROVIDED,
-                })).stringify(),
+                })).stringify() as Protocol.Protocol.TStringifyOutput,
             };
         }
         if (token !== this._tokens.get(clientId)) {
@@ -353,7 +353,7 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
                 response: (new TransportProtocol.ConnectionError({
                     message: `Incorrect token is in request: ${message.stringify()}`,
                     reason: TransportProtocol.ConnectionError.Reasons.TOKEN_IS_WRONG,
-                })).stringify(),
+                })).stringify() as Protocol.Protocol.TStringifyOutput,
             };
         }
         return null;

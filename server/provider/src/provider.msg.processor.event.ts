@@ -18,7 +18,7 @@ export class MessageEventProcessor extends MessageProcessor<Protocol.Message.Eve
                     guid: message.guid,
                     message: `Expecting defined fields: protocol {string}; event {string}`,
                     reason: Protocol.ConnectionError.Reasons.NO_DATA_PROVIDED,
-                })).stringify()).then(() => {
+                })).stringify() as Protocol.Protocol.TStringifyOutput).then(() => {
                     this._logger.env(`Fail to emit event from client ${clientId}.`);
                 }).catch((error: Error) => {
                     this._logger.warn(`Fail to close connection ${clientId} due error: ${error.message}`);
@@ -42,7 +42,7 @@ export class MessageEventProcessor extends MessageProcessor<Protocol.Message.Eve
                     clientId: clientId,
                     guid: message.guid,
                     subscribers: count,
-                })).stringify()).then(() => {
+                })).stringify() as Protocol.Protocol.TStringifyOutput).then(() => {
                     this._logger.env(`Emit event from client ${clientId} for event protocol ${message.event.protocol}, event ${message.event.event} is done for ${count} subscribers.`);
                     resolveProcess();
                 }).catch((error: Error) => {

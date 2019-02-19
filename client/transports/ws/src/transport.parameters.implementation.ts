@@ -1,4 +1,4 @@
-import { Tools } from 'ceres.client.consumer';
+import { Tools } from 'ceres.consumer';
 import { IConnectionParameters } from './transport.parameters.interface';
 
 const logger = new Tools.Logger('ConnectionParameters');

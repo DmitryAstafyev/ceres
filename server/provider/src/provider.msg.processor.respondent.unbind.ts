@@ -18,7 +18,7 @@ export class MessageRespondentUnbindProcessor extends MessageProcessor<Protocol.
                 clientId: clientId,
                 guid: message.guid,
                 status: status,
-            })).stringify()).then(() => {
+            })).stringify() as Protocol.Protocol.TStringifyOutput).then(() => {
                 this._logger.env(`Unbinding client ${clientId} with demand "${message.protocol}/${message.demand}" is done.`);
                 resolveProcess();
             }).catch((error: Error) => {

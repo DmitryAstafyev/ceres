@@ -1,4 +1,4 @@
-import { ATransport, Tools, Protocol, Token } from 'ceres.client.consumer';
+import { ATransport, Tools, Protocol, Token } from 'ceres.consumer';
 import Middleware from './consumer.middleware.implementation';
 
 import * as TransportProtocol from './protocols/protocol.transport.ws';
@@ -70,8 +70,8 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
             this._sendViaHTML((new TransportProtocol.Message.Handshake.Request({
                 guid: Tools.guid(),
                 clientId: this._clientGUID,
-            })).stringify(), true).then((message: Protocol.TProtocolTypes | TransportProtocol.TProtocolTypes) => {
-                if (!(message instanceof TransportProtocol.Message.Handshake.Response)) {
+            })).stringify() as Protocol.Protocol.TStringifyOutput, true).then((message: any) => {
+                if (!(TransportProtocol.Message.Handshake.Response.instanceOf(message))) {
                     const error: Error = new Error(this._logger.warn(`On this state (${this.state.get()}) expected authorization confirmation, but gotten: ${Tools.inspect(message)}.`));
                     return reject(error);
                 }

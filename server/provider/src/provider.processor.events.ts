@@ -61,7 +61,7 @@ export class ProcessorEvents {
                     protocol: protocol,
                 }),
                 guid: Tools.guid(),
-            })).stringify(),
+            })).stringify() as Protocol.Protocol.TStringifyOutput,
             onReject: (error: Error) => {
                 this._logger.warn(`Fail to emit event for client ${clientId}: protocol ${protocol}, event ${event} due error: ${error.message}.`);
             },

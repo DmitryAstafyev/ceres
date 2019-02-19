@@ -1,4 +1,4 @@
-import { Tools } from 'ceres.server.provider';
+import { Tools } from 'ceres.provider';
 
 import { Connection } from './transport.connection';
 import { Connections } from './transport.connections';

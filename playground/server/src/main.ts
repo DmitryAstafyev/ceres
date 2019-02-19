@@ -1,6 +1,6 @@
-import Transport from 'ceres.server.transport.ws';
-import { ConnectionParameters } from 'ceres.server.transport.ws';
-import Provider from 'ceres.server.provider';
+import Transport from 'ceres.provider.node.ws';
+import { ConnectionParameters } from 'ceres.provider.node.ws';
+import Provider from 'ceres.provider';
 import * as Tools from '../../../common/platform/tools/index';
 import * as Protocol from '../../protocol/protocol.playground';
 

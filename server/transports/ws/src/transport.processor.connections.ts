@@ -1,4 +1,4 @@
-import { Tools } from 'ceres.server.provider';
+import { Tools } from 'ceres.provider';
 
 import * as WebSocket from 'ws';
 
@@ -6,7 +6,7 @@ import { Connection } from './transport.connection';
 import { Connections } from './transport.connections';
 import { ConnectionParameters } from './transport.parameters.implementation';
 
-interface ISocketInfo {
+export interface ISocketInfo {
     socket: WebSocket;
     clientId: string;
     alive: boolean;

@@ -1,7 +1,7 @@
 import * as Tools from '../platform/tools/index';
 import * as Protocol from '../protocols/connection/protocol.connection';
 
-export type TSender = (data: string) => Promise<void>;
+export type TSender = (data: string | Uint8Array) => Promise<void>;
 
 export type TClientRequests =
                         Protocol.Message.Reconnection.Request |
@@ -65,7 +65,7 @@ export default abstract class ATransport<ConnectionParameters, Middleware> exten
 
     public abstract create(): Promise<any>;
     public abstract destroy(): Promise<any>;
-    public abstract send(clientId: string, data: string): Promise<void>;
+    public abstract send(clientId: string, data: string | Uint8Array): Promise<void>;
     public abstract isConnected(clientId: string): boolean;
     public abstract isAvailable(clientId: string): boolean;
     public abstract getInfo(): string;

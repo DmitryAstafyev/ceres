@@ -1,4 +1,4 @@
-import { Tools, Protocol, Token } from 'ceres.client.consumer';
+import { Tools, Protocol, Token } from 'ceres.consumer';
 import * as TransportProtocol from './protocols/protocol.transport.longpoll';
 
 import { Request } from './transport.request.connection';
@@ -24,7 +24,7 @@ export class Hook {
                 clientId: clientGUID,
                 token: token.get(),
             });
-            this._request = new Request(url, instance.stringify());
+            this._request = new Request(url, instance.stringify() as Protocol.Protocol.TStringifyOutput);
             const requestId = this._request.getId();
             this._request.send().then((response: string | Uint8Array) => {
                 const message = TransportProtocol.parseFrom(response, [TransportProtocol, Protocol]);
@@ -32,7 +32,7 @@ export class Hook {
                 if (message instanceof Error) {
                     return reject(message);
                 }
-                if (!(message instanceof TransportProtocol.ConnectionError) && !(message instanceof TransportProtocol.Disconnect)) {
+                if (!(TransportProtocol.ConnectionError.instanceOf(message)) && !(TransportProtocol.Disconnect.instanceOf(message))) {
                     return reject(new Error(`Unexpected response: ${message.constructor.name}: ${Tools.inspect(message)}`));
                 }
                 resolve(message);

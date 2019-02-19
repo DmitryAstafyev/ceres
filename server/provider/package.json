@@ -1,7 +1,7 @@
 {
-  "name": "ceres.server.provider",
-  "version": "0.0.1",
-  "description": "Backend provider",
+  "name": "ceres.provider",
+  "version": "1.0.1",
+  "description": "Provider for network framework ceres. Used with ceres.protocol.",
   "main": "./dist/provider.js",
   "types": "./dist/provider.d.ts",
   "scripts": {
@@ -10,8 +10,8 @@
     "test:unit": "./node_modules/.bin/jasmine-ts",
     "tslint": "./node_modules/.bin/tslint -c tslint.json './src/**/*{.ts,.tsx}'"
   },
-  "author": "Dmitry Astafyev",
-  "license": "MIT",
+  "author": "Dmitry Astafyev (D.Astafyev@outlook.com)",
+  "license": "Apache 2",
   "devDependencies": {
     "@types/jasmine": "^2.8.9",
     "@types/node": "^10.12.0",
@@ -26,5 +26,22 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/DmitryAstafyev/ceres.git"
-  }
+  },
+  "keywords": [
+    "network",
+    "protocol",
+    "JSON",
+    "binary",
+    "typescript",
+    "encode",
+    "decode",
+    "converting",
+    "validation",
+    "server",
+    "provider",
+    "http",
+    "https",
+    "ws",
+    "wss"
+  ]
 }

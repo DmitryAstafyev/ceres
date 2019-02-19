@@ -1,4 +1,4 @@
-import { Protocol } from 'ceres.client.consumer';
+import { Protocol } from 'ceres.consumer';
 import * as TransportProtocol from './protocols/protocol.transport.longpoll';
 
 import { Request } from './transport.request.connection';

@@ -1,6 +1,6 @@
 import * as HTTP from 'http';
 
-import { Tools } from 'ceres.server.provider';
+import { Tools } from 'ceres.provider';
 
 type THeaders = { [key: string]: string };
 

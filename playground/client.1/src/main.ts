@@ -5,11 +5,11 @@ import { Indicators } from '../../client.common/indicators';
 import { Switcher } from '../../client.common/switcher';
 
 import { TTestStates, EClientTests } from '../../client.common/client.tests.desc';
-import TransportWS from 'ceres.client.transport.ws';
-import TransportLP from 'ceres.client.transport.httplongpoll';
-import { ConnectionParameters as ConnectionParametersWS } from 'ceres.client.transport.ws';
-import { ConnectionParameters as ConnectionParametersLP } from 'ceres.client.transport.httplongpoll';
-import Consumer from 'ceres.client.consumer';
+import TransportWS from 'ceres.consumer.browser.ws';
+import TransportLP from 'ceres.consumer.browser.longpoll';
+import { ConnectionParameters as ConnectionParametersWS } from 'ceres.consumer.browser.ws';
+import { ConnectionParameters as ConnectionParametersLP } from 'ceres.consumer.browser.longpoll';
+import Consumer from 'ceres.consumer';
 
 enum EIndicators {
     connected = 'connected',

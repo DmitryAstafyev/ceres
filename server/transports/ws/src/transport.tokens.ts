@@ -1,4 +1,4 @@
-import { Tools } from 'ceres.server.provider';
+import { Tools } from 'ceres.provider';
 
 export type Token = { token: string, timestamp: number };
 

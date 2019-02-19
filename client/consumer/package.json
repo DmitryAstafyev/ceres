@@ -1,7 +1,7 @@
 {
-  "name": "ceres.client.consumer",
-  "version": "0.0.1",
-  "description": "Consumer for client",
+  "name": "ceres.consumer",
+  "version": "1.0.1",
+  "description": "Provider for network framework ceres. Used with ceres.protocol.",
   "main": "./dist/consumer.js",
   "types": "./dist/consumer.d.ts",
   "scripts": {
@@ -13,8 +13,8 @@
     "tslint": "./node_modules/.bin/tslint -c tslint.json './src/**/*{.ts,.tsx}'",
     "tslint-fix": "concurrently \"./node_modules/.bin/tslint --fix -c ./tslint.json 'src/**/*{.ts,.tsx}'\""
   },
-  "author": "Dmitry Astafyev",
-  "license": "MIT",
+  "author": "Dmitry Astafyev (D.Astafyev@outlook.com)",
+  "license": "Apache 2",
   "devDependencies": {
     "@types/jasmine": "^2.8.9",
     "jasmine": "^3.3.0",
@@ -33,5 +33,22 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/DmitryAstafyev/ceres.git"
-  }
+  },
+  "keywords": [
+    "network",
+    "protocol",
+    "JSON",
+    "binary",
+    "typescript",
+    "encode",
+    "decode",
+    "converting",
+    "validation",
+    "server",
+    "consumer",
+    "http",
+    "https",
+    "ws",
+    "wss"
+  ]
 }

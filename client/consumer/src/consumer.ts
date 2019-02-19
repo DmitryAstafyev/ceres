@@ -133,11 +133,11 @@ export default class Consumer extends Tools.EventEmitter {
                 guid: Tools.guid(),
                 token: this._transport.getClientToken(),
             });
-            this._transport.send(paketInst.stringify()).then((message: Protocol.TProtocolTypes) => {
-                if (message instanceof Protocol.ConnectionError) {
+            this._transport.send(paketInst.stringify()).then((message: any) => {
+                if (Protocol.ConnectionError.instanceOf(message)) {
                     return reject(new Error(this._logger.warn(`Connection error. Reason: ${message.reason} (error: ${message.message}). Initialize hard reconnection.`)));
                 }
-                if (!(message instanceof Protocol.Message.Event.Response)) {
+                if (!Protocol.Message.Event.Response.instanceOf(message)) {
                     return reject(new Error(`Unexpected server response (expected "Protocol.Message.Event.Response"): ${message.stringify()}`));
                 }
                 this._logger.env(`For event found ${message.subscribers} subscribers.`);
@@ -187,11 +187,11 @@ export default class Consumer extends Tools.EventEmitter {
                             protocol: protocolSignature,
                         }),
                         token: this._transport.getClientToken(),
-                    })).stringify()).then((message: Protocol.TProtocolTypes) => {
-                        if (message instanceof Protocol.ConnectionError) {
+                    })).stringify()).then((message: any) => {
+                        if (Protocol.ConnectionError.instanceOf(message)) {
                             return reject(new Error(this._logger.warn(`Connection error. Reason: ${message.reason} (error: ${message.message}). Initialize hard reconnection.`)));
                         }
-                        if (!(message instanceof Protocol.Message.Subscribe.Response)) {
+                        if (!(Protocol.Message.Subscribe.Response.instanceOf(message))) {
                             this._subscriptions.unsubscribe(protocolSignature, eventSignature);
                             return reject(new Error(`Unexpected server response (expected "EventResponse"): ${message.stringify()}`));
                         }
@@ -242,11 +242,11 @@ export default class Consumer extends Tools.EventEmitter {
                     protocol: protocolSignature,
                 }),
                 token: this._transport.getClientToken(),
-            })).stringify()).then((message: Protocol.TProtocolTypes) => {
-                if (message instanceof Protocol.ConnectionError) {
+            })).stringify()).then((message: any) => {
+                if (Protocol.ConnectionError.instanceOf(message)) {
                     return reject(new Error(this._logger.warn(`Connection error. Reason: ${message.reason} (error: ${message.message}). Initialize hard reconnection.`)));
                 }
-                if (!(message instanceof Protocol.Message.Unsubscribe.Response)) {
+                if (!(Protocol.Message.Unsubscribe.Response.instanceOf(message))) {
                     return reject(new Error(`Unexpected server response (expected "Protocol.Message.Unsubscribe.Response"): ${message.stringify()}`));
                 }
                 if (!message.status) {
@@ -284,11 +284,11 @@ export default class Consumer extends Tools.EventEmitter {
                     protocol: protocolSignature,
                 }),
                 token: this._transport.getClientToken(),
-            })).stringify()).then((message: Protocol.TProtocolTypes) => {
-                if (message instanceof Protocol.ConnectionError) {
+            })).stringify()).then((message: any) => {
+                if (Protocol.ConnectionError.instanceOf(message)) {
                     return reject(new Error(this._logger.warn(`Connection error. Reason: ${message.reason} (error: ${message.message}). Initialize hard reconnection.`)));
                 }
-                if (!(message instanceof Protocol.Message.UnsubscribeAll.Response)) {
+                if (!(Protocol.Message.UnsubscribeAll.Response.instanceOf(message))) {
                     return reject(new Error(`Unexpected server response (expected "Protocol.Message.UnsubscribeAll.Response"): ${message.stringify()}`));
                 }
                 if (!message.status) {
@@ -337,11 +337,11 @@ export default class Consumer extends Tools.EventEmitter {
                 clientId: this._transport.getClientId(),
                 guid: Tools.guid(),
                 token: this._transport.getClientToken(),
-            })).stringify()).then((message: Protocol.TProtocolTypes) => {
-                if (message instanceof Protocol.ConnectionError) {
+            })).stringify()).then((message: any) => {
+                if (Protocol.ConnectionError.instanceOf(message)) {
                     return reject(new Error(this._logger.warn(`Connection error. Reason: ${message.reason} (error: ${message.message}). Initialize hard reconnection.`)));
                 }
-                if (!(message instanceof Protocol.Message.Registration.Response)) {
+                if (!(Protocol.Message.Registration.Response.instanceOf(message))) {
                     return reject(new Error(`Unexpected server response (expected "Protocol.Message.Registration.Response"): ${message.stringify()}`));
                 }
                 if (!message.status) {
@@ -419,11 +419,11 @@ export default class Consumer extends Tools.EventEmitter {
                     protocol: protocolSignature,
                     query: queryArray,
                     token: this._transport.getClientToken(),
-                })).stringify()).then((message: Protocol.TProtocolTypes) => {
-                    if (message instanceof Protocol.ConnectionError) {
+                })).stringify()).then((message: any) => {
+                    if (Protocol.ConnectionError.instanceOf(message)) {
                         return reject(new Error(this._logger.warn(`Connection error. Reason: ${message.reason} (error: ${message.message}). Initialize hard reconnection.`)));
                     }
-                    if (!(message instanceof Protocol.Message.Respondent.Bind.Response)) {
+                    if (!(Protocol.Message.Respondent.Bind.Response.instanceOf(message))) {
                         return reject(new Error(this._logger.verbose(`Unexpected server response (expected "Protocol.Message.Respondent.Bind.Response"): ${message.stringify()}`)));
                     }
                     if (!message.status) {
@@ -479,11 +479,11 @@ export default class Consumer extends Tools.EventEmitter {
                 guid: Tools.guid(),
                 protocol: protocolSignature,
                 token: this._transport.getClientToken(),
-            })).stringify()).then((message: Protocol.TProtocolTypes) => {
-                if (message instanceof Protocol.ConnectionError) {
+            })).stringify()).then((message: any) => {
+                if (Protocol.ConnectionError.instanceOf(message)) {
                     return reject(new Error(this._logger.warn(`Connection error. Reason: ${message.reason} (error: ${message.message}). Initialize hard reconnection.`)));
                 }
-                if (!(message instanceof Protocol.Message.Respondent.Unbind.Response)) {
+                if (!(Protocol.Message.Respondent.Unbind.Response.instanceOf(message))) {
                     return reject(new Error(`Unexpected server response (expected "Protocol.Message.Respondent.Unbind.Response"): ${message.stringify()}`));
                 }
                 if (!message.status) {
@@ -549,7 +549,10 @@ export default class Consumer extends Tools.EventEmitter {
                 return reject(new Error(this._logger.verbose(`Query can not be empty. Define at least one property.`)));
             }
             // Register protocol implementation
-            const demandBody: string | Uint8Array = demand.stringify();
+            const demandBody: string | Uint8Array | Error = demand.stringify();
+            if (demandBody instanceof Error) {
+                return reject(demandBody);
+            }
             this._protocols.add(protocol).then(() => {
                 const guid = Tools.guid();
                 // Send demand's request to server
@@ -568,11 +571,11 @@ export default class Consumer extends Tools.EventEmitter {
                     options: new Protocol.Message.Demand.Options(options),
                     query: queryArray,
                     token: this._transport.getClientToken(),
-                })).stringify()).then((message: Protocol.TProtocolTypes) => {
-                    if (message instanceof Protocol.ConnectionError) {
+                })).stringify()).then((message: any) => {
+                    if (Protocol.ConnectionError.instanceOf(message)) {
                         return reject(new Error(this._logger.warn(`Connection error. Reason: ${message.reason} (error: ${message.message}). Initialize hard reconnection.`)));
                     }
-                    if (!(message instanceof Protocol.Message.Demand.FromExpectant.Response)) {
+                    if (!(Protocol.Message.Demand.FromExpectant.Response.instanceOf(message))) {
                         return reject(new Error(this._logger.verbose(`Unexpected server response (expected "Protocol.Message.Demand.FromExpectant.Response"): ${message.stringify()}`)));
                     }
                     if ([Protocol.Message.Demand.State.DEMAND_SENT, Protocol.Message.Demand.State.PENDING].indexOf(message.state) === -1) {
@@ -668,14 +671,14 @@ export default class Consumer extends Tools.EventEmitter {
 	 * Income messages
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
     @Tools.EventHandler() private _onMessage(message: Protocol.Message.ToConsumer) {
-        if (message.event instanceof Protocol.EventDefinition) {
+        if (Protocol.EventDefinition.instanceOf(message.event)) {
             // Processing income event
-            return this._emitIncomeEvent(message.event);
+            return this._emitIncomeEvent(message.event as Protocol.EventDefinition);
         }
-        if (message.demand instanceof Protocol.DemandDefinition) {
+        if (Protocol.DemandDefinition.instanceOf(message.demand)) {
             // Processing income demand
             const demand = message.demand as Protocol.DemandDefinition;
-            this._proccessDemand(message.demand).then((results: string | Uint8Array) => {
+            this._proccessDemand(message.demand as Protocol.DemandDefinition).then((results: string | Uint8Array) => {
                 // Send success message
                 this._transport.send((new Protocol.Message.Demand.FromRespondent.Request({
                     clientId: this._transport.getClientId(),
@@ -690,11 +693,11 @@ export default class Consumer extends Tools.EventEmitter {
                     guid: Tools.guid(),
                     id: demand.id,
                     token: this._transport.getClientToken(),
-                })).stringify()).then((messageResResponse: Protocol.TProtocolTypes) => {
-                    if (messageResResponse instanceof Protocol.ConnectionError) {
+                })).stringify()).then((messageResResponse: any) => {
+                    if (Protocol.ConnectionError.instanceOf(messageResResponse)) {
                         return this._logger.warn(`Connection error. Reason: ${messageResResponse.reason} (error: ${messageResResponse.message}). Initialize hard reconnection.`);
                     }
-                    if (!(messageResResponse instanceof Protocol.Message.Demand.FromRespondent.Response)) {
+                    if (!(Protocol.Message.Demand.FromRespondent.Response.instanceOf(messageResResponse))) {
                         return this._logger.warn(`Unexpected server response (expected "Protocol.Message.Demand.FromRespondent.Response"): ${messageResResponse.stringify()}`);
                     }
                     if (!messageResResponse.status) {
@@ -712,11 +715,11 @@ export default class Consumer extends Tools.EventEmitter {
                     guid: Tools.guid(),
                     id: demand.id,
                     token: this._transport.getClientToken(),
-                })).stringify()).then((messageErrResponse: Protocol.TProtocolTypes) => {
-                    if (messageErrResponse instanceof Protocol.ConnectionError) {
+                })).stringify()).then((messageErrResponse: any) => {
+                    if (Protocol.ConnectionError.instanceOf(messageErrResponse)) {
                         return this._logger.warn(`Connection error. Reason: ${messageErrResponse.reason} (error: ${messageErrResponse.message}). Initialize hard reconnection.`);
                     }
-                    if (!(messageErrResponse instanceof Protocol.Message.Demand.FromRespondent.Response)) {
+                    if (!(Protocol.Message.Demand.FromRespondent.Response.instanceOf(messageErrResponse))) {
                         return this._logger.warn(`Unexpected server response (expected "Protocol.Message.Demand.FromRespondent.Response"): ${messageErrResponse.stringify()}`);
                     }
                     if (!messageErrResponse.status) {
@@ -728,8 +731,8 @@ export default class Consumer extends Tools.EventEmitter {
                 });
             });
         }
-        if (message.return instanceof Protocol.DemandDefinition) {
-            const demandReturn: Protocol.DemandDefinition = message.return;
+        if (Protocol.DemandDefinition.instanceOf(message.return)) {
+            const demandReturn: Protocol.DemandDefinition = message.return as Protocol.DemandDefinition;
             // Processing income demand's results
             if (typeof demandReturn.error === 'string' && demandReturn.error.trim() !== '') {
                 // Error handled

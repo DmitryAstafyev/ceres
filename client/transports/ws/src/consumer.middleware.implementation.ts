@@ -1,4 +1,4 @@
-import { Tools } from 'ceres.client.consumer';
+import { Tools } from 'ceres.consumer';
 
 import { IMiddleware, TConnectingMethod } from './consumer.middleware.interfaces';
 

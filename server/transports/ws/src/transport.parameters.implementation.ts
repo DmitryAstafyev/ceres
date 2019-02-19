@@ -1,6 +1,6 @@
 import { IConnectionParameters } from './transport.parameters.interfaces';
 
-import { Tools } from 'ceres.server.provider';
+import { Tools } from 'ceres.provider';
 
 const DEFAULTS = {
     CORS: true,

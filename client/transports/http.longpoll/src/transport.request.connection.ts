@@ -1,4 +1,4 @@
-import { Tools } from 'ceres.client.consumer';
+import { Tools } from 'ceres.consumer';
 import ImpXMLHTTPRequest from './xmlhttprequest';
 
 const SETTINGS = {
@@ -12,7 +12,7 @@ export class Request {
 	private _id: 		string;
 
     constructor(
-		url: 		string,
+		url: 			string,
 		post: 		string | Uint8Array,
 		timeout: 	number = SETTINGS.DEFAULT_TIMEOUT,
 	) {

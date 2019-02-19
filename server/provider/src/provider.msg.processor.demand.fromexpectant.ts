@@ -29,7 +29,7 @@ export class MessageDemandFromExpectantProcessor extends MessageProcessor<Protoc
                     guid: message.guid,
                     id: demandGUID,
                     state: Protocol.Message.Demand.State.ERROR,
-                })).stringify()).then(() => {
+                })).stringify() as Protocol.Protocol.TStringifyOutput).then(() => {
                     this._logger.env(`Fail to process demand of client ${clientId} "${message.demand.protocol}/${message.demand.demand}". Error message was sent.`);
                     resolveProcess();
                 }).catch((error: Error) => {
@@ -45,7 +45,7 @@ export class MessageDemandFromExpectantProcessor extends MessageProcessor<Protoc
                         guid: message.guid,
                         id: demandGUID,
                         state: Protocol.Message.Demand.State.NO_RESPONDENTS,
-                    })).stringify()).then(() => {
+                    })).stringify() as Protocol.Protocol.TStringifyOutput).then(() => {
                         this._logger.env(`No respondents for demand of client ${clientId} "${message.demand.protocol}/${message.demand.demand}". Response was sent.`);
                         resolveProcess();
                     }).catch((error: Error) => {
@@ -58,7 +58,7 @@ export class MessageDemandFromExpectantProcessor extends MessageProcessor<Protoc
                     guid: message.guid,
                     id: demandGUID,
                     state: Protocol.Message.Demand.State.PENDING,
-                })).stringify()).then(() => {
+                })).stringify() as Protocol.Protocol.TStringifyOutput).then(() => {
                     this._logger.env(`Confirmation of pendinng demand of client ${clientId} "${message.demand.protocol}/${message.demand.demand}" is sent.`);
                     // No respondents, create pending task
                     this.state.demands.createPendingTask(demandGUID, {
@@ -83,7 +83,7 @@ export class MessageDemandFromExpectantProcessor extends MessageProcessor<Protoc
                 guid: message.guid,
                 id: demandGUID,
                 state: Protocol.Message.Demand.State.DEMAND_SENT,
-            })).stringify()).then(() => {
+            })).stringify() as Protocol.Protocol.TStringifyOutput).then(() => {
                 this._logger.env(`Confirmation of sending demand of client ${clientId} "${message.demand.protocol}/${message.demand.demand}" is sent.`);
                 if (respondents.type === Protocol.Message.Demand.Options.Scope.hosts) {
                     // Respondent is host: proceed task

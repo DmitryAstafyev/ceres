@@ -22,7 +22,7 @@ export class MessageDemandFromRespondentProcessor extends MessageProcessor<Proto
                     error: `No expectants are found`,
                     guid: message.guid,
                     status: false,
-                })).stringify()).then(() => {
+                })).stringify() as Protocol.Protocol.TStringifyOutput).then(() => {
                     this._logger.env(`No expectants for demand are found. Responend ${clientId}. Response was sent.`);
                     resolveProcess();
                 }).catch((error: Error) => {
@@ -60,7 +60,7 @@ export class MessageDemandFromRespondentProcessor extends MessageProcessor<Proto
                 clientId: clientId,
                 guid: message.guid,
                 status: true,
-            })).stringify()).then(() => {
+            })).stringify() as Protocol.Protocol.TStringifyOutput).then(() => {
                 this._logger.env(`Confirmation of sending demand's response sent Responend ${clientId}.`);
                 resolveProcess();
             }).catch((error: Error) => {

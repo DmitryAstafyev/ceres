@@ -158,7 +158,7 @@ export class ProcessorDemands {
                     protocol: protocol,
                 }),
                 guid: Tools.guid(),
-            })).stringify(),
+            })).stringify() as Protocol.Protocol.TStringifyOutput,
             onReject: (error: Error) => {
                 // TODO: expectant still waiting for response
                 this._logger.warn(`Fail to demand to client ${respondentId}: protocol ${protocol}, demand ${demand} due error: ${error.message}.`);
@@ -192,7 +192,7 @@ export class ProcessorDemands {
                     id: demandRequestId,
                     protocol: protocol,
                 }),
-            })).stringify(),
+            })).stringify() as Protocol.Protocol.TStringifyOutput,
             onReject: (errorSending: Error) => {
                 this._logger.warn(`Fail to send response on demand to client ${expectantId}: protocol ${protocol}, demand ${demand} due error: ${errorSending.message}.`);
             },

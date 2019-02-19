@@ -1,7 +1,7 @@
 {
-  "name": "ceres.client.transport.httplongpoll",
-  "version": "0.0.1",
-  "description": "HTTP longpoll transport for client consumer",
+  "name": "ceres.consumer.browser.longpoll",
+  "version": "1.0.0",
+  "description": "Long polling transport for ceres.consumer for browser",
   "main": "./dist/transport.js",
   "types": "./dist/transport.d.ts",
   "scripts": {
@@ -13,8 +13,8 @@
     "tslint": "./node_modules/.bin/tslint -c tslint.json './src/**/*{.ts,.tsx}'",
     "tslint-fix": "concurrently \"./node_modules/.bin/tslint --fix -c ./tslint.json 'src/**/*{.ts,.tsx}'\""
   },
-  "author": "Dmitry Astafyev",
-  "license": "MIT",
+  "author": "Dmitry Astafyev (D.Astafyev@outlook.com)",
+  "license": "Apache 2",
   "devDependencies": {
     "@types/jasmine": "^2.8.9",
     "jasmine": "^3.3.0",
@@ -28,9 +28,29 @@
     "webpack": "^4.23.1",
     "webpack-cli": "^3.2.1"
   },
-  "dependencies": {},
+  "dependencies": {
+    "ceres.consumer": "latest"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/DmitryAstafyev/ceres.git"
-  }
+  },
+  "keywords": [
+    "network",
+    "protocol",
+    "JSON",
+    "binary",
+    "typescript",
+    "encode",
+    "decode",
+    "converting",
+    "validation",
+    "server",
+    "provider",
+    "http",
+    "https",
+    "ws",
+    "wss",
+    "longpolling"
+  ]
 }

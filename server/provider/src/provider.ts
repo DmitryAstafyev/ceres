@@ -226,65 +226,65 @@ export default class Provider {
         });
     }
 
-    private _onClientMessage(message: TClientRequests, sender: TSender) {
+    private _onClientMessage(message: any, sender: TSender) {
         const clientId = message.clientId;
 
         // Reconnection
-        if (message instanceof Protocol.Message.Reconnection.Request) {
+        if (Protocol.Message.Reconnection.Request.instanceOf(message)) {
             return this._messageReconnectionProcessor.process(sender, message).catch((error: Error) => {
                 this._logger.warn(`Fail to reconnect for connection ${clientId} due error: ${error.message}`);
             });
         }
         // Subscribe to event
-        if (message instanceof Protocol.Message.Subscribe.Request) {
+        if (Protocol.Message.Subscribe.Request.instanceOf(message)) {
             this._messageSubscribeProcessor.process(sender, message).catch((error: Error) => {
                 this._logger.warn(`Fail todo Subscribe for connection ${clientId} due error: ${error.message}`);
             });
         }
         // Unsubscribe event
-        if (message instanceof Protocol.Message.Unsubscribe.Request) {
+        if (Protocol.Message.Unsubscribe.Request.instanceOf(message)) {
             this._messageUnsubscribeProcessor.process(sender, message).catch((error: Error) => {
                 this._logger.warn(`Fail todo Unsubscribe for connection ${clientId} due error: ${error.message}`);
             });
         }
         // Unsubscribe all event
-        if (message instanceof Protocol.Message.UnsubscribeAll.Request) {
+        if (Protocol.Message.UnsubscribeAll.Request.instanceOf(message)) {
             this._messageUnsubscribeAllProcessor.process(sender, message).catch((error: Error) => {
                 this._logger.warn(`Fail todo UnsubscribeAll for connection ${clientId} due error: ${error.message}`);
             });
         }
         // Trigger event
-        if (message instanceof Protocol.Message.Event.Request) {
+        if (Protocol.Message.Event.Request.instanceOf(message)) {
             this._messageEventProcessor.process(sender, message).catch((error: Error) => {
                 this._logger.warn(`Fail todo Event for connection ${clientId} due error: ${error.message}`);
             });
         }
         // Registration
-        if (message instanceof Protocol.Message.Registration.Request) {
+        if (Protocol.Message.Registration.Request.instanceOf(message)) {
             this._messageRegistrationProcessor.process(sender, message).catch((error: Error) => {
                 this._logger.warn(`Fail todo Registration for connection ${clientId} due error: ${error.message}`);
             });
         }
         // Registration as Respondent for Demand
-        if (message instanceof Protocol.Message.Respondent.Bind.Request) {
+        if (Protocol.Message.Respondent.Bind.Request.instanceOf(message)) {
             this._messageRespondentBindProcessor.process(sender, message).catch((error: Error) => {
                 this._logger.warn(`Fail todo Respondent.Bind for connection ${clientId} due error: ${error.message}`);
             });
         }
         // Unregistration as Respondent for Demand
-        if (message instanceof Protocol.Message.Respondent.Unbind.Request) {
+        if (Protocol.Message.Respondent.Unbind.Request.instanceOf(message)) {
             this._messageRespondentUnbindProcessor.process(sender, message).catch((error: Error) => {
                 this._logger.warn(`Fail todo Respondent.Unbind for connection ${clientId} due error: ${error.message}`);
             });
         }
         // Demand request: call from expectant
-        if (message instanceof Protocol.Message.Demand.FromExpectant.Request) {
+        if (Protocol.Message.Demand.FromExpectant.Request.instanceOf(message)) {
             this._messageDemandFromExpectantProcessor.process(sender, message).catch((error: Error) => {
                 this._logger.warn(`Fail todo Demand.FromExpectant for connection ${clientId} due error: ${error.message}`);
             });
         }
         // Demand request: response from respondent
-        if (message instanceof Protocol.Message.Demand.FromRespondent.Request) {
+        if (Protocol.Message.Demand.FromRespondent.Request.instanceOf(message)) {
             this._messageDemandFromRespondentProcessor.process(sender, message).catch((error: Error) => {
                 this._logger.warn(`Fail todo Demand.FromRespondent for connection ${clientId} due error: ${error.message}`);
             });

@@ -1,4 +1,4 @@
-import { Tools, Protocol, Token } from 'ceres.client.consumer';
+import { Tools, Protocol, Token } from 'ceres.consumer';
 import * as TransportProtocol from './protocols/protocol.transport.longpoll';
 import { Request } from './transport.request.connection';
 
@@ -30,7 +30,7 @@ export class Pending {
                 clientId: clientGUID,
                 token: token.get(),
             });
-            this._request = new Request(url, instance.stringify());
+            this._request = new Request(url, instance.stringify() as Protocol.Protocol.TStringifyOutput);
             const requestId = this._request.getId();
             this._request.send().then((response: string | Uint8Array) => {
                 this._request = null;
@@ -51,10 +51,10 @@ export class Pending {
                     if (message instanceof Error) {
                         return errors.push(message);
                     }
-                    if (!(message instanceof Protocol.Message.ToConsumer) && !(message instanceof TransportProtocol.Message.Pending.Response) && !(message instanceof TransportProtocol.Disconnect)) {
+                    if (!(Protocol.Message.ToConsumer.instanceOf(message)) && !(TransportProtocol.Message.Pending.Response.instanceOf(message)) && !(TransportProtocol.Disconnect.instanceOf(message))) {
                         return errors.push(new Error(`Unexpected response: ${message.constructor.name}: ${Tools.inspect(message)}`));
                     }
-                    messages.push(message);
+                    messages.push(message as TPandingExpectedMessage);
                 });
                 if (errors.length > 0) {
                     return reject(errors);

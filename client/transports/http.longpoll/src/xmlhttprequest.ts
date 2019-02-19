@@ -1,4 +1,4 @@
-import { Tools } from 'ceres.client.consumer';
+import { Tools } from 'ceres.consumer';
 
 export enum ERequestTypes {
     get     = 'GET',

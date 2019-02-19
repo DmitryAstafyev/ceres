@@ -1,4 +1,4 @@
-import { Tools } from 'ceres.server.provider';
+import { Tools, Protocol } from 'ceres.provider';
 import { Connection } from './transport.connection';
 
 import * as TransportProtocol from './protocols/protocol.transport.ws';
@@ -47,7 +47,7 @@ export class Connections {
                     return connection.close((new TransportProtocol.Disconnect({
                         message: 'Closing all pending requests.',
                         reason: TransportProtocol.Disconnect.Reasons.SHUTDOWN,
-                    })).stringify());
+                    })).stringify() as Protocol.Protocol.TStringifyOutput);
                 }));
             });
             Promise.all(tasks)

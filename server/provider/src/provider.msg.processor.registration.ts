@@ -42,7 +42,7 @@ export class MessageRegistrationProcessor extends MessageProcessor<Protocol.Mess
                 clientId: clientId,
                 guid: message.guid,
                 status: status,
-            })).stringify()).then(() => {
+            })).stringify() as Protocol.Protocol.TStringifyOutput).then(() => {
                 this._logger.env(`Registration of aliases for client ${clientId} as "${message.aliases.map((alias: Protocol.KeyValue) => {
                     return `${alias.key}: ${alias.value}`;
                 }).join(', ')}" is done.`);

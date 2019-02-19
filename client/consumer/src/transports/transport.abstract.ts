@@ -42,7 +42,7 @@ export default abstract class ATransport<ConnectionParameters, Middleware> exten
 
     public abstract connect(): Promise<any>;
     public abstract disconnect(): Promise<any>;
-    public abstract send(data: string): Promise<Protocol.TProtocolTypes>;
+    public abstract send(data: any): Promise<Protocol.TProtocolTypes>;
     public abstract getInfo(): string;
     public abstract getClientId(): string;
     public abstract getClientToken(): string;
