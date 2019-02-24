@@ -1,6 +1,6 @@
 /* tslint:disable */
 /*
-* This file generated automaticaly (Wed Feb 20 2019 00:01:49 GMT+0100 (CET))
+* This file generated automaticaly (Sat Feb 23 2019 19:24:19 GMT+0100 (CET))
 * Do not remove or change this code.
 * Protocol version: 0.0.1
 */

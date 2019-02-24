@@ -122,7 +122,7 @@ export default class Test {
     //////////////////////////////////////////////////////////////////////////////////////////////
     private _onConnected(){
         this._testDoneHandler(EClientTests.connection);
-        this._output.add(`HTTP.Longpoll transport test: Connected`);
+        this._output.add(`Connected`);
         this._sendGreetingMessage();
         this._sendTargetMessage();
         this._sendServerEvent();

@@ -132,7 +132,7 @@ export default class Test {
     // Transprt events: handlers
     //////////////////////////////////////////////////////////////////////////////////////////////
     private _onConnected(){
-        this._output.add(`HTTP.Longpoll transport test: Connected`);
+        this._output.add(`Connected`);
         this._subscribeTestProtocol();
         this._subscribeTargetedTestProtocol();
         this._subscribeToServerEvent();
@@ -302,7 +302,7 @@ export default class Test {
     //////////////////////////////////////////////////////////////////////////////////////////////
     private _onTestProtocolGreeting(event: Protocol.Events.Ping){
         const color: string = typeof event.message === 'string' ? (event.message.indexOf('Bred') !== -1 ? 'rgb(170, 236, 236)' : 'rgb(170, 170, 236)') : 'rgb(170, 170, 236)';
-        this._output.add(`HTTP.Longpoll transport test: get event: ${Tools.inspect(event)}`, { color: color});
+        this._output.add(`get event: ${Tools.inspect(event)}`, { color: color});
         this._testDoneHandler(EClientTests.catchBroadcastEvent);
         this._indicators.state(EIndicators.catchBroadcast, Indicators.States.success);
         this._indicators.increase(EIndicators.catchBroadcast);
@@ -310,14 +310,14 @@ export default class Test {
 
     private _onTargetedTestProtocolGreeting(event: Protocol.Events.TargetedPing){
         const color: string = typeof event.message === 'string' ? (event.message.indexOf('Bred') !== -1 ? 'rgb(170, 236, 236)' : 'rgb(170, 170, 236)') : 'rgb(170, 170, 236)';
-        this._output.add(`HTTP.Longpoll transport test: get event: ${Tools.inspect(event)}`, { color: color});
+        this._output.add(`get event: ${Tools.inspect(event)}`, { color: color});
         this._testDoneHandler(EClientTests.catchTargetedEvent);
         this._indicators.state(EIndicators.catchTargeted, Indicators.States.success);
         this._indicators.increase(EIndicators.catchTargeted);
     }
 
     private _onServerEvent(event: Protocol.Events.EventFromServer){
-        this._output.add(`HTTP.Longpoll transport test: get server event: ${Tools.inspect(event)}`, { color: 'rgb(200, 222, 247)'});
+        this._output.add(`get server event: ${Tools.inspect(event)}`, { color: 'rgb(200, 222, 247)'});
         this._testDoneHandler(EClientTests.catchServerEvent);
         this._indicators.state(EIndicators.catchServerEvent, Indicators.States.success);
         this._indicators.increase(EIndicators.catchServerEvent);
@@ -331,7 +331,7 @@ export default class Test {
             return;
         }
         this._consumer.subscribeToRequest(Protocol, Protocol.Requests.IsOnlineClient.Request, { type: 'online'}, this._demandOnlineHandler).then(() => {
-            this._output.add(`HTTP.Longpoll transport test: client is subscribed as respontent to: ${Tools.inspect(Protocol.Requests.IsOnlineClient.Request.getSignature())}`, { color: 'rgb(50,50,250)' });
+            this._output.add(`client is subscribed as respontent to: ${Tools.inspect(Protocol.Requests.IsOnlineClient.Request.getSignature())}`, { color: 'rgb(50,50,250)' });
             this._testDoneHandler(EClientTests.subscribeAsRespondent);
             this._indicators.state(EIndicators.subscribeAsRespondent, Indicators.States.success);
             this._indicators.increase(EIndicators.subscribeAsRespondent);
@@ -347,7 +347,7 @@ export default class Test {
             return;
         }
         this._consumer.unsubscribeToRequest(Protocol, Protocol.Requests.IsOnlineClient.Request).then(() => {
-            this._output.add(`HTTP.Longpoll transport test: client is unsubscribed as respontent to: ${Tools.inspect(Protocol.Requests.IsOnlineClient.Request.getSignature())}`, { color: 'rgb(50,50,250)' });
+            this._output.add(`client is unsubscribed as respontent to: ${Tools.inspect(Protocol.Requests.IsOnlineClient.Request.getSignature())}`, { color: 'rgb(50,50,250)' });
             this._testDoneHandler(EClientTests.unsubscribeAsRespondent);
             this._indicators.state(EIndicators.unsubscribeAsRespondent, Indicators.States.success);
             this._indicators.increase(EIndicators.unsubscribeAsRespondent);
@@ -359,7 +359,7 @@ export default class Test {
     }
 
     private _demandOnlineHandler(demand: Protocol.Requests.IsOnlineClient.Request, callback: (error: Error | null, results: Protocol.Requests.IsOnlineClient.Response) => any){
-        this._output.add(`HTTP.Longpoll transport test: client has gotten a demand: ${Tools.inspect(demand.getSignature())}`, { color: 'rgb(50,50,250)' });
+        this._output.add(`client has gotten a demand: ${Tools.inspect(demand.getSignature())}`, { color: 'rgb(50,50,250)' });
         callback(null, new Protocol.Requests.IsOnlineClient.Response({
             since: new Date(),
             message: `yes, I'm here`

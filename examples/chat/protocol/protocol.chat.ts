@@ -1,6 +1,6 @@
 /* tslint:disable */
 /*
-* This file generated automaticaly (Sat Feb 23 2019 19:24:19 GMT+0100 (CET))
+* This file generated automaticaly (Sun Feb 24 2019 00:53:46 GMT+0100 (CET))
 * Do not remove or change this code.
 * Protocol version: 0.0.1
 */
@@ -10,162 +10,275 @@ export namespace Protocol {
 	* Injection: map of types
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 	export type TTypes = 
-		Requests.IsOnlineServer.Request |
+		Requests.GetUsersInChannel |
 		Events |
-		Events.Ping |
-		Events.TargetedPing |
-		Events.EventToServer |
-		Events.EventFromServer |
+		Events.NewMessage |
+		Events.RemovedMessage |
 		Requests |
-		Requests.IsOnlineServer |
-		Requests.IsOnlineServer.Response |
-		Requests.IsOnlineClient |
-		Requests.IsOnlineClient.Request |
-		Requests.IsOnlineClient.Response;
+		Requests.GetChannels |
+		Responses |
+		Responses.ChannelUsersList |
+		Responses.ChannelsList |
+		ChatMessage |
+		User |
+		Channel |
+		Request |
+		Response;
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	* Injection: map of types
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 	export const KeysMapLeft: {[key: string]: any} = {
-		"48041566": {
-			sent: "a",
+		"3661859": {
+			channelId: "a",
 		},
 		"D7E6E2": {
-			guid: "a",
 		},
-		"18DF1862": {
-			guid: "a",
-			timestamp: "b",
-			message: "c",
+		"4C177D37": {
+			channelId: "a",
+			message: "b",
 		},
-		"1A957D8E": {
-			guid: "a",
-			timestamp: "b",
-			message: "c",
+		"71D3EB56": {
+			id: "a",
+			channelId: "b",
+			nickname: "c",
+			message: "d",
+			created: "e",
 		},
-		"3734F568": {
-			guid: "a",
-			timestamp: "b",
-			message: "c",
-		},
-		"6C9954D7": {
-			guid: "a",
-			timestamp: "b",
-			message: "c",
+		"3083FE77": {
+			channelId: "a",
+			messageId: "b",
 		},
 		"527E5577": {
 		},
-		"156E2FE5": {
+		"4EFB1ABF": {
 		},
-		"4459B3B6": {
-			since: "a",
-			message: "b",
+		"6482822D": {
 		},
-		"5810B93": {
+		"54A4AAC4": {
+			channelId: "a",
+			users: "b",
 		},
-		"466BD1EE": {
-			sent: "a",
+		"3B609EF0": {
+			nickname: "a",
+			firstName: "b",
+			lastName: "c",
 		},
-		"75C9DF3E": {
-			since: "a",
-			message: "b",
+		"4B5A7131": {
+			channels: "a",
+		},
+		"63F2459E": {
+			name: "a",
+			created: "b",
+		},
+		"7935BB2A": {
+		},
+		"4F56A0FA": {
 		},
 	};
 	export const KeysMapRight: {[key: string]: any} = {
-		"48041566": {
-			a: "sent",
+		"3661859": {
+			a: "channelId",
 		},
 		"D7E6E2": {
-			a: "guid",
 		},
-		"18DF1862": {
-			a: "guid",
-			b: "timestamp",
-			c: "message",
+		"4C177D37": {
+			a: "channelId",
+			b: "message",
 		},
-		"1A957D8E": {
-			a: "guid",
-			b: "timestamp",
-			c: "message",
+		"71D3EB56": {
+			a: "id",
+			b: "channelId",
+			c: "nickname",
+			d: "message",
+			e: "created",
 		},
-		"3734F568": {
-			a: "guid",
-			b: "timestamp",
-			c: "message",
-		},
-		"6C9954D7": {
-			a: "guid",
-			b: "timestamp",
-			c: "message",
+		"3083FE77": {
+			a: "channelId",
+			b: "messageId",
 		},
 		"527E5577": {
 		},
-		"156E2FE5": {
+		"4EFB1ABF": {
 		},
-		"4459B3B6": {
-			a: "since",
-			b: "message",
+		"6482822D": {
 		},
-		"5810B93": {
+		"54A4AAC4": {
+			a: "channelId",
+			b: "users",
 		},
-		"466BD1EE": {
-			a: "sent",
+		"3B609EF0": {
+			a: "nickname",
+			b: "firstName",
+			c: "lastName",
 		},
-		"75C9DF3E": {
-			a: "since",
-			b: "message",
+		"4B5A7131": {
+			a: "channels",
+		},
+		"63F2459E": {
+			a: "name",
+			b: "created",
+		},
+		"7935BB2A": {
+		},
+		"4F56A0FA": {
 		},
 	};
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	* Injection: typed map
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 	export const TypedEntitiesMap: {[key: string]: any} = {
-		"48041566": {
-			a: "datetime",
+		"3661859": {
+			a: "int16",
 		},
 		"D7E6E2": {
-			a: "guid",
 		},
-		"18DF1862": {
-			a: "guid",
-			b: "datetime",
-			c: "string",
+		"4C177D37": {
+			a: "int16",
+			b: {
+				a: "int16",
+				b: "int16",
+				c: "asciiString",
+				d: "utf8String",
+				e: "datetime",
+			},
 		},
-		"1A957D8E": {
-			a: "guid",
-			b: "datetime",
-			c: "string",
-		},
-		"3734F568": {
-			a: "guid",
-			b: "datetime",
-			c: "string",
-		},
-		"6C9954D7": {
-			a: "guid",
-			b: "datetime",
-			c: "string",
+		"3083FE77": {
+			a: "int16",
+			b: "int16",
 		},
 		"527E5577": {
 		},
-		"156E2FE5": {
+		"4EFB1ABF": {
 		},
-		"4459B3B6": {
-			a: "datetime",
-			b: "string",
+		"6482822D": {
 		},
-		"5810B93": {
+		"54A4AAC4": {
+			a: "int16",
+			b: [{
+				a: "asciiString",
+				b: "utf8String",
+				c: "utf8String",
+			}],
 		},
-		"466BD1EE": {
-			a: "datetime",
+		"4B5A7131": {
+			a: [{
+				a: "utf8String",
+				b: "datetime",
+			}],
 		},
-		"75C9DF3E": {
-			a: "datetime",
-			b: "string",
+		"71D3EB56": {
+			a: "int16",
+			b: "int16",
+			c: "asciiString",
+			d: "utf8String",
+			e: "datetime",
+		},
+		"3B609EF0": {
+			a: "asciiString",
+			b: "utf8String",
+			c: "utf8String",
+		},
+		"63F2459E": {
+			a: "utf8String",
+			b: "datetime",
+		},
+		"7935BB2A": {
+		},
+		"4F56A0FA": {
 		},
 	};
 
 	export const AdvancedTypes: {[key: string]: any} = {};
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	* Injection: injection.packager.ts
+	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	// tslint:disable:no-namespace
+	// tslint:disable:max-classes-per-file
+	// tslint:disable:object-literal-sort-keys
+	
+	// declare var Json: any;
+	
+	export namespace Packager {
+	
+	    export function join(...items: any[]): string | Uint8Array | Error {
+	        if (items instanceof Array && items.length === 1 && items[0] instanceof Array) {
+	            items = items[0];
+	        }
+	        if (!(items instanceof Array) || items.length === 0) {
+	            return new Error(`No arguments provided to join`);
+	        }
+	        const strs: any[] = [];
+	        const bytes: number[] = [];
+	        let isBinary: boolean | undefined;
+	        try {
+	            items.forEach((item: any, i: number) => {
+	                if (item instanceof Uint8Array && (isBinary === undefined || isBinary === true)) {
+	                    isBinary = true;
+	                    if (i === 0) {
+	                        // Set type as array
+	                        bytes.push(Json.Scheme.Types.array);
+	                    }
+	                    // Set length of item
+	                    bytes.push(...Json.Impls.Uint32.toUint8(item.length));
+	                    // Put item
+	                    bytes.push(...item);
+	                } else if (typeof item === 'string' && (isBinary === undefined || isBinary === false)) {
+	                    isBinary = false;
+	                    strs.push(item);
+	                } else {
+	                    throw new Error(`Only strings or Uint8Array can be joined. Each array item should be same type.`);
+	                }
+	            });
+	            if (isBinary) {
+	                return new Uint8Array(bytes);
+	            }
+	        } catch (error) {
+	            return error;
+	        }
+	        return JSON.stringify(strs);
+	    }
+	
+	    export function split(source: string | Uint8Array): string[] | Uint8Array[] | Error {
+	        if (!isPackage(source)) {
+	            return new Error(`Source isn't a package of protocol data.`);
+	        }
+	        if (source instanceof ArrayBuffer) {
+	            source = new Uint8Array(source);
+	        }
+	        if (source instanceof Uint8Array) {
+	            let buffer = source.slice(1, source.length);
+	            const items: Uint8Array[] = [];
+	            do {
+	                const itemLength = Json.Impls.Uint32.fromUint8(buffer.slice(0, 4));
+	                items.push(buffer.slice(4, 4 + itemLength));
+	                buffer = buffer.slice(4 + itemLength, buffer.length);
+	            } while (buffer.length > 0);
+	            return items;
+	        } else {
+	            return JSON.parse(source) as string[];
+	        }
+	    }
+	
+	    export function isPackage(source: any): boolean {
+	        if (source instanceof Uint8Array) {
+	            return source[0] === Json.Scheme.Types.array;
+	        } else if (source instanceof ArrayBuffer) {
+	            const uint8array: Uint8Array = new Uint8Array(source);
+	            return uint8array.length > 0 ? (uint8array[0] === Json.Scheme.Types.array) : false;
+	        } else if (typeof source === 'string') {
+	            try {
+	                return JSON.parse(source) instanceof Array;
+	            } catch (error) {
+	                return false;
+	            }
+	        } else {
+	            return false;
+	        }
+	    }
+	
+	}
+	
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	* Injection: injection.root.ts
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -709,95 +822,6 @@ export namespace Protocol {
 	}
 	
 	export class Root {
-	
-	}
-	
-	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	* Injection: injection.packager.ts
-	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-	// tslint:disable:no-namespace
-	// tslint:disable:max-classes-per-file
-	// tslint:disable:object-literal-sort-keys
-	
-	// declare var Json: any;
-	
-	export namespace Packager {
-	
-	    export function join(...items: any[]): string | Uint8Array | Error {
-	        if (items instanceof Array && items.length === 1 && items[0] instanceof Array) {
-	            items = items[0];
-	        }
-	        if (!(items instanceof Array) || items.length === 0) {
-	            return new Error(`No arguments provided to join`);
-	        }
-	        const strs: any[] = [];
-	        const bytes: number[] = [];
-	        let isBinary: boolean | undefined;
-	        try {
-	            items.forEach((item: any, i: number) => {
-	                if (item instanceof Uint8Array && (isBinary === undefined || isBinary === true)) {
-	                    isBinary = true;
-	                    if (i === 0) {
-	                        // Set type as array
-	                        bytes.push(Json.Scheme.Types.array);
-	                    }
-	                    // Set length of item
-	                    bytes.push(...Json.Impls.Uint32.toUint8(item.length));
-	                    // Put item
-	                    bytes.push(...item);
-	                } else if (typeof item === 'string' && (isBinary === undefined || isBinary === false)) {
-	                    isBinary = false;
-	                    strs.push(item);
-	                } else {
-	                    throw new Error(`Only strings or Uint8Array can be joined. Each array item should be same type.`);
-	                }
-	            });
-	            if (isBinary) {
-	                return new Uint8Array(bytes);
-	            }
-	        } catch (error) {
-	            return error;
-	        }
-	        return JSON.stringify(strs);
-	    }
-	
-	    export function split(source: string | Uint8Array): string[] | Uint8Array[] | Error {
-	        if (!isPackage(source)) {
-	            return new Error(`Source isn't a package of protocol data.`);
-	        }
-	        if (source instanceof ArrayBuffer) {
-	            source = new Uint8Array(source);
-	        }
-	        if (source instanceof Uint8Array) {
-	            let buffer = source.slice(1, source.length);
-	            const items: Uint8Array[] = [];
-	            do {
-	                const itemLength = Json.Impls.Uint32.fromUint8(buffer.slice(0, 4));
-	                items.push(buffer.slice(4, 4 + itemLength));
-	                buffer = buffer.slice(4 + itemLength, buffer.length);
-	            } while (buffer.length > 0);
-	            return items;
-	        } else {
-	            return JSON.parse(source) as string[];
-	        }
-	    }
-	
-	    export function isPackage(source: any): boolean {
-	        if (source instanceof Uint8Array) {
-	            return source[0] === Json.Scheme.Types.array;
-	        } else if (source instanceof ArrayBuffer) {
-	            const uint8array: Uint8Array = new Uint8Array(source);
-	            return uint8array.length > 0 ? (uint8array[0] === Json.Scheme.Types.array) : false;
-	        } else if (typeof source === 'string') {
-	            try {
-	                return JSON.parse(source) instanceof Array;
-	            } catch (error) {
-	                return false;
-	            }
-	        } else {
-	            return false;
-	        }
-	    }
 	
 	}
 	
@@ -1729,18 +1753,20 @@ export namespace Protocol {
 	export let ConvertedTypedEntitiesMap: {[key: string]: any} = {};
 	export let ReferencesMap: {[key: string]: any} = {};
 	export function init(){
-		ReferencesMap["48041566"] = Requests.IsOnlineServer.Request;
+		ReferencesMap["3661859"] = Requests.GetUsersInChannel;
 		ReferencesMap["D7E6E2"] = Events;
-		ReferencesMap["18DF1862"] = Events.Ping;
-		ReferencesMap["1A957D8E"] = Events.TargetedPing;
-		ReferencesMap["3734F568"] = Events.EventToServer;
-		ReferencesMap["6C9954D7"] = Events.EventFromServer;
+		ReferencesMap["4C177D37"] = Events.NewMessage;
+		ReferencesMap["3083FE77"] = Events.RemovedMessage;
 		ReferencesMap["527E5577"] = Requests;
-		ReferencesMap["156E2FE5"] = Requests.IsOnlineServer;
-		ReferencesMap["4459B3B6"] = Requests.IsOnlineServer.Response;
-		ReferencesMap["5810B93"] = Requests.IsOnlineClient;
-		ReferencesMap["466BD1EE"] = Requests.IsOnlineClient.Request;
-		ReferencesMap["75C9DF3E"] = Requests.IsOnlineClient.Response;
+		ReferencesMap["4EFB1ABF"] = Requests.GetChannels;
+		ReferencesMap["6482822D"] = Responses;
+		ReferencesMap["54A4AAC4"] = Responses.ChannelUsersList;
+		ReferencesMap["4B5A7131"] = Responses.ChannelsList;
+		ReferencesMap["71D3EB56"] = ChatMessage;
+		ReferencesMap["3B609EF0"] = User;
+		ReferencesMap["63F2459E"] = Channel;
+		ReferencesMap["7935BB2A"] = Request;
+		ReferencesMap["4F56A0FA"] = Response;
 		ConvertedTypedEntitiesMap = convertTypesToStandard(TypedEntitiesMap);
 	}
 
@@ -1748,7 +1774,7 @@ export namespace Protocol {
 	* Injection: protocol signature
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 	export function getSignature() {
-		return "31D366C7";
+		return "5E8183B8";
 	}
 
 }
@@ -1774,7 +1800,6 @@ function guid() {
 export class Events extends Protocol.Root {
 	static getDescription(): {[key: string]: Protocol.IProperty } {
 		return {
-			guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
 		}
 	}
 	public static __signature: string = "D7E6E2";
@@ -1794,171 +1819,85 @@ export class Events extends Protocol.Root {
 	public static instanceOf(target: any): boolean {
 		return Protocol.isInstanceOf(Events.__signature, target);
 	}
-	public guid?: string = guid();
 
-	constructor(args: { guid?: string }) {
+	constructor() {
 		super();
-		args.guid !== void 0 && (this.guid = args.guid);
-		const errors: Error[] = Protocol.validateParams(args, Events);
-		if (errors.length > 0) {
-			throw new Error(`Cannot create class of "Events" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
-		}
 
 	}
 }
 export namespace Events {
-	export class Ping extends Events {
+	export class NewMessage extends Events {
 		static getDescription(): {[key: string]: Protocol.IProperty } {
 			return {
-				guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
-				timestamp: { name: "timestamp", value: "datetime", type: Protocol.EEntityType.primitive, optional: false }, 
-				message: { name: "message", value: "string", type: Protocol.EEntityType.primitive, optional: true }, 
+				channelId: { name: "channelId", value: "int16", type: Protocol.EEntityType.primitive, optional: false }, 
+				message: { name: "message", value: ChatMessage, type: Protocol.EEntityType.reference, optional: false }, 
 			}
 		}
-		public static __signature: string = "18DF1862";
+		public static __signature: string = "4C177D37";
 		public static getSignature(): string {
-			return Ping.__signature;
+			return NewMessage.__signature;
 		}
-		public __signature: string = Ping.__signature;
+		public __signature: string = NewMessage.__signature;
 		public getSignature(): string {
 			return this.__signature;
 		}
 		public static parse(str: string | object): Protocol.TTypes | Error {
-			return Protocol.parse(str, Ping);
+			return Protocol.parse(str, NewMessage);
 		}
 		public stringify(): Protocol.TStringifyOutput | Error {
-			return Protocol.stringify(this, Ping);
+			return Protocol.stringify(this, NewMessage);
 		}
 		public static instanceOf(target: any): boolean {
-			return Protocol.isInstanceOf(Ping.__signature, target);
+			return Protocol.isInstanceOf(NewMessage.__signature, target);
 		}
-		public timestamp: Date = new Date();
-		public message?: string = "";
+		public channelId: number = -1;
+		public message: ChatMessage;
 
-		constructor(args: { guid?: string, timestamp: Date, message?: string }) {
-			super(Object.assign(args, {}));
-			this.timestamp = args.timestamp;
-			args.message !== void 0 && (this.message = args.message);
-			const errors: Error[] = Protocol.validateParams(args, Ping);
+		constructor(args: { channelId: number, message: ChatMessage }) {
+			super();
+			this.channelId = args.channelId;
+			this.message = args.message;
+			const errors: Error[] = Protocol.validateParams(args, NewMessage);
 			if (errors.length > 0) {
-				throw new Error(`Cannot create class of "Ping" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+				throw new Error(`Cannot create class of "NewMessage" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
 			}
 
 		}
 	}
-	export class TargetedPing extends Events {
+	export class RemovedMessage extends Events {
 		static getDescription(): {[key: string]: Protocol.IProperty } {
 			return {
-				guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
-				timestamp: { name: "timestamp", value: "datetime", type: Protocol.EEntityType.primitive, optional: false }, 
-				message: { name: "message", value: "string", type: Protocol.EEntityType.primitive, optional: true }, 
+				channelId: { name: "channelId", value: "int16", type: Protocol.EEntityType.primitive, optional: false }, 
+				messageId: { name: "messageId", value: "int16", type: Protocol.EEntityType.primitive, optional: false }, 
 			}
 		}
-		public static __signature: string = "1A957D8E";
+		public static __signature: string = "3083FE77";
 		public static getSignature(): string {
-			return TargetedPing.__signature;
+			return RemovedMessage.__signature;
 		}
-		public __signature: string = TargetedPing.__signature;
+		public __signature: string = RemovedMessage.__signature;
 		public getSignature(): string {
 			return this.__signature;
 		}
 		public static parse(str: string | object): Protocol.TTypes | Error {
-			return Protocol.parse(str, TargetedPing);
+			return Protocol.parse(str, RemovedMessage);
 		}
 		public stringify(): Protocol.TStringifyOutput | Error {
-			return Protocol.stringify(this, TargetedPing);
+			return Protocol.stringify(this, RemovedMessage);
 		}
 		public static instanceOf(target: any): boolean {
-			return Protocol.isInstanceOf(TargetedPing.__signature, target);
+			return Protocol.isInstanceOf(RemovedMessage.__signature, target);
 		}
-		public timestamp: Date = new Date();
-		public message?: string = "";
+		public channelId: number = -1;
+		public messageId: number = -1;
 
-		constructor(args: { guid?: string, timestamp: Date, message?: string }) {
-			super(Object.assign(args, {}));
-			this.timestamp = args.timestamp;
-			args.message !== void 0 && (this.message = args.message);
-			const errors: Error[] = Protocol.validateParams(args, TargetedPing);
+		constructor(args: { channelId: number, messageId: number }) {
+			super();
+			this.channelId = args.channelId;
+			this.messageId = args.messageId;
+			const errors: Error[] = Protocol.validateParams(args, RemovedMessage);
 			if (errors.length > 0) {
-				throw new Error(`Cannot create class of "TargetedPing" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
-			}
-
-		}
-	}
-	export class EventToServer extends Events {
-		static getDescription(): {[key: string]: Protocol.IProperty } {
-			return {
-				guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
-				timestamp: { name: "timestamp", value: "datetime", type: Protocol.EEntityType.primitive, optional: false }, 
-				message: { name: "message", value: "string", type: Protocol.EEntityType.primitive, optional: true }, 
-			}
-		}
-		public static __signature: string = "3734F568";
-		public static getSignature(): string {
-			return EventToServer.__signature;
-		}
-		public __signature: string = EventToServer.__signature;
-		public getSignature(): string {
-			return this.__signature;
-		}
-		public static parse(str: string | object): Protocol.TTypes | Error {
-			return Protocol.parse(str, EventToServer);
-		}
-		public stringify(): Protocol.TStringifyOutput | Error {
-			return Protocol.stringify(this, EventToServer);
-		}
-		public static instanceOf(target: any): boolean {
-			return Protocol.isInstanceOf(EventToServer.__signature, target);
-		}
-		public timestamp: Date = new Date();
-		public message?: string = "";
-
-		constructor(args: { guid?: string, timestamp: Date, message?: string }) {
-			super(Object.assign(args, {}));
-			this.timestamp = args.timestamp;
-			args.message !== void 0 && (this.message = args.message);
-			const errors: Error[] = Protocol.validateParams(args, EventToServer);
-			if (errors.length > 0) {
-				throw new Error(`Cannot create class of "EventToServer" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
-			}
-
-		}
-	}
-	export class EventFromServer extends Events {
-		static getDescription(): {[key: string]: Protocol.IProperty } {
-			return {
-				guid: { name: "guid", value: "guid", type: Protocol.EEntityType.primitive, optional: true }, 
-				timestamp: { name: "timestamp", value: "datetime", type: Protocol.EEntityType.primitive, optional: false }, 
-				message: { name: "message", value: "string", type: Protocol.EEntityType.primitive, optional: true }, 
-			}
-		}
-		public static __signature: string = "6C9954D7";
-		public static getSignature(): string {
-			return EventFromServer.__signature;
-		}
-		public __signature: string = EventFromServer.__signature;
-		public getSignature(): string {
-			return this.__signature;
-		}
-		public static parse(str: string | object): Protocol.TTypes | Error {
-			return Protocol.parse(str, EventFromServer);
-		}
-		public stringify(): Protocol.TStringifyOutput | Error {
-			return Protocol.stringify(this, EventFromServer);
-		}
-		public static instanceOf(target: any): boolean {
-			return Protocol.isInstanceOf(EventFromServer.__signature, target);
-		}
-		public timestamp: Date = new Date();
-		public message?: string = "";
-
-		constructor(args: { guid?: string, timestamp: Date, message?: string }) {
-			super(Object.assign(args, {}));
-			this.timestamp = args.timestamp;
-			args.message !== void 0 && (this.message = args.message);
-			const errors: Error[] = Protocol.validateParams(args, EventFromServer);
-			if (errors.length > 0) {
-				throw new Error(`Cannot create class of "EventFromServer" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+				throw new Error(`Cannot create class of "RemovedMessage" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
 			}
 
 		}
@@ -1993,27 +1932,62 @@ export class Requests extends Protocol.Root {
 	}
 }
 export namespace Requests {
-	export class IsOnlineServer extends Requests {
+	export class GetUsersInChannel extends Requests {
 		static getDescription(): {[key: string]: Protocol.IProperty } {
 			return {
+				channelId: { name: "channelId", value: "int16", type: Protocol.EEntityType.primitive, optional: false }, 
 			}
 		}
-		public static __signature: string = "156E2FE5";
+		public static __signature: string = "3661859";
 		public static getSignature(): string {
-			return IsOnlineServer.__signature;
+			return GetUsersInChannel.__signature;
 		}
-		public __signature: string = IsOnlineServer.__signature;
+		public __signature: string = GetUsersInChannel.__signature;
 		public getSignature(): string {
 			return this.__signature;
 		}
 		public static parse(str: string | object): Protocol.TTypes | Error {
-			return Protocol.parse(str, IsOnlineServer);
+			return Protocol.parse(str, GetUsersInChannel);
 		}
 		public stringify(): Protocol.TStringifyOutput | Error {
-			return Protocol.stringify(this, IsOnlineServer);
+			return Protocol.stringify(this, GetUsersInChannel);
 		}
 		public static instanceOf(target: any): boolean {
-			return Protocol.isInstanceOf(IsOnlineServer.__signature, target);
+			return Protocol.isInstanceOf(GetUsersInChannel.__signature, target);
+		}
+		public channelId: number = -1;
+
+		constructor(args: { channelId: number }) {
+			super();
+			this.channelId = args.channelId;
+			const errors: Error[] = Protocol.validateParams(args, GetUsersInChannel);
+			if (errors.length > 0) {
+				throw new Error(`Cannot create class of "GetUsersInChannel" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+			}
+
+		}
+	}
+	export class GetChannels extends Requests {
+		static getDescription(): {[key: string]: Protocol.IProperty } {
+			return {
+			}
+		}
+		public static __signature: string = "4EFB1ABF";
+		public static getSignature(): string {
+			return GetChannels.__signature;
+		}
+		public __signature: string = GetChannels.__signature;
+		public getSignature(): string {
+			return this.__signature;
+		}
+		public static parse(str: string | object): Protocol.TTypes | Error {
+			return Protocol.parse(str, GetChannels);
+		}
+		public stringify(): Protocol.TStringifyOutput | Error {
+			return Protocol.stringify(this, GetChannels);
+		}
+		public static instanceOf(target: any): boolean {
+			return Protocol.isInstanceOf(GetChannels.__signature, target);
 		}
 
 		constructor() {
@@ -2021,185 +1995,290 @@ export namespace Requests {
 
 		}
 	}
-	export namespace IsOnlineServer {
-		export class Request extends IsOnlineServer {
-			static getDescription(): {[key: string]: Protocol.IProperty } {
-				return {
-					sent: { name: "sent", value: "datetime", type: Protocol.EEntityType.primitive, optional: false }, 
-				}
-			}
-			public static __signature: string = "48041566";
-			public static getSignature(): string {
-				return Request.__signature;
-			}
-			public __signature: string = Request.__signature;
-			public getSignature(): string {
-				return this.__signature;
-			}
-			public static parse(str: string | object): Protocol.TTypes | Error {
-				return Protocol.parse(str, Request);
-			}
-			public stringify(): Protocol.TStringifyOutput | Error {
-				return Protocol.stringify(this, Request);
-			}
-			public static instanceOf(target: any): boolean {
-				return Protocol.isInstanceOf(Request.__signature, target);
-			}
-			public sent: Date = new Date();
-
-			constructor(args: { sent: Date }) {
-				super();
-				this.sent = args.sent;
-				const errors: Error[] = Protocol.validateParams(args, Request);
-				if (errors.length > 0) {
-					throw new Error(`Cannot create class of "Request" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
-				}
-
-			}
+}
+export class Responses extends Protocol.Root {
+	static getDescription(): {[key: string]: Protocol.IProperty } {
+		return {
 		}
-		export class Response extends IsOnlineServer {
-			static getDescription(): {[key: string]: Protocol.IProperty } {
-				return {
-					since: { name: "since", value: "datetime", type: Protocol.EEntityType.primitive, optional: false }, 
-					message: { name: "message", value: "string", type: Protocol.EEntityType.primitive, optional: true }, 
-				}
-			}
-			public static __signature: string = "4459B3B6";
-			public static getSignature(): string {
-				return Response.__signature;
-			}
-			public __signature: string = Response.__signature;
-			public getSignature(): string {
-				return this.__signature;
-			}
-			public static parse(str: string | object): Protocol.TTypes | Error {
-				return Protocol.parse(str, Response);
-			}
-			public stringify(): Protocol.TStringifyOutput | Error {
-				return Protocol.stringify(this, Response);
-			}
-			public static instanceOf(target: any): boolean {
-				return Protocol.isInstanceOf(Response.__signature, target);
-			}
-			public since: Date = new Date();
-			public message?: string = "";
-
-			constructor(args: { since: Date, message?: string }) {
-				super();
-				this.since = args.since;
-				args.message !== void 0 && (this.message = args.message);
-				const errors: Error[] = Protocol.validateParams(args, Response);
-				if (errors.length > 0) {
-					throw new Error(`Cannot create class of "Response" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
-				}
-
-			}
-		}
-		type TResponses = Response;
 	}
-	export class IsOnlineClient extends Requests {
+	public static __signature: string = "6482822D";
+	public static getSignature(): string {
+		return Responses.__signature;
+	}
+	public __signature: string = Responses.__signature;
+	public getSignature(): string {
+		return this.__signature;
+	}
+	public static parse(str: string | object): Protocol.TTypes | Error {
+		return Protocol.parse(str, Responses);
+	}
+	public stringify(): Protocol.TStringifyOutput | Error {
+		return Protocol.stringify(this, Responses);
+	}
+	public static instanceOf(target: any): boolean {
+		return Protocol.isInstanceOf(Responses.__signature, target);
+	}
+
+	constructor() {
+		super();
+
+	}
+}
+export namespace Responses {
+	export class ChannelUsersList extends Responses {
 		static getDescription(): {[key: string]: Protocol.IProperty } {
 			return {
+				channelId: { name: "channelId", value: "int16", type: Protocol.EEntityType.primitive, optional: false }, 
+				users: { name: "users", value: User, type: Protocol.EEntityType.repeated, optional: false }, 
 			}
 		}
-		public static __signature: string = "5810B93";
+		public static __signature: string = "54A4AAC4";
 		public static getSignature(): string {
-			return IsOnlineClient.__signature;
+			return ChannelUsersList.__signature;
 		}
-		public __signature: string = IsOnlineClient.__signature;
+		public __signature: string = ChannelUsersList.__signature;
 		public getSignature(): string {
 			return this.__signature;
 		}
 		public static parse(str: string | object): Protocol.TTypes | Error {
-			return Protocol.parse(str, IsOnlineClient);
+			return Protocol.parse(str, ChannelUsersList);
 		}
 		public stringify(): Protocol.TStringifyOutput | Error {
-			return Protocol.stringify(this, IsOnlineClient);
+			return Protocol.stringify(this, ChannelUsersList);
 		}
 		public static instanceOf(target: any): boolean {
-			return Protocol.isInstanceOf(IsOnlineClient.__signature, target);
+			return Protocol.isInstanceOf(ChannelUsersList.__signature, target);
 		}
+		public channelId: number = -1;
+		public users: Array<User> = [];
 
-		constructor() {
+		constructor(args: { channelId: number, users: Array<User> }) {
 			super();
+			this.channelId = args.channelId;
+			this.users = args.users;
+			const errors: Error[] = Protocol.validateParams(args, ChannelUsersList);
+			if (errors.length > 0) {
+				throw new Error(`Cannot create class of "ChannelUsersList" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+			}
 
 		}
 	}
-	export namespace IsOnlineClient {
-		export class Request extends IsOnlineClient {
-			static getDescription(): {[key: string]: Protocol.IProperty } {
-				return {
-					sent: { name: "sent", value: "datetime", type: Protocol.EEntityType.primitive, optional: false }, 
-				}
-			}
-			public static __signature: string = "466BD1EE";
-			public static getSignature(): string {
-				return Request.__signature;
-			}
-			public __signature: string = Request.__signature;
-			public getSignature(): string {
-				return this.__signature;
-			}
-			public static parse(str: string | object): Protocol.TTypes | Error {
-				return Protocol.parse(str, Request);
-			}
-			public stringify(): Protocol.TStringifyOutput | Error {
-				return Protocol.stringify(this, Request);
-			}
-			public static instanceOf(target: any): boolean {
-				return Protocol.isInstanceOf(Request.__signature, target);
-			}
-			public sent: Date = new Date();
-
-			constructor(args: { sent: Date }) {
-				super();
-				this.sent = args.sent;
-				const errors: Error[] = Protocol.validateParams(args, Request);
-				if (errors.length > 0) {
-					throw new Error(`Cannot create class of "Request" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
-				}
-
+	export class ChannelsList extends Responses {
+		static getDescription(): {[key: string]: Protocol.IProperty } {
+			return {
+				channels: { name: "channels", value: Channel, type: Protocol.EEntityType.repeated, optional: false }, 
 			}
 		}
-		export class Response extends IsOnlineClient {
-			static getDescription(): {[key: string]: Protocol.IProperty } {
-				return {
-					since: { name: "since", value: "datetime", type: Protocol.EEntityType.primitive, optional: false }, 
-					message: { name: "message", value: "string", type: Protocol.EEntityType.primitive, optional: true }, 
-				}
-			}
-			public static __signature: string = "75C9DF3E";
-			public static getSignature(): string {
-				return Response.__signature;
-			}
-			public __signature: string = Response.__signature;
-			public getSignature(): string {
-				return this.__signature;
-			}
-			public static parse(str: string | object): Protocol.TTypes | Error {
-				return Protocol.parse(str, Response);
-			}
-			public stringify(): Protocol.TStringifyOutput | Error {
-				return Protocol.stringify(this, Response);
-			}
-			public static instanceOf(target: any): boolean {
-				return Protocol.isInstanceOf(Response.__signature, target);
-			}
-			public since: Date = new Date();
-			public message?: string = "";
-
-			constructor(args: { since: Date, message?: string }) {
-				super();
-				this.since = args.since;
-				args.message !== void 0 && (this.message = args.message);
-				const errors: Error[] = Protocol.validateParams(args, Response);
-				if (errors.length > 0) {
-					throw new Error(`Cannot create class of "Response" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
-				}
-
-			}
+		public static __signature: string = "4B5A7131";
+		public static getSignature(): string {
+			return ChannelsList.__signature;
 		}
-		type TResponses = Response;
+		public __signature: string = ChannelsList.__signature;
+		public getSignature(): string {
+			return this.__signature;
+		}
+		public static parse(str: string | object): Protocol.TTypes | Error {
+			return Protocol.parse(str, ChannelsList);
+		}
+		public stringify(): Protocol.TStringifyOutput | Error {
+			return Protocol.stringify(this, ChannelsList);
+		}
+		public static instanceOf(target: any): boolean {
+			return Protocol.isInstanceOf(ChannelsList.__signature, target);
+		}
+		public channels: Array<Channel> = [];
+
+		constructor(args: { channels: Array<Channel> }) {
+			super();
+			this.channels = args.channels;
+			const errors: Error[] = Protocol.validateParams(args, ChannelsList);
+			if (errors.length > 0) {
+				throw new Error(`Cannot create class of "ChannelsList" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+			}
+
+		}
+	}
+}
+export class ChatMessage extends Protocol.Root {
+	static getDescription(): {[key: string]: Protocol.IProperty } {
+		return {
+			id: { name: "id", value: "int16", type: Protocol.EEntityType.primitive, optional: false }, 
+			channelId: { name: "channelId", value: "int16", type: Protocol.EEntityType.primitive, optional: false }, 
+			nickname: { name: "nickname", value: "asciiString", type: Protocol.EEntityType.primitive, optional: false }, 
+			message: { name: "message", value: "utf8String", type: Protocol.EEntityType.primitive, optional: false }, 
+			created: { name: "created", value: "datetime", type: Protocol.EEntityType.primitive, optional: false }, 
+		}
+	}
+	public static __signature: string = "71D3EB56";
+	public static getSignature(): string {
+		return ChatMessage.__signature;
+	}
+	public __signature: string = ChatMessage.__signature;
+	public getSignature(): string {
+		return this.__signature;
+	}
+	public static parse(str: string | object): Protocol.TTypes | Error {
+		return Protocol.parse(str, ChatMessage);
+	}
+	public stringify(): Protocol.TStringifyOutput | Error {
+		return Protocol.stringify(this, ChatMessage);
+	}
+	public static instanceOf(target: any): boolean {
+		return Protocol.isInstanceOf(ChatMessage.__signature, target);
+	}
+	public id: number = -1;
+	public channelId: number = -1;
+	public nickname: string = "";
+	public message: string = "";
+	public created: Date = new Date();
+
+	constructor(args: { id: number, channelId: number, nickname: string, message: string, created: Date }) {
+		super();
+		this.id = args.id;
+		this.channelId = args.channelId;
+		this.nickname = args.nickname;
+		this.message = args.message;
+		this.created = args.created;
+		const errors: Error[] = Protocol.validateParams(args, ChatMessage);
+		if (errors.length > 0) {
+			throw new Error(`Cannot create class of "ChatMessage" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+		}
+
+	}
+}
+export class User extends Protocol.Root {
+	static getDescription(): {[key: string]: Protocol.IProperty } {
+		return {
+			nickname: { name: "nickname", value: "asciiString", type: Protocol.EEntityType.primitive, optional: false }, 
+			firstName: { name: "firstName", value: "utf8String", type: Protocol.EEntityType.primitive, optional: false }, 
+			lastName: { name: "lastName", value: "utf8String", type: Protocol.EEntityType.primitive, optional: false }, 
+		}
+	}
+	public static __signature: string = "3B609EF0";
+	public static getSignature(): string {
+		return User.__signature;
+	}
+	public __signature: string = User.__signature;
+	public getSignature(): string {
+		return this.__signature;
+	}
+	public static parse(str: string | object): Protocol.TTypes | Error {
+		return Protocol.parse(str, User);
+	}
+	public stringify(): Protocol.TStringifyOutput | Error {
+		return Protocol.stringify(this, User);
+	}
+	public static instanceOf(target: any): boolean {
+		return Protocol.isInstanceOf(User.__signature, target);
+	}
+	public nickname: string = "";
+	public firstName: string = "";
+	public lastName: string = "";
+
+	constructor(args: { nickname: string, firstName: string, lastName: string }) {
+		super();
+		this.nickname = args.nickname;
+		this.firstName = args.firstName;
+		this.lastName = args.lastName;
+		const errors: Error[] = Protocol.validateParams(args, User);
+		if (errors.length > 0) {
+			throw new Error(`Cannot create class of "User" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+		}
+
+	}
+}
+export class Channel extends Protocol.Root {
+	static getDescription(): {[key: string]: Protocol.IProperty } {
+		return {
+			name: { name: "name", value: "utf8String", type: Protocol.EEntityType.primitive, optional: false }, 
+			created: { name: "created", value: "datetime", type: Protocol.EEntityType.primitive, optional: false }, 
+		}
+	}
+	public static __signature: string = "63F2459E";
+	public static getSignature(): string {
+		return Channel.__signature;
+	}
+	public __signature: string = Channel.__signature;
+	public getSignature(): string {
+		return this.__signature;
+	}
+	public static parse(str: string | object): Protocol.TTypes | Error {
+		return Protocol.parse(str, Channel);
+	}
+	public stringify(): Protocol.TStringifyOutput | Error {
+		return Protocol.stringify(this, Channel);
+	}
+	public static instanceOf(target: any): boolean {
+		return Protocol.isInstanceOf(Channel.__signature, target);
+	}
+	public name: string = "";
+	public created: Date = new Date();
+
+	constructor(args: { name: string, created: Date }) {
+		super();
+		this.name = args.name;
+		this.created = args.created;
+		const errors: Error[] = Protocol.validateParams(args, Channel);
+		if (errors.length > 0) {
+			throw new Error(`Cannot create class of "Channel" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+		}
+
+	}
+}
+export class Request extends Protocol.Root {
+	static getDescription(): {[key: string]: Protocol.IProperty } {
+		return {
+		}
+	}
+	public static __signature: string = "7935BB2A";
+	public static getSignature(): string {
+		return Request.__signature;
+	}
+	public __signature: string = Request.__signature;
+	public getSignature(): string {
+		return this.__signature;
+	}
+	public static parse(str: string | object): Protocol.TTypes | Error {
+		return Protocol.parse(str, Request);
+	}
+	public stringify(): Protocol.TStringifyOutput | Error {
+		return Protocol.stringify(this, Request);
+	}
+	public static instanceOf(target: any): boolean {
+		return Protocol.isInstanceOf(Request.__signature, target);
+	}
+
+	constructor() {
+		super();
+
+	}
+}
+export class Response extends Protocol.Root {
+	static getDescription(): {[key: string]: Protocol.IProperty } {
+		return {
+		}
+	}
+	public static __signature: string = "4F56A0FA";
+	public static getSignature(): string {
+		return Response.__signature;
+	}
+	public __signature: string = Response.__signature;
+	public getSignature(): string {
+		return this.__signature;
+	}
+	public static parse(str: string | object): Protocol.TTypes | Error {
+		return Protocol.parse(str, Response);
+	}
+	public stringify(): Protocol.TStringifyOutput | Error {
+		return Protocol.stringify(this, Response);
+	}
+	public static instanceOf(target: any): boolean {
+		return Protocol.isInstanceOf(Response.__signature, target);
+	}
+
+	constructor() {
+		super();
+
 	}
 }
 

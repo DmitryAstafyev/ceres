@@ -39,6 +39,7 @@ export class Queue {
         }
         packets.push(packet);
         this._packets.set(clientId, packets);
+        this.resolve(clientId);
     }
 
     public drop(clientId: TClientId) {
