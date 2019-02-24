@@ -1,6 +1,6 @@
 {
   "name": "ceres.provider",
-  "version": "1.0.2",
+  "version": "1.0.5",
   "description": "Provider for network framework ceres. Used with ceres.protocol.",
   "main": "./dist/provider.js",
   "types": "./dist/provider.d.ts",

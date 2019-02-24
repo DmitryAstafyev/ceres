@@ -216,6 +216,7 @@ export default class Provider {
             }
             options.scope = options.scope === undefined ? Protocol.Message.Event.Options.Scope.all : options.scope;
             this._state.events.emitAll(
+                null,
                 protocolSignature,
                 eventSignature,
                 event.stringify(),

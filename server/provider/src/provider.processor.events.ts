@@ -21,6 +21,7 @@ export class ProcessorEvents {
     }
 
     public emitAll(
+        emitterId: string | null,
         protocolSignature: string,
         eventSignature: string,
         body: string | Uint8Array,
@@ -29,17 +30,17 @@ export class ProcessorEvents {
         return new Promise((resolve, reject) => {
             if (options.scope === Protocol.Message.Event.Options.Scope.all) {
                 Promise.all([
-                    this._emitClients(protocolSignature, eventSignature, body, options, aliases),
-                    this._emitServer(protocolSignature, eventSignature, body, options, aliases),
+                    this._emitClients(emitterId, protocolSignature, eventSignature, body, options, aliases),
+                    this._emitServer(emitterId, protocolSignature, eventSignature, body, options, aliases),
                 ]).then((counts: number[]) => {
                     resolve(counts[0] + counts[1]);
                 }).catch((error: Error) => {
                     reject(error);
                 });
             } else if (options.scope === Protocol.Message.Event.Options.Scope.clients) {
-                this._emitClients(protocolSignature, eventSignature, body, options, aliases).then(resolve).catch(reject);
+                this._emitClients(emitterId, protocolSignature, eventSignature, body, options, aliases).then(resolve).catch(reject);
             } else if (options.scope === Protocol.Message.Event.Options.Scope.hosts) {
-                this._emitServer(protocolSignature, eventSignature, body, options, aliases).then(resolve).catch(reject);
+                this._emitServer(emitterId, protocolSignature, eventSignature, body, options, aliases).then(resolve).catch(reject);
             }
         });
     }
@@ -174,6 +175,7 @@ export class ProcessorEvents {
     }
 
     private _emitClients(
+        emitterId: string | null,
         protocolSignature: string,
         eventSignature: string,
         body: string | Uint8Array,
@@ -182,7 +184,7 @@ export class ProcessorEvents {
         return new Promise((resolve) => {
             let subscribers = this.state.events.getSubscribers(protocolSignature, eventSignature);
             // Check aliases
-            if (aliases instanceof Array) {
+            if (aliases instanceof Array && aliases.length > 0) {
                 const targetClients = this.state.getClientsByAlias(aliases);
                 subscribers = subscribers.filter((subscriberId: string) => {
                     return targetClients.indexOf(subscriberId) !== -1;
@@ -190,6 +192,9 @@ export class ProcessorEvents {
             }
             // Add tasks
             subscribers.forEach((subscriberId: string) => {
+                if (emitterId === subscriberId) {
+                    return;
+                }
                 this.emit(protocolSignature, eventSignature, body, subscriberId);
             });
             // Execute tasks
@@ -199,6 +204,7 @@ export class ProcessorEvents {
     }
 
     private _emitServer(
+        emitterId: string | null,
         protocolSignature: string,
         eventSignature: string,
         body: string | Uint8Array,
@@ -206,7 +212,7 @@ export class ProcessorEvents {
         aliases?: Protocol.KeyValue[]): Promise<number> {
         return new Promise((resolve, reject) => {
             // Check server alias
-            if (aliases instanceof Array && !isAliasInclude(this.alias, aliases)) {
+            if (aliases instanceof Array && aliases.length > 0 && !isAliasInclude(this.alias, aliases)) {
                 return resolve(0);
             }
             // Get server subscriptions
@@ -216,6 +222,10 @@ export class ProcessorEvents {
             }
             const handlers = serverEventsHandlers.get(eventSignature);
             if (!(handlers instanceof Map)) {
+                return resolve(0);
+            }
+            if (emitterId === null) {
+                // Event was emitted by server, do not need trigger event
                 return resolve(0);
             }
             // Note: in any case we resolve it, because to keep server stable

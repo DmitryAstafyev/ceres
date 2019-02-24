@@ -31,6 +31,7 @@ export class MessageEventProcessor extends MessageProcessor<Protocol.Message.Eve
             message.options.scope = message.options.scope === undefined ? Protocol.Message.Event.Options.Scope.all : message.options.scope;
             // Process event
             this.state.events.emitAll(
+                clientId,
                 message.event.protocol,
                 message.event.event,
                 message.event.bodyStr === '' ? new Uint8Array(message.event.bodyBinary) : message.event.bodyStr,

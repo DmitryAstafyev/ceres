@@ -4,7 +4,7 @@ import Consumer from 'ceres.consumer';
 
 // Step 1. Create transport
 const transport = new Transport(new ConnectionParameters({
-    host: 'http://{sub[1..200]}.localhost',
+    host: 'http://localhost',
     port: 3005,
     wsHost: 'ws://localhost',
     wsPort: 3005,
@@ -85,7 +85,7 @@ function getUsersList() {
 function sendChatMessage() {
     const message: Protocol.ChatMessage = new Protocol.ChatMessage({
         id: messageSequence++,
-        nickname: 'client.0',
+        nickname: 'client.1',
         message: `${Math.random().toFixed(10)}`,
         created: new Date(),
         channelId: 1
