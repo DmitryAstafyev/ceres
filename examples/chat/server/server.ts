@@ -3,7 +3,7 @@ import Provider from 'ceres.provider';
 import * as Protocol from '../protocol/protocol.chat';
 
 class ChatServer {
-
+    //Create transport
     private transport: Transport = new Transport(new ConnectionParameters({
         port: 3005
     }));
@@ -11,6 +11,7 @@ class ChatServer {
     private users: { [key: string]: string } = {};
 
     constructor() {
+        // Create provider
         this.provider = new Provider(this.transport);
         // Listen request GetUsers
         this.provider.listenRequest(
