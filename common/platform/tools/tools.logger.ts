@@ -18,7 +18,7 @@ let aliasMaxLength = 0;
 const typeMaxLength = 7;
 
 // tslint:disable-next-line:only-arrow-functions
-(function() {
+(function(): any {
     if (typeof process !== 'object' || process === null || process.stdout === void 0 ) {
         return undefined;
     }

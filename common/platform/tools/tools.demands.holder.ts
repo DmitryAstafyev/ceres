@@ -24,9 +24,11 @@ export default class DemandsHolder {
         if (validQuery instanceof Error) {
             return validQuery;
         }
+        /*
         if (Object.keys(validQuery).length === 0) {
             return new Error(`Query cannot be empty.`);
         }
+        */
         // Create / update subscription
         let demands: TDemandsStorage | undefined = this._subscriptions.get(protocol);
         if (demands === undefined) {

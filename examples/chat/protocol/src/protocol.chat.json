@@ -2,46 +2,35 @@
     /* This is events, which will happen in our system */
     "Events": {
         "NewMessage": {
-            "channelId": "int16",
             "message": "ChatMessage"
         },
-        "RemovedMessage": {
-            "channelId": "int16",
-            "messageId": "int16"
+        "UsersListUpdated": {
+            "users": "Array<User>"
         }
     },
     /* This is description of possible requests and responses in system */
     "Requests": {
-        "GetUsersInChannel": {
-            "channelId": "int16"
-        },
-        "GetChannels": {}
+        "GetUsers": {},
+        "AddUser": {
+            "user": "User"
+        }
     },
     "Responses": {
-        "ChannelUsersList": {
-            "channelId": "int16",
+        "UsersList": {
             "users": "Array<User>"
         },
-        "ChannelsList": {
-            "channels": "Array<Channel>"
+        "AddUserResult": {
+            "error?": "asciiString"
         }
     },
     /* Description of entities in system */
     "ChatMessage": {
-        "id": "int16",
-        "channelId": "int16",
         "nickname": "asciiString",
         "message": "utf8String",
         "created": "datetime"
     },
     "User": {
-        "nickname": "asciiString",
-        "firstName": "utf8String",
-        "lastName": "utf8String"
-    },
-    "Channel": {
-        "name": "utf8String",
-        "created": "datetime"
+        "nickname": "asciiString"
     },
     "version": "0.0.1"
 }

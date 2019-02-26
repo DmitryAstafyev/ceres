@@ -1,6 +1,6 @@
 /* tslint:disable */
 /*
-* This file generated automaticaly (Sat Feb 23 2019 19:24:19 GMT+0100 (CET))
+* This file generated automaticaly (Tue Feb 26 2019 17:29:12 GMT+0100 (CET))
 * Do not remove or change this code.
 * Protocol version: 0.0.1
 */
@@ -166,641 +166,6 @@ export namespace Protocol {
 	};
 
 	export const AdvancedTypes: {[key: string]: any} = {};
-	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	* Injection: injection.root.ts
-	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-	// tslint:disable:max-classes-per-file
-	
-	// declare var ReferencesMap: {[key: string]: any};
-	// declare var PrimitiveTypes: {[key: string]: any};
-	// declare var AdvancedTypes: {[key: string]: any};
-	// declare var KeysMapLeft: {[key: string]: any};
-	// declare var KeysMapRight: {[key: string]: any};
-	// declare var TypedEntitiesMap: {[key: string]: any};
-	// declare var ConvertedTypedEntitiesMap: {[key: string]: any};
-	// declare var ConvertedTypedEntitiesMinMap: {[key: string]: any};
-	// declare var Json: any;
-	
-	// declare type TTypes = any;
-	
-	export type TIncomeData = string | object | ArrayBuffer | number[] | Uint8Array;
-	
-	export type TStringifyOutput = string | Uint8Array;
-	
-	export class ProtocolState {
-	
-	    private _debug: boolean = false;
-	
-	    public debug(value: boolean) {
-	        this._debug = value;
-	    }
-	
-	    public isDebugged(): boolean {
-	        return this._debug;
-	    }
-	
-	}
-	
-	export const state: ProtocolState = new ProtocolState();
-	
-	export enum EEntityType {
-	    root = 'root',
-	    class = 'class',
-	    namespace = 'namespace',
-	    complex = 'complex',
-	    primitive = 'primitive',
-	    repeated = 'repeated',
-	    reference = 'reference',
-	    enum = 'enum',
-	}
-	
-	export interface IProperty {
-	    name: string;
-	    type: EEntityType;
-	    optional: boolean;
-	    value: any;
-	}
-	
-	export const StandardTypes: string[] = [
-	    'int8', 'int16', 'int32',
-	    'uint8', 'uint16', 'uint32',
-	    'float32', 'float64', 'boolean',
-	    'asciiString', 'utf8String',
-	];
-	
-	export function _getPropNameAlias(propName: string, signature: string): string | Error {
-	    if (state.isDebugged() || propName === '__signature') {
-	        return propName;
-	    }
-	    if (KeysMapLeft[signature] === void 0) {
-	        return new Error(`Fail to find keys map for ${signature}`);
-	    }
-	    if (KeysMapLeft[signature][propName] === void 0) {
-	        return new Error(`Fail to find keys map for ${signature}; property "${propName}".`);
-	    }
-	    return KeysMapLeft[signature][propName];
-	}
-	
-	export function _getPropName(alias: string, signature: string): string | Error {
-	    if (state.isDebugged() || alias === '__signature') {
-	        return alias;
-	    }
-	    if (KeysMapRight[signature] === void 0) {
-	        return new Error(`Fail to find keys map for ${signature}`);
-	    }
-	    if (KeysMapRight[signature][alias] === void 0) {
-	        return new Error(`Fail to find keys map for ${signature}; property alias "${alias}".`);
-	    }
-	    return KeysMapRight[signature][alias];
-	}
-	
-	export function _parse(source: TIncomeData, target?: any): TTypes | Error[] {
-	    const types: {[key: string]: any} = getTypes();
-	    const json: any = getJSONFromIncomeData(source);
-	    if (json instanceof Error) {
-	        return [json];
-	    }
-	    if (typeof json.__signature !== 'string' || json.__signature.trim() === '') {
-	        return [new Error(`Cannot find signature of entity.`)];
-	    }
-	    if (ReferencesMap[json.__signature] === void 0) {
-	        return [new Error(`Entity with signature "${json.__signature}" doesn't exist in this protocol implementation. Check protocol name or protocol version.`)];
-	    }
-	    const classRef: any = ReferencesMap[json.__signature];
-	    if (target !== undefined) {
-	        if (classRef.getSignature() !== target.getSignature()) {
-	            return [new Error(`Target reference doesn't match with entity in json.`)];
-	        }
-	    }
-	    // Get description of entity
-	    const description: {[key: string]: IProperty} = classRef.getDescription();
-	    // Parsing properties
-	    const errors: Error[] = [];
-	    Object.keys(json).forEach((alias: string) => {
-	        const prop: string | Error = _getPropName(alias, json.__signature);
-	        if (prop instanceof Error) {
-	            errors.push(new Error(`Cannot get property name by alias "${alias}" due error: ${prop.message}.`));
-	            return;
-	        }
-	        if (prop === alias) {
-	            return;
-	        }
-	        json[prop] = json[alias];
-	        delete json[alias];
-	    });
-	    if (errors.length > 0) {
-	        return errors;
-	    }
-	    Object.keys(description).forEach((prop: string) => {
-	        const desc = description[prop];
-	        if (desc.optional && json[prop] === void 0) {
-	            return;
-	        }
-	        switch (desc.type) {
-	            case EEntityType.repeated:
-	                if (!(json[prop] instanceof Array)) {
-	                    errors.push(new Error(`Property "${prop}" has wrong format. Expected an array (repeated).`));
-	                    break;
-	                }
-	                if (typeof desc.value === 'string') {
-	                    json[prop] = json[prop].map((value: any) => {
-	                        const nestedType = types[desc.value];
-	                        if (!nestedType.validate(value)) {
-	                            errors.push(new Error(`Property "${prop}" has wrong format.`));
-	                            return undefined;
-	                        }
-	                        return nestedType.parse(value);
-	                    });
-	                } else if (typeof desc.value === 'function') {
-	                    // It's reference to class
-	                    const parsed = json[prop].map((value: any) => {
-	                        const nested = _parse(value, desc.value);
-	                        if (nested instanceof Array) {
-	                            errors.push(new Error(`Cannot get instance of class "${desc.value.name}" from property "${prop}" due error: \n${nested.map((e: Error) => e.message).join(';\n')}`));
-	                            return null;
-	                        }
-	                        return nested;
-	                    });
-	                    if (errors.length > 0) {
-	                        break;
-	                    }
-	                    json[prop] = parsed;
-	                } else if (typeof desc.value === 'object') {
-	                    // It's reference to enum
-	                    json[prop].forEach((value: any) => {
-	                        if (desc.value[value] === void 0) {
-	                            errors.push(new Error(`Property "${prop}" has wrong value: "${value}". Available values: ${Object.keys(desc.value).join(', ')}.`));
-	                        }
-	                    });
-	                }
-	                break;
-	            case EEntityType.primitive:
-	                const type = types[desc.value];
-	                if (!type.validate(json[prop])) {
-	                    errors.push(new Error(`Property "${prop}" has wrong format.`));
-	                }
-	                json[prop] = type.parse(json[prop]);
-	                break;
-	            case EEntityType.reference:
-	                if (typeof desc.value === 'function') {
-	                    // It's reference to class
-	                    const nested = _parse(json[prop], desc.value);
-	                    if (nested instanceof Array) {
-	                        errors.push(new Error(`Cannot get instance of class "${desc.value.name}" from property "${prop}" due error: \n${nested.map((e: Error) => e.message).join(';\n')}`));
-	                    } else {
-	                        json[prop] = nested;
-	                    }
-	                } else if (typeof desc.value === 'object') {
-	                    // It's reference to enum
-	                    if (desc.value[json[prop]] === void 0) {
-	                        errors.push(new Error(`Property "${prop}" has wrong value: "${json[prop]}". Available values: ${Object.keys(desc.value).join(', ')}.`));
-	                    }
-	                }
-	                break;
-	        }
-	    });
-	    if (errors.length > 0) {
-	        return errors;
-	    }
-	    // Create instance
-	    try {
-	        return new classRef(json);
-	    } catch (error) {
-	        return [error];
-	    }
-	}
-	
-	export function _stringify(target: any, classRef: any): { [key: string]: any } | Error[] {
-	    if (!(target instanceof classRef)) {
-	        return [new Error(`Defined wrong reference to class.`)];
-	    }
-	    const types: {[key: string]: any} = getTypes();
-	    const description: {[key: string]: IProperty} = classRef.getDescription();
-	    const errors: Error[] = [];
-	    const json: any = {
-	        __signature: target.getSignature(),
-	    };
-	    Object.keys(description).forEach((prop: string) => {
-	        const propNameAlias: string | Error = _getPropNameAlias(prop, target.getSignature());
-	        if (propNameAlias instanceof Error) {
-	            errors.push(new Error(`Cannot get property alias for property "${prop}" due error: ${propNameAlias.message}.`));
-	            return;
-	        }
-	        const desc = description[prop];
-	        if (desc.optional && target[prop] === void 0) {
-	            return;
-	        }
-	        switch (desc.type) {
-	            case EEntityType.repeated:
-	                if (!(target[prop] instanceof Array)) {
-	                    errors.push(new Error(`Property "${prop}" has wrong format. Expected an array (repeated).`));
-	                    break;
-	                }
-	                if (typeof desc.value === 'string') {
-	                    json[propNameAlias] = target[prop].map((value: any) => {
-	                        const nestedType = types[desc.value];
-	                        if (!nestedType.validate(value)) {
-	                            errors.push(new Error(`Property "${prop}" has wrong format. Value: ${value}; type: ${typeof value}.`));
-	                            return undefined;
-	                        }
-	                        return nestedType.serialize(value);
-	                    });
-	                } else if (typeof desc.value === 'function') {
-	                    // It's reference to class
-	                    const parsed = target[prop].map((value: any) => {
-	                        const nested = _stringify(value, desc.value);
-	                        if (nested instanceof Array) {
-	                            errors.push(new Error(`Cannot get instance of class "${desc.value.name}" from property "${prop}" due error: \n${nested.map((e: Error) => e.message).join(';\n')}`));
-	                            return null;
-	                        }
-	                        return nested;
-	                    });
-	                    if (errors.length > 0) {
-	                        break;
-	                    }
-	                    json[propNameAlias] = parsed;
-	                } else if (typeof desc.value === 'object') {
-	                    // It's reference to enum
-	                    json[propNameAlias] = target[prop].map((value: any) => {
-	                        if (desc.value[value] === void 0) {
-	                            errors.push(new Error(`Property "${prop}" has wrong value: "${value}". Available values: ${Object.keys(desc.value).join(', ')}.`));
-	                            return undefined;
-	                        }
-	                        return value;
-	                    });
-	                }
-	                break;
-	            case EEntityType.primitive:
-	                const type = types[desc.value];
-	                if (!type.validate(target[prop])) {
-	                    errors.push(new Error(`Property "${prop}" has wrong format.`));
-	                    break;
-	                }
-	                json[propNameAlias] = type.serialize(target[prop]);
-	                break;
-	            case EEntityType.reference:
-	                if (typeof desc.value === 'function') {
-	                    // It's reference to class
-	                    const nested = _stringify(target[prop], desc.value);
-	                    if (nested instanceof Array) {
-	                        errors.push(new Error(`Cannot get instance of class "${desc.value.name}" from property "${prop}" due error: \n${nested.map((e: Error) => e.message).join(';\n')}`));
-	                        break;
-	                    }
-	                    json[propNameAlias] = nested;
-	                } else if (typeof desc.value === 'object') {
-	                    // It's reference to enum
-	                    if (desc.value[target[prop]] === void 0) {
-	                        errors.push(new Error(`Property "${prop}" has wrong value: "${target[prop]}". Available values: ${Object.keys(desc.value).join(', ')}.`));
-	                        break;
-	                    }
-	                    json[propNameAlias] = target[prop];
-	                }
-	                break;
-	        }
-	    });
-	    if (errors.length > 0) {
-	        return errors;
-	    }
-	    return json;
-	}
-	
-	export function _JSONToBinary(target: any, signature: string): Uint8Array | Error {
-	    if (ConvertedTypedEntitiesMap[signature] === void 0) {
-	        return new Error(`Cannot find typed map for "${signature}"`);
-	    }
-	    try {
-	        return Json.Convertor.encode(target, ConvertedTypedEntitiesMap[signature]);
-	    } catch (error) {
-	        return error;
-	    }
-	}
-	
-	export function _JSONFromBinary(data: Uint8Array): {} | Error {
-	    try {
-	        return Json.Convertor.decode(data);
-	    } catch (error) {
-	        return error;
-	    }
-	}
-	
-	export function getTypes(): {[key: string]: any} {
-	    const defTypes = Object.assign({}, PrimitiveTypes);
-	    const adTypes = Object.assign({}, AdvancedTypes);
-	    return Object.assign(defTypes, adTypes);
-	}
-	
-	export function getJSONFromStr(str: string): {} | Error {
-	    try {
-	        return JSON.parse(str);
-	    } catch (error) {
-	        return error;
-	    }
-	}
-	
-	export function getJSONFromIncomeData(income: TIncomeData): {} | Error {
-	    if (typeof income === 'string') {
-	        return getJSONFromStr(income);
-	    } else if (income instanceof Uint8Array) {
-	        return _JSONFromBinary(income);
-	    } else if (income instanceof ArrayBuffer) {
-	        return _JSONFromBinary(new Uint8Array(income));
-	    } else if (income instanceof Array) {
-	        return _JSONFromBinary(new Uint8Array(income));
-	    } else if (typeof income === 'object' && income !== null) {
-	        return income;
-	    } else {
-	        return new Error(`Unsupported format of income data. Type: ${typeof income}`);
-	    }
-	}
-	
-	export function stringify(target: any, classRef: any): TStringifyOutput | Error {
-	    const result = _stringify(target, classRef);
-	    if (result instanceof Array) {
-	        return new Error(`Cannot stringify due errors:\n ${result.map((error: Error) => error.message).join('\n')}`);
-	    }
-	    // Create binary
-	    if (state.isDebugged()) {
-	        return JSON.stringify(result);
-	    }
-	    return _JSONToBinary(result, classRef.getSignature());
-	}
-	
-	export function parse(source: TIncomeData, target?: any): TTypes | Error {
-	    const json: {} | Error = getJSONFromIncomeData(source);
-	    if (json instanceof Error) {
-	        return json;
-	    }
-	    const result = _parse(json, target);
-	    if (result instanceof Array) {
-	        return new Error(`Cannot parse due errors:\n ${result.map((error: Error) => error.message).join('\n')}`);
-	    }
-	    return result;
-	}
-	
-	export function parseFrom(source: TIncomeData, protocols: any | any[]): any {
-	    const json: {} | Error = getJSONFromIncomeData(source);
-	    if (json instanceof Error) {
-	        return json;
-	    }
-	    protocols = protocols instanceof Array ? protocols : [protocols];
-	    let result: any;
-	    protocols.forEach((protocol: any, i: number) => {
-	        if (result !== undefined) {
-	            return;
-	        }
-	        if (protocol === undefined || protocol === null || typeof protocol.parse !== 'function') {
-	            result = new Error(`Incorrect ref to protocol is provided`);
-	        }
-	        result = protocol.parse(json);
-	        if (result instanceof Error && i !== protocols.length - 1) {
-	            result = undefined;
-	        }
-	    });
-	    return result;
-	}
-	
-	export function typeOf(smth: any): string {
-	    switch (typeof smth) {
-	        case 'object':
-	            if (smth === null) {
-	                return 'null';
-	            }
-	            if (smth.constructor !== void 0) {
-	                return smth.constructor.name;
-	            }
-	            return 'object';
-	        default:
-	            return typeof smth;
-	    }
-	}
-	
-	export function validateParams(params: any, classRef: any): Error[] {
-	    const errors: Error[] = [];
-	    const description: {[key: string]: any} = classRef.getDescription();
-	    const types: {[key: string]: any} = getTypes();
-	    const classRefName: string = classRef.name;
-	    if (Object.keys(description).length === 0 && params === undefined) {
-	        return errors;
-	    }
-	    if (typeof params !== 'object' || params === null) {
-	        errors.push(new Error(`Expecting "params" will be an object on "${classRefName}".`));
-	        return errors;
-	    }
-	    Object.keys(description).forEach((prop: string) => {
-	        const desc: any = description[prop];
-	        if (!desc.optional && params[prop] === void 0) {
-	            errors.push(new Error(`Property "${prop}" isn't defined, but it's obligatory property for "${classRefName}".`));
-	            return;
-	        }
-	        if (desc.optional && params[prop] === void 0) {
-	            return;
-	        }
-	        switch (desc.type) {
-	            case EEntityType.repeated:
-	                if (!(params[prop] instanceof Array)) {
-	                    errors.push(new Error(`Property "${prop}" has wrong format. Expected an array (repeated). Reference: "${classRefName}"`));
-	                    break;
-	                }
-	                if (typeof desc.value === 'string') {
-	                    params[prop] = params[prop].map((value: any) => {
-	                        const nestedType = types[desc.value];
-	                        if (typeOf(value) !== nestedType.tsType) {
-	                            errors.push(new Error(`Property "${prop}" has wrong format. Expected an array (repeated) of "${nestedType.tsType}"`));
-	                        }
-	                    });
-	                } else if (typeof desc.value === 'function') {
-	                    // It's reference to class
-	                    params[prop].forEach((instance: any, index: number) => {
-	                        if (!(instance instanceof desc.value)) {
-	                            errors.push(new Error(`Expecting property "${prop}", index "${index}" should be instance of "${desc.value.name}".`));
-	                        }
-	                    });
-	                } else if (typeof desc.value === 'object') {
-	                    // It's reference to enum
-	                    params[prop].forEach((value: any) => {
-	                        if (desc.value[value] === void 0) {
-	                            errors.push(new Error(`Property "${prop}" has wrong value: "${value}". Available values: ${Object.keys(desc.value).join(', ')}.`));
-	                        }
-	                    });
-	                }
-	                break;
-	            case EEntityType.primitive:
-	                const type = types[desc.value];
-	                if (typeOf(params[prop]) !== type.tsType) {
-	                    errors.push(new Error(`Property "${prop}" has wrong format. Expected: "${type.tsType}".`));
-	                }
-	                if (!type.validate(params[prop])) {
-	                    errors.push(new Error(`Property "${prop}" has wrong value; validation was failed with value "${params[prop]}".`));
-	                }
-	                break;
-	            case EEntityType.reference:
-	                if (typeof desc.value === 'function') {
-	                    // It's reference to class
-	                    if (!(params[prop] instanceof desc.value)) {
-	                        errors.push(new Error(`Expecting property "${prop}" will be instance of "${desc.value.name}".`));
-	                    }
-	                } else if (typeof desc.value === 'object') {
-	                    // It's reference to enum
-	                    if (desc.value[params[prop]] === void 0) {
-	                        errors.push(new Error(`Property "${prop}" has wrong value: "${params[prop]}". Available values: ${Object.keys(desc.value).join(', ')}.`));
-	                    }
-	                }
-	                break;
-	        }
-	    });
-	    return errors;
-	}
-	
-	export function convertTypesToStandard(target: {[key: string]: any}): {[key: string]: any} {
-	    function getTypeFromStr(type: string): string | Error {
-	        let result: string | Error;
-	        if (PrimitiveTypes[type] !== void 0) {
-	            result = PrimitiveTypes[type].binaryType;
-	        } else if (AdvancedTypes[type] !== void 0) {
-	            if (typeof AdvancedTypes[type].binaryType === 'string') {
-	                result = AdvancedTypes[type].binaryType;
-	            } else {
-	                result = new Error(`Type "${type}" is defined as advanced type, but property "binaryType" isn't defined.`);
-	            }
-	        } else {
-	            const availableTypes = [...Object.keys(PrimitiveTypes), ...Object.keys(AdvancedTypes)];
-	            result = new Error(`Found unexpected type: "${type}". This type isn't defined in protocol. Available types in this protocol: ${availableTypes.join(', ')}`);
-	        }
-	        if (result instanceof Error) {
-	            return result;
-	        }
-	        if (StandardTypes.indexOf(result) === -1) {
-	            result = new Error(`Type "${result}" isn't standard type. Available standard types: ${StandardTypes.join(', ')}`);
-	        }
-	        return result;
-	    }
-	    const converted: {[key: string]: any} = { __signature: 'asciiString' };
-	    Object.keys(target).forEach((key: string) => {
-	        const value = target[key];
-	        if (typeof value === 'string') {
-	            const type: string | Error = getTypeFromStr(value);
-	            if (type instanceof Error) {
-	                throw type;
-	            }
-	            converted[key] = type;
-	        } else if (value instanceof Array && value.length === 1) {
-	            const type: string | {} | Error = typeof value[0] === 'string' ? getTypeFromStr(value[0]) : convertTypesToStandard(value[0]);
-	            if (type instanceof Error) {
-	                throw type;
-	            }
-	            converted[key] = [type];
-	        } else if (typeof value === 'object' && value !== null) {
-	            converted[key] = convertTypesToStandard(value);
-	        } else {
-	            throw new Error(`Unexpected value of type: ${value}. Check key: ${key}`);
-	        }
-	    });
-	    return converted;
-	}
-	
-	export function isInstanceOf(signature: string, target: any): boolean {
-	    if (typeof target !== 'object' || target === null) {
-	        return false;
-	    }
-	    if (typeof target.getSignature !== 'function') {
-	        return false;
-	    }
-	    return target.getSignature() === signature;
-	}
-	
-	export class Root {
-	
-	}
-	
-	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	* Injection: injection.packager.ts
-	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-	// tslint:disable:no-namespace
-	// tslint:disable:max-classes-per-file
-	// tslint:disable:object-literal-sort-keys
-	
-	// declare var Json: any;
-	
-	export namespace Packager {
-	
-	    export function join(...items: any[]): string | Uint8Array | Error {
-	        if (items instanceof Array && items.length === 1 && items[0] instanceof Array) {
-	            items = items[0];
-	        }
-	        if (!(items instanceof Array) || items.length === 0) {
-	            return new Error(`No arguments provided to join`);
-	        }
-	        const strs: any[] = [];
-	        const bytes: number[] = [];
-	        let isBinary: boolean | undefined;
-	        try {
-	            items.forEach((item: any, i: number) => {
-	                if (item instanceof Uint8Array && (isBinary === undefined || isBinary === true)) {
-	                    isBinary = true;
-	                    if (i === 0) {
-	                        // Set type as array
-	                        bytes.push(Json.Scheme.Types.array);
-	                    }
-	                    // Set length of item
-	                    bytes.push(...Json.Impls.Uint32.toUint8(item.length));
-	                    // Put item
-	                    bytes.push(...item);
-	                } else if (typeof item === 'string' && (isBinary === undefined || isBinary === false)) {
-	                    isBinary = false;
-	                    strs.push(item);
-	                } else {
-	                    throw new Error(`Only strings or Uint8Array can be joined. Each array item should be same type.`);
-	                }
-	            });
-	            if (isBinary) {
-	                return new Uint8Array(bytes);
-	            }
-	        } catch (error) {
-	            return error;
-	        }
-	        return JSON.stringify(strs);
-	    }
-	
-	    export function split(source: string | Uint8Array): string[] | Uint8Array[] | Error {
-	        if (!isPackage(source)) {
-	            return new Error(`Source isn't a package of protocol data.`);
-	        }
-	        if (source instanceof ArrayBuffer) {
-	            source = new Uint8Array(source);
-	        }
-	        if (source instanceof Uint8Array) {
-	            let buffer = source.slice(1, source.length);
-	            const items: Uint8Array[] = [];
-	            do {
-	                const itemLength = Json.Impls.Uint32.fromUint8(buffer.slice(0, 4));
-	                items.push(buffer.slice(4, 4 + itemLength));
-	                buffer = buffer.slice(4 + itemLength, buffer.length);
-	            } while (buffer.length > 0);
-	            return items;
-	        } else {
-	            return JSON.parse(source) as string[];
-	        }
-	    }
-	
-	    export function isPackage(source: any): boolean {
-	        if (source instanceof Uint8Array) {
-	            return source[0] === Json.Scheme.Types.array;
-	        } else if (source instanceof ArrayBuffer) {
-	            const uint8array: Uint8Array = new Uint8Array(source);
-	            return uint8array.length > 0 ? (uint8array[0] === Json.Scheme.Types.array) : false;
-	        } else if (typeof source === 'string') {
-	            try {
-	                return JSON.parse(source) instanceof Array;
-	            } catch (error) {
-	                return false;
-	            }
-	        } else {
-	            return false;
-	        }
-	    }
-	
-	}
-	
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	* Injection: injection.convertor.ts
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -1384,6 +749,641 @@ export namespace Protocol {
 	}
 	
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	* Injection: injection.packager.ts
+	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	// tslint:disable:no-namespace
+	// tslint:disable:max-classes-per-file
+	// tslint:disable:object-literal-sort-keys
+	
+	// declare var Json: any;
+	
+	export namespace Packager {
+	
+	    export function join(...items: any[]): string | Uint8Array | Error {
+	        if (items instanceof Array && items.length === 1 && items[0] instanceof Array) {
+	            items = items[0];
+	        }
+	        if (!(items instanceof Array) || items.length === 0) {
+	            return new Error(`No arguments provided to join`);
+	        }
+	        const strs: any[] = [];
+	        const bytes: number[] = [];
+	        let isBinary: boolean | undefined;
+	        try {
+	            items.forEach((item: any, i: number) => {
+	                if (item instanceof Uint8Array && (isBinary === undefined || isBinary === true)) {
+	                    isBinary = true;
+	                    if (i === 0) {
+	                        // Set type as array
+	                        bytes.push(Json.Scheme.Types.array);
+	                    }
+	                    // Set length of item
+	                    bytes.push(...Json.Impls.Uint32.toUint8(item.length));
+	                    // Put item
+	                    bytes.push(...item);
+	                } else if (typeof item === 'string' && (isBinary === undefined || isBinary === false)) {
+	                    isBinary = false;
+	                    strs.push(item);
+	                } else {
+	                    throw new Error(`Only strings or Uint8Array can be joined. Each array item should be same type.`);
+	                }
+	            });
+	            if (isBinary) {
+	                return new Uint8Array(bytes);
+	            }
+	        } catch (error) {
+	            return error;
+	        }
+	        return JSON.stringify(strs);
+	    }
+	
+	    export function split(source: string | Uint8Array): string[] | Uint8Array[] | Error {
+	        if (!isPackage(source)) {
+	            return new Error(`Source isn't a package of protocol data.`);
+	        }
+	        if (source instanceof ArrayBuffer) {
+	            source = new Uint8Array(source);
+	        }
+	        if (source instanceof Uint8Array) {
+	            let buffer = source.slice(1, source.length);
+	            const items: Uint8Array[] = [];
+	            do {
+	                const itemLength = Json.Impls.Uint32.fromUint8(buffer.slice(0, 4));
+	                items.push(buffer.slice(4, 4 + itemLength));
+	                buffer = buffer.slice(4 + itemLength, buffer.length);
+	            } while (buffer.length > 0);
+	            return items;
+	        } else {
+	            return JSON.parse(source) as string[];
+	        }
+	    }
+	
+	    export function isPackage(source: any): boolean {
+	        if (source instanceof Uint8Array) {
+	            return source[0] === Json.Scheme.Types.array;
+	        } else if (source instanceof ArrayBuffer) {
+	            const uint8array: Uint8Array = new Uint8Array(source);
+	            return uint8array.length > 0 ? (uint8array[0] === Json.Scheme.Types.array) : false;
+	        } else if (typeof source === 'string') {
+	            try {
+	                return JSON.parse(source) instanceof Array;
+	            } catch (error) {
+	                return false;
+	            }
+	        } else {
+	            return false;
+	        }
+	    }
+	
+	}
+	
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	* Injection: injection.root.ts
+	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	// tslint:disable:max-classes-per-file
+	
+	// declare var ReferencesMap: {[key: string]: any};
+	// declare var PrimitiveTypes: {[key: string]: any};
+	// declare var AdvancedTypes: {[key: string]: any};
+	// declare var KeysMapLeft: {[key: string]: any};
+	// declare var KeysMapRight: {[key: string]: any};
+	// declare var TypedEntitiesMap: {[key: string]: any};
+	// declare var ConvertedTypedEntitiesMap: {[key: string]: any};
+	// declare var ConvertedTypedEntitiesMinMap: {[key: string]: any};
+	// declare var Json: any;
+	
+	// declare type TTypes = any;
+	
+	export type TIncomeData = string | object | ArrayBuffer | number[] | Uint8Array;
+	
+	export type TStringifyOutput = string | Uint8Array;
+	
+	export class ProtocolState {
+	
+	    private _debug: boolean = false;
+	
+	    public debug(value: boolean) {
+	        this._debug = value;
+	    }
+	
+	    public isDebugged(): boolean {
+	        return this._debug;
+	    }
+	
+	}
+	
+	export const state: ProtocolState = new ProtocolState();
+	
+	export enum EEntityType {
+	    root = 'root',
+	    class = 'class',
+	    namespace = 'namespace',
+	    complex = 'complex',
+	    primitive = 'primitive',
+	    repeated = 'repeated',
+	    reference = 'reference',
+	    enum = 'enum',
+	}
+	
+	export interface IProperty {
+	    name: string;
+	    type: EEntityType;
+	    optional: boolean;
+	    value: any;
+	}
+	
+	export const StandardTypes: string[] = [
+	    'int8', 'int16', 'int32',
+	    'uint8', 'uint16', 'uint32',
+	    'float32', 'float64', 'boolean',
+	    'asciiString', 'utf8String',
+	];
+	
+	export function _getPropNameAlias(propName: string, signature: string): string | Error {
+	    if (state.isDebugged() || propName === '__signature') {
+	        return propName;
+	    }
+	    if (KeysMapLeft[signature] === void 0) {
+	        return new Error(`Fail to find keys map for ${signature}`);
+	    }
+	    if (KeysMapLeft[signature][propName] === void 0) {
+	        return new Error(`Fail to find keys map for ${signature}; property "${propName}".`);
+	    }
+	    return KeysMapLeft[signature][propName];
+	}
+	
+	export function _getPropName(alias: string, signature: string): string | Error {
+	    if (state.isDebugged() || alias === '__signature') {
+	        return alias;
+	    }
+	    if (KeysMapRight[signature] === void 0) {
+	        return new Error(`Fail to find keys map for ${signature}`);
+	    }
+	    if (KeysMapRight[signature][alias] === void 0) {
+	        return new Error(`Fail to find keys map for ${signature}; property alias "${alias}".`);
+	    }
+	    return KeysMapRight[signature][alias];
+	}
+	
+	export function _parse(source: TIncomeData, target?: any): TTypes | Error[] {
+	    const types: {[key: string]: any} = getTypes();
+	    const json: any = getJSONFromIncomeData(source);
+	    if (json instanceof Error) {
+	        return [json];
+	    }
+	    if (typeof json.__signature !== 'string' || json.__signature.trim() === '') {
+	        return [new Error(`Cannot find signature of entity.`)];
+	    }
+	    if (ReferencesMap[json.__signature] === void 0) {
+	        return [new Error(`Entity with signature "${json.__signature}" doesn't exist in this protocol implementation. Check protocol name or protocol version.`)];
+	    }
+	    const classRef: any = ReferencesMap[json.__signature];
+	    if (target !== undefined) {
+	        if (classRef.getSignature() !== target.getSignature()) {
+	            return [new Error(`Target reference doesn't match with entity in json.`)];
+	        }
+	    }
+	    // Get description of entity
+	    const description: {[key: string]: IProperty} = classRef.getDescription();
+	    // Parsing properties
+	    const errors: Error[] = [];
+	    Object.keys(json).forEach((alias: string) => {
+	        const prop: string | Error = _getPropName(alias, json.__signature);
+	        if (prop instanceof Error) {
+	            errors.push(new Error(`Cannot get property name by alias "${alias}" due error: ${prop.message}.`));
+	            return;
+	        }
+	        if (prop === alias) {
+	            return;
+	        }
+	        json[prop] = json[alias];
+	        delete json[alias];
+	    });
+	    if (errors.length > 0) {
+	        return errors;
+	    }
+	    Object.keys(description).forEach((prop: string) => {
+	        const desc = description[prop];
+	        if (desc.optional && json[prop] === void 0) {
+	            return;
+	        }
+	        switch (desc.type) {
+	            case EEntityType.repeated:
+	                if (!(json[prop] instanceof Array)) {
+	                    errors.push(new Error(`Property "${prop}" has wrong format. Expected an array (repeated).`));
+	                    break;
+	                }
+	                if (typeof desc.value === 'string') {
+	                    json[prop] = json[prop].map((value: any) => {
+	                        const nestedType = types[desc.value];
+	                        if (!nestedType.validate(value)) {
+	                            errors.push(new Error(`Property "${prop}" has wrong format.`));
+	                            return undefined;
+	                        }
+	                        return nestedType.parse(value);
+	                    });
+	                } else if (typeof desc.value === 'function') {
+	                    // It's reference to class
+	                    const parsed = json[prop].map((value: any) => {
+	                        const nested = _parse(value, desc.value);
+	                        if (nested instanceof Array) {
+	                            errors.push(new Error(`Cannot get instance of class "${desc.value.name}" from property "${prop}" due error: \n${nested.map((e: Error) => e.message).join(';\n')}`));
+	                            return null;
+	                        }
+	                        return nested;
+	                    });
+	                    if (errors.length > 0) {
+	                        break;
+	                    }
+	                    json[prop] = parsed;
+	                } else if (typeof desc.value === 'object') {
+	                    // It's reference to enum
+	                    json[prop].forEach((value: any) => {
+	                        if (desc.value[value] === void 0) {
+	                            errors.push(new Error(`Property "${prop}" has wrong value: "${value}". Available values: ${Object.keys(desc.value).join(', ')}.`));
+	                        }
+	                    });
+	                }
+	                break;
+	            case EEntityType.primitive:
+	                const type = types[desc.value];
+	                if (!type.validate(json[prop])) {
+	                    errors.push(new Error(`Property "${prop}" has wrong format.`));
+	                }
+	                json[prop] = type.parse(json[prop]);
+	                break;
+	            case EEntityType.reference:
+	                if (typeof desc.value === 'function') {
+	                    // It's reference to class
+	                    const nested = _parse(json[prop], desc.value);
+	                    if (nested instanceof Array) {
+	                        errors.push(new Error(`Cannot get instance of class "${desc.value.name}" from property "${prop}" due error: \n${nested.map((e: Error) => e.message).join(';\n')}`));
+	                    } else {
+	                        json[prop] = nested;
+	                    }
+	                } else if (typeof desc.value === 'object') {
+	                    // It's reference to enum
+	                    if (desc.value[json[prop]] === void 0) {
+	                        errors.push(new Error(`Property "${prop}" has wrong value: "${json[prop]}". Available values: ${Object.keys(desc.value).join(', ')}.`));
+	                    }
+	                }
+	                break;
+	        }
+	    });
+	    if (errors.length > 0) {
+	        return errors;
+	    }
+	    // Create instance
+	    try {
+	        return new classRef(json);
+	    } catch (error) {
+	        return [error];
+	    }
+	}
+	
+	export function _stringify(target: any, classRef: any): { [key: string]: any } | Error[] {
+	    if (!(target instanceof classRef)) {
+	        return [new Error(`Defined wrong reference to class.`)];
+	    }
+	    const types: {[key: string]: any} = getTypes();
+	    const description: {[key: string]: IProperty} = classRef.getDescription();
+	    const errors: Error[] = [];
+	    const json: any = {
+	        __signature: target.getSignature(),
+	    };
+	    Object.keys(description).forEach((prop: string) => {
+	        const propNameAlias: string | Error = _getPropNameAlias(prop, target.getSignature());
+	        if (propNameAlias instanceof Error) {
+	            errors.push(new Error(`Cannot get property alias for property "${prop}" due error: ${propNameAlias.message}.`));
+	            return;
+	        }
+	        const desc = description[prop];
+	        if (desc.optional && target[prop] === void 0) {
+	            return;
+	        }
+	        switch (desc.type) {
+	            case EEntityType.repeated:
+	                if (!(target[prop] instanceof Array)) {
+	                    errors.push(new Error(`Property "${prop}" has wrong format. Expected an array (repeated).`));
+	                    break;
+	                }
+	                if (typeof desc.value === 'string') {
+	                    json[propNameAlias] = target[prop].map((value: any) => {
+	                        const nestedType = types[desc.value];
+	                        if (!nestedType.validate(value)) {
+	                            errors.push(new Error(`Property "${prop}" has wrong format. Value: ${value}; type: ${typeof value}.`));
+	                            return undefined;
+	                        }
+	                        return nestedType.serialize(value);
+	                    });
+	                } else if (typeof desc.value === 'function') {
+	                    // It's reference to class
+	                    const parsed = target[prop].map((value: any) => {
+	                        const nested = _stringify(value, desc.value);
+	                        if (nested instanceof Array) {
+	                            errors.push(new Error(`Cannot get instance of class "${desc.value.name}" from property "${prop}" due error: \n${nested.map((e: Error) => e.message).join(';\n')}`));
+	                            return null;
+	                        }
+	                        return nested;
+	                    });
+	                    if (errors.length > 0) {
+	                        break;
+	                    }
+	                    json[propNameAlias] = parsed;
+	                } else if (typeof desc.value === 'object') {
+	                    // It's reference to enum
+	                    json[propNameAlias] = target[prop].map((value: any) => {
+	                        if (desc.value[value] === void 0) {
+	                            errors.push(new Error(`Property "${prop}" has wrong value: "${value}". Available values: ${Object.keys(desc.value).join(', ')}.`));
+	                            return undefined;
+	                        }
+	                        return value;
+	                    });
+	                }
+	                break;
+	            case EEntityType.primitive:
+	                const type = types[desc.value];
+	                if (!type.validate(target[prop])) {
+	                    errors.push(new Error(`Property "${prop}" has wrong format.`));
+	                    break;
+	                }
+	                json[propNameAlias] = type.serialize(target[prop]);
+	                break;
+	            case EEntityType.reference:
+	                if (typeof desc.value === 'function') {
+	                    // It's reference to class
+	                    const nested = _stringify(target[prop], desc.value);
+	                    if (nested instanceof Array) {
+	                        errors.push(new Error(`Cannot get instance of class "${desc.value.name}" from property "${prop}" due error: \n${nested.map((e: Error) => e.message).join(';\n')}`));
+	                        break;
+	                    }
+	                    json[propNameAlias] = nested;
+	                } else if (typeof desc.value === 'object') {
+	                    // It's reference to enum
+	                    if (desc.value[target[prop]] === void 0) {
+	                        errors.push(new Error(`Property "${prop}" has wrong value: "${target[prop]}". Available values: ${Object.keys(desc.value).join(', ')}.`));
+	                        break;
+	                    }
+	                    json[propNameAlias] = target[prop];
+	                }
+	                break;
+	        }
+	    });
+	    if (errors.length > 0) {
+	        return errors;
+	    }
+	    return json;
+	}
+	
+	export function _JSONToBinary(target: any, signature: string): Uint8Array | Error {
+	    if (ConvertedTypedEntitiesMap[signature] === void 0) {
+	        return new Error(`Cannot find typed map for "${signature}"`);
+	    }
+	    try {
+	        return Json.Convertor.encode(target, ConvertedTypedEntitiesMap[signature]);
+	    } catch (error) {
+	        return error;
+	    }
+	}
+	
+	export function _JSONFromBinary(data: Uint8Array): {} | Error {
+	    try {
+	        return Json.Convertor.decode(data);
+	    } catch (error) {
+	        return error;
+	    }
+	}
+	
+	export function getTypes(): {[key: string]: any} {
+	    const defTypes = Object.assign({}, PrimitiveTypes);
+	    const adTypes = Object.assign({}, AdvancedTypes);
+	    return Object.assign(defTypes, adTypes);
+	}
+	
+	export function getJSONFromStr(str: string): {} | Error {
+	    try {
+	        return JSON.parse(str);
+	    } catch (error) {
+	        return error;
+	    }
+	}
+	
+	export function getJSONFromIncomeData(income: TIncomeData): {} | Error {
+	    if (typeof income === 'string') {
+	        return getJSONFromStr(income);
+	    } else if (income instanceof Uint8Array) {
+	        return _JSONFromBinary(income);
+	    } else if (income instanceof ArrayBuffer) {
+	        return _JSONFromBinary(new Uint8Array(income));
+	    } else if (income instanceof Array) {
+	        return _JSONFromBinary(new Uint8Array(income));
+	    } else if (typeof income === 'object' && income !== null) {
+	        return income;
+	    } else {
+	        return new Error(`Unsupported format of income data. Type: ${typeof income}`);
+	    }
+	}
+	
+	export function stringify(target: any, classRef: any): TStringifyOutput | Error {
+	    const result = _stringify(target, classRef);
+	    if (result instanceof Array) {
+	        return new Error(`Cannot stringify due errors:\n ${result.map((error: Error) => error.message).join('\n')}`);
+	    }
+	    // Create binary
+	    if (state.isDebugged()) {
+	        return JSON.stringify(result);
+	    }
+	    return _JSONToBinary(result, classRef.getSignature());
+	}
+	
+	export function parse(source: TIncomeData, target?: any): TTypes | Error {
+	    const json: {} | Error = getJSONFromIncomeData(source);
+	    if (json instanceof Error) {
+	        return json;
+	    }
+	    const result = _parse(json, target);
+	    if (result instanceof Array) {
+	        return new Error(`Cannot parse due errors:\n ${result.map((error: Error) => error.message).join('\n')}`);
+	    }
+	    return result;
+	}
+	
+	export function parseFrom(source: TIncomeData, protocols: any | any[]): any {
+	    const json: {} | Error = getJSONFromIncomeData(source);
+	    if (json instanceof Error) {
+	        return json;
+	    }
+	    protocols = protocols instanceof Array ? protocols : [protocols];
+	    let result: any;
+	    protocols.forEach((protocol: any, i: number) => {
+	        if (result !== undefined) {
+	            return;
+	        }
+	        if (protocol === undefined || protocol === null || typeof protocol.parse !== 'function') {
+	            result = new Error(`Incorrect ref to protocol is provided`);
+	        }
+	        result = protocol.parse(json);
+	        if (result instanceof Error && i !== protocols.length - 1) {
+	            result = undefined;
+	        }
+	    });
+	    return result;
+	}
+	
+	export function typeOf(smth: any): string {
+	    switch (typeof smth) {
+	        case 'object':
+	            if (smth === null) {
+	                return 'null';
+	            }
+	            if (smth.constructor !== void 0) {
+	                return smth.constructor.name;
+	            }
+	            return 'object';
+	        default:
+	            return typeof smth;
+	    }
+	}
+	
+	export function validateParams(params: any, classRef: any): Error[] {
+	    const errors: Error[] = [];
+	    const description: {[key: string]: any} = classRef.getDescription();
+	    const types: {[key: string]: any} = getTypes();
+	    const classRefName: string = classRef.name;
+	    if (Object.keys(description).length === 0 && params === undefined) {
+	        return errors;
+	    }
+	    if (typeof params !== 'object' || params === null) {
+	        errors.push(new Error(`Expecting "params" will be an object on "${classRefName}".`));
+	        return errors;
+	    }
+	    Object.keys(description).forEach((prop: string) => {
+	        const desc: any = description[prop];
+	        if (!desc.optional && params[prop] === void 0) {
+	            errors.push(new Error(`Property "${prop}" isn't defined, but it's obligatory property for "${classRefName}".`));
+	            return;
+	        }
+	        if (desc.optional && params[prop] === void 0) {
+	            return;
+	        }
+	        switch (desc.type) {
+	            case EEntityType.repeated:
+	                if (!(params[prop] instanceof Array)) {
+	                    errors.push(new Error(`Property "${prop}" has wrong format. Expected an array (repeated). Reference: "${classRefName}"`));
+	                    break;
+	                }
+	                if (typeof desc.value === 'string') {
+	                    params[prop] = params[prop].map((value: any) => {
+	                        const nestedType = types[desc.value];
+	                        if (typeOf(value) !== nestedType.tsType) {
+	                            errors.push(new Error(`Property "${prop}" has wrong format. Expected an array (repeated) of "${nestedType.tsType}"`));
+	                        }
+	                    });
+	                } else if (typeof desc.value === 'function') {
+	                    // It's reference to class
+	                    params[prop].forEach((instance: any, index: number) => {
+	                        if (!(instance instanceof desc.value)) {
+	                            errors.push(new Error(`Expecting property "${prop}", index "${index}" should be instance of "${desc.value.name}".`));
+	                        }
+	                    });
+	                } else if (typeof desc.value === 'object') {
+	                    // It's reference to enum
+	                    params[prop].forEach((value: any) => {
+	                        if (desc.value[value] === void 0) {
+	                            errors.push(new Error(`Property "${prop}" has wrong value: "${value}". Available values: ${Object.keys(desc.value).join(', ')}.`));
+	                        }
+	                    });
+	                }
+	                break;
+	            case EEntityType.primitive:
+	                const type = types[desc.value];
+	                if (typeOf(params[prop]) !== type.tsType) {
+	                    errors.push(new Error(`Property "${prop}" has wrong format. Expected: "${type.tsType}".`));
+	                }
+	                if (!type.validate(params[prop])) {
+	                    errors.push(new Error(`Property "${prop}" has wrong value; validation was failed with value "${params[prop]}".`));
+	                }
+	                break;
+	            case EEntityType.reference:
+	                if (typeof desc.value === 'function') {
+	                    // It's reference to class
+	                    if (!(params[prop] instanceof desc.value)) {
+	                        errors.push(new Error(`Expecting property "${prop}" will be instance of "${desc.value.name}".`));
+	                    }
+	                } else if (typeof desc.value === 'object') {
+	                    // It's reference to enum
+	                    if (desc.value[params[prop]] === void 0) {
+	                        errors.push(new Error(`Property "${prop}" has wrong value: "${params[prop]}". Available values: ${Object.keys(desc.value).join(', ')}.`));
+	                    }
+	                }
+	                break;
+	        }
+	    });
+	    return errors;
+	}
+	
+	export function convertTypesToStandard(target: {[key: string]: any}): {[key: string]: any} {
+	    function getTypeFromStr(type: string): string | Error {
+	        let result: string | Error;
+	        if (PrimitiveTypes[type] !== void 0) {
+	            result = PrimitiveTypes[type].binaryType;
+	        } else if (AdvancedTypes[type] !== void 0) {
+	            if (typeof AdvancedTypes[type].binaryType === 'string') {
+	                result = AdvancedTypes[type].binaryType;
+	            } else {
+	                result = new Error(`Type "${type}" is defined as advanced type, but property "binaryType" isn't defined.`);
+	            }
+	        } else {
+	            const availableTypes = [...Object.keys(PrimitiveTypes), ...Object.keys(AdvancedTypes)];
+	            result = new Error(`Found unexpected type: "${type}". This type isn't defined in protocol. Available types in this protocol: ${availableTypes.join(', ')}`);
+	        }
+	        if (result instanceof Error) {
+	            return result;
+	        }
+	        if (StandardTypes.indexOf(result) === -1) {
+	            result = new Error(`Type "${result}" isn't standard type. Available standard types: ${StandardTypes.join(', ')}`);
+	        }
+	        return result;
+	    }
+	    const converted: {[key: string]: any} = { __signature: 'asciiString' };
+	    Object.keys(target).forEach((key: string) => {
+	        const value = target[key];
+	        if (typeof value === 'string') {
+	            const type: string | Error = getTypeFromStr(value);
+	            if (type instanceof Error) {
+	                throw type;
+	            }
+	            converted[key] = type;
+	        } else if (value instanceof Array && value.length === 1) {
+	            const type: string | {} | Error = typeof value[0] === 'string' ? getTypeFromStr(value[0]) : convertTypesToStandard(value[0]);
+	            if (type instanceof Error) {
+	                throw type;
+	            }
+	            converted[key] = [type];
+	        } else if (typeof value === 'object' && value !== null) {
+	            converted[key] = convertTypesToStandard(value);
+	        } else {
+	            throw new Error(`Unexpected value of type: ${value}. Check key: ${key}`);
+	        }
+	    });
+	    return converted;
+	}
+	
+	export function isInstanceOf(signature: string, target: any): boolean {
+	    if (typeof target !== 'object' || target === null) {
+	        return false;
+	    }
+	    if (typeof target.getSignature !== 'function') {
+	        return false;
+	    }
+	    return target.getSignature() === signature;
+	}
+	
+	export class Root {
+	
+	}
+	
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	* Injection: injection.types.primitive.ts
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 	
@@ -1778,22 +1778,14 @@ export class Events extends Protocol.Root {
 		}
 	}
 	public static __signature: string = "D7E6E2";
-	public static getSignature(): string {
-		return Events.__signature;
-	}
+	public static getSignature(): string { return Events.__signature; }
+	public static getProtocol(): any { return Protocol; }
 	public __signature: string = Events.__signature;
-	public getSignature(): string {
-		return this.__signature;
-	}
-	public static parse(str: string | object): Protocol.TTypes | Error {
-		return Protocol.parse(str, Events);
-	}
-	public stringify(): Protocol.TStringifyOutput | Error {
-		return Protocol.stringify(this, Events);
-	}
-	public static instanceOf(target: any): boolean {
-		return Protocol.isInstanceOf(Events.__signature, target);
-	}
+	public getSignature(): string { return this.__signature; }
+	public getProtocol(): any { return Protocol; }
+	public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, Events); }
+	public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, Events); }
+	public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(Events.__signature, target); }
 	public guid?: string = guid();
 
 	constructor(args: { guid?: string }) {
@@ -1816,22 +1808,14 @@ export namespace Events {
 			}
 		}
 		public static __signature: string = "18DF1862";
-		public static getSignature(): string {
-			return Ping.__signature;
-		}
+		public static getSignature(): string { return Ping.__signature; }
+		public static getProtocol(): any { return Protocol; }
 		public __signature: string = Ping.__signature;
-		public getSignature(): string {
-			return this.__signature;
-		}
-		public static parse(str: string | object): Protocol.TTypes | Error {
-			return Protocol.parse(str, Ping);
-		}
-		public stringify(): Protocol.TStringifyOutput | Error {
-			return Protocol.stringify(this, Ping);
-		}
-		public static instanceOf(target: any): boolean {
-			return Protocol.isInstanceOf(Ping.__signature, target);
-		}
+		public getSignature(): string { return this.__signature; }
+		public getProtocol(): any { return Protocol; }
+		public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, Ping); }
+		public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, Ping); }
+		public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(Ping.__signature, target); }
 		public timestamp: Date = new Date();
 		public message?: string = "";
 
@@ -1855,22 +1839,14 @@ export namespace Events {
 			}
 		}
 		public static __signature: string = "1A957D8E";
-		public static getSignature(): string {
-			return TargetedPing.__signature;
-		}
+		public static getSignature(): string { return TargetedPing.__signature; }
+		public static getProtocol(): any { return Protocol; }
 		public __signature: string = TargetedPing.__signature;
-		public getSignature(): string {
-			return this.__signature;
-		}
-		public static parse(str: string | object): Protocol.TTypes | Error {
-			return Protocol.parse(str, TargetedPing);
-		}
-		public stringify(): Protocol.TStringifyOutput | Error {
-			return Protocol.stringify(this, TargetedPing);
-		}
-		public static instanceOf(target: any): boolean {
-			return Protocol.isInstanceOf(TargetedPing.__signature, target);
-		}
+		public getSignature(): string { return this.__signature; }
+		public getProtocol(): any { return Protocol; }
+		public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, TargetedPing); }
+		public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, TargetedPing); }
+		public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(TargetedPing.__signature, target); }
 		public timestamp: Date = new Date();
 		public message?: string = "";
 
@@ -1894,22 +1870,14 @@ export namespace Events {
 			}
 		}
 		public static __signature: string = "3734F568";
-		public static getSignature(): string {
-			return EventToServer.__signature;
-		}
+		public static getSignature(): string { return EventToServer.__signature; }
+		public static getProtocol(): any { return Protocol; }
 		public __signature: string = EventToServer.__signature;
-		public getSignature(): string {
-			return this.__signature;
-		}
-		public static parse(str: string | object): Protocol.TTypes | Error {
-			return Protocol.parse(str, EventToServer);
-		}
-		public stringify(): Protocol.TStringifyOutput | Error {
-			return Protocol.stringify(this, EventToServer);
-		}
-		public static instanceOf(target: any): boolean {
-			return Protocol.isInstanceOf(EventToServer.__signature, target);
-		}
+		public getSignature(): string { return this.__signature; }
+		public getProtocol(): any { return Protocol; }
+		public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, EventToServer); }
+		public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, EventToServer); }
+		public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(EventToServer.__signature, target); }
 		public timestamp: Date = new Date();
 		public message?: string = "";
 
@@ -1933,22 +1901,14 @@ export namespace Events {
 			}
 		}
 		public static __signature: string = "6C9954D7";
-		public static getSignature(): string {
-			return EventFromServer.__signature;
-		}
+		public static getSignature(): string { return EventFromServer.__signature; }
+		public static getProtocol(): any { return Protocol; }
 		public __signature: string = EventFromServer.__signature;
-		public getSignature(): string {
-			return this.__signature;
-		}
-		public static parse(str: string | object): Protocol.TTypes | Error {
-			return Protocol.parse(str, EventFromServer);
-		}
-		public stringify(): Protocol.TStringifyOutput | Error {
-			return Protocol.stringify(this, EventFromServer);
-		}
-		public static instanceOf(target: any): boolean {
-			return Protocol.isInstanceOf(EventFromServer.__signature, target);
-		}
+		public getSignature(): string { return this.__signature; }
+		public getProtocol(): any { return Protocol; }
+		public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, EventFromServer); }
+		public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, EventFromServer); }
+		public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(EventFromServer.__signature, target); }
 		public timestamp: Date = new Date();
 		public message?: string = "";
 
@@ -1970,22 +1930,14 @@ export class Requests extends Protocol.Root {
 		}
 	}
 	public static __signature: string = "527E5577";
-	public static getSignature(): string {
-		return Requests.__signature;
-	}
+	public static getSignature(): string { return Requests.__signature; }
+	public static getProtocol(): any { return Protocol; }
 	public __signature: string = Requests.__signature;
-	public getSignature(): string {
-		return this.__signature;
-	}
-	public static parse(str: string | object): Protocol.TTypes | Error {
-		return Protocol.parse(str, Requests);
-	}
-	public stringify(): Protocol.TStringifyOutput | Error {
-		return Protocol.stringify(this, Requests);
-	}
-	public static instanceOf(target: any): boolean {
-		return Protocol.isInstanceOf(Requests.__signature, target);
-	}
+	public getSignature(): string { return this.__signature; }
+	public getProtocol(): any { return Protocol; }
+	public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, Requests); }
+	public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, Requests); }
+	public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(Requests.__signature, target); }
 
 	constructor() {
 		super();
@@ -1999,22 +1951,14 @@ export namespace Requests {
 			}
 		}
 		public static __signature: string = "156E2FE5";
-		public static getSignature(): string {
-			return IsOnlineServer.__signature;
-		}
+		public static getSignature(): string { return IsOnlineServer.__signature; }
+		public static getProtocol(): any { return Protocol; }
 		public __signature: string = IsOnlineServer.__signature;
-		public getSignature(): string {
-			return this.__signature;
-		}
-		public static parse(str: string | object): Protocol.TTypes | Error {
-			return Protocol.parse(str, IsOnlineServer);
-		}
-		public stringify(): Protocol.TStringifyOutput | Error {
-			return Protocol.stringify(this, IsOnlineServer);
-		}
-		public static instanceOf(target: any): boolean {
-			return Protocol.isInstanceOf(IsOnlineServer.__signature, target);
-		}
+		public getSignature(): string { return this.__signature; }
+		public getProtocol(): any { return Protocol; }
+		public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, IsOnlineServer); }
+		public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, IsOnlineServer); }
+		public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(IsOnlineServer.__signature, target); }
 
 		constructor() {
 			super();
@@ -2029,22 +1973,14 @@ export namespace Requests {
 				}
 			}
 			public static __signature: string = "48041566";
-			public static getSignature(): string {
-				return Request.__signature;
-			}
+			public static getSignature(): string { return Request.__signature; }
+			public static getProtocol(): any { return Protocol; }
 			public __signature: string = Request.__signature;
-			public getSignature(): string {
-				return this.__signature;
-			}
-			public static parse(str: string | object): Protocol.TTypes | Error {
-				return Protocol.parse(str, Request);
-			}
-			public stringify(): Protocol.TStringifyOutput | Error {
-				return Protocol.stringify(this, Request);
-			}
-			public static instanceOf(target: any): boolean {
-				return Protocol.isInstanceOf(Request.__signature, target);
-			}
+			public getSignature(): string { return this.__signature; }
+			public getProtocol(): any { return Protocol; }
+			public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, Request); }
+			public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, Request); }
+			public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(Request.__signature, target); }
 			public sent: Date = new Date();
 
 			constructor(args: { sent: Date }) {
@@ -2065,22 +2001,14 @@ export namespace Requests {
 				}
 			}
 			public static __signature: string = "4459B3B6";
-			public static getSignature(): string {
-				return Response.__signature;
-			}
+			public static getSignature(): string { return Response.__signature; }
+			public static getProtocol(): any { return Protocol; }
 			public __signature: string = Response.__signature;
-			public getSignature(): string {
-				return this.__signature;
-			}
-			public static parse(str: string | object): Protocol.TTypes | Error {
-				return Protocol.parse(str, Response);
-			}
-			public stringify(): Protocol.TStringifyOutput | Error {
-				return Protocol.stringify(this, Response);
-			}
-			public static instanceOf(target: any): boolean {
-				return Protocol.isInstanceOf(Response.__signature, target);
-			}
+			public getSignature(): string { return this.__signature; }
+			public getProtocol(): any { return Protocol; }
+			public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, Response); }
+			public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, Response); }
+			public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(Response.__signature, target); }
 			public since: Date = new Date();
 			public message?: string = "";
 
@@ -2103,22 +2031,14 @@ export namespace Requests {
 			}
 		}
 		public static __signature: string = "5810B93";
-		public static getSignature(): string {
-			return IsOnlineClient.__signature;
-		}
+		public static getSignature(): string { return IsOnlineClient.__signature; }
+		public static getProtocol(): any { return Protocol; }
 		public __signature: string = IsOnlineClient.__signature;
-		public getSignature(): string {
-			return this.__signature;
-		}
-		public static parse(str: string | object): Protocol.TTypes | Error {
-			return Protocol.parse(str, IsOnlineClient);
-		}
-		public stringify(): Protocol.TStringifyOutput | Error {
-			return Protocol.stringify(this, IsOnlineClient);
-		}
-		public static instanceOf(target: any): boolean {
-			return Protocol.isInstanceOf(IsOnlineClient.__signature, target);
-		}
+		public getSignature(): string { return this.__signature; }
+		public getProtocol(): any { return Protocol; }
+		public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, IsOnlineClient); }
+		public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, IsOnlineClient); }
+		public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(IsOnlineClient.__signature, target); }
 
 		constructor() {
 			super();
@@ -2133,22 +2053,14 @@ export namespace Requests {
 				}
 			}
 			public static __signature: string = "466BD1EE";
-			public static getSignature(): string {
-				return Request.__signature;
-			}
+			public static getSignature(): string { return Request.__signature; }
+			public static getProtocol(): any { return Protocol; }
 			public __signature: string = Request.__signature;
-			public getSignature(): string {
-				return this.__signature;
-			}
-			public static parse(str: string | object): Protocol.TTypes | Error {
-				return Protocol.parse(str, Request);
-			}
-			public stringify(): Protocol.TStringifyOutput | Error {
-				return Protocol.stringify(this, Request);
-			}
-			public static instanceOf(target: any): boolean {
-				return Protocol.isInstanceOf(Request.__signature, target);
-			}
+			public getSignature(): string { return this.__signature; }
+			public getProtocol(): any { return Protocol; }
+			public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, Request); }
+			public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, Request); }
+			public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(Request.__signature, target); }
 			public sent: Date = new Date();
 
 			constructor(args: { sent: Date }) {
@@ -2169,22 +2081,14 @@ export namespace Requests {
 				}
 			}
 			public static __signature: string = "75C9DF3E";
-			public static getSignature(): string {
-				return Response.__signature;
-			}
+			public static getSignature(): string { return Response.__signature; }
+			public static getProtocol(): any { return Protocol; }
 			public __signature: string = Response.__signature;
-			public getSignature(): string {
-				return this.__signature;
-			}
-			public static parse(str: string | object): Protocol.TTypes | Error {
-				return Protocol.parse(str, Response);
-			}
-			public stringify(): Protocol.TStringifyOutput | Error {
-				return Protocol.stringify(this, Response);
-			}
-			public static instanceOf(target: any): boolean {
-				return Protocol.isInstanceOf(Response.__signature, target);
-			}
+			public getSignature(): string { return this.__signature; }
+			public getProtocol(): any { return Protocol; }
+			public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, Response); }
+			public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, Response); }
+			public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(Response.__signature, target); }
 			public since: Date = new Date();
 			public message?: string = "";
 

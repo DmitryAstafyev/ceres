@@ -1,6 +1,6 @@
 /* tslint:disable */
 /*
-* This file generated automaticaly (Sat Feb 23 2019 19:24:19 GMT+0100 (CET))
+* This file generated automaticaly (Tue Feb 26 2019 17:29:12 GMT+0100 (CET))
 * Do not remove or change this code.
 * Protocol version: 0.0.1
 */
@@ -852,6 +852,95 @@ export namespace Protocol {
 	}
 	
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	* Injection: injection.packager.ts
+	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+	// tslint:disable:no-namespace
+	// tslint:disable:max-classes-per-file
+	// tslint:disable:object-literal-sort-keys
+	
+	// declare var Json: any;
+	
+	export namespace Packager {
+	
+	    export function join(...items: any[]): string | Uint8Array | Error {
+	        if (items instanceof Array && items.length === 1 && items[0] instanceof Array) {
+	            items = items[0];
+	        }
+	        if (!(items instanceof Array) || items.length === 0) {
+	            return new Error(`No arguments provided to join`);
+	        }
+	        const strs: any[] = [];
+	        const bytes: number[] = [];
+	        let isBinary: boolean | undefined;
+	        try {
+	            items.forEach((item: any, i: number) => {
+	                if (item instanceof Uint8Array && (isBinary === undefined || isBinary === true)) {
+	                    isBinary = true;
+	                    if (i === 0) {
+	                        // Set type as array
+	                        bytes.push(Json.Scheme.Types.array);
+	                    }
+	                    // Set length of item
+	                    bytes.push(...Json.Impls.Uint32.toUint8(item.length));
+	                    // Put item
+	                    bytes.push(...item);
+	                } else if (typeof item === 'string' && (isBinary === undefined || isBinary === false)) {
+	                    isBinary = false;
+	                    strs.push(item);
+	                } else {
+	                    throw new Error(`Only strings or Uint8Array can be joined. Each array item should be same type.`);
+	                }
+	            });
+	            if (isBinary) {
+	                return new Uint8Array(bytes);
+	            }
+	        } catch (error) {
+	            return error;
+	        }
+	        return JSON.stringify(strs);
+	    }
+	
+	    export function split(source: string | Uint8Array): string[] | Uint8Array[] | Error {
+	        if (!isPackage(source)) {
+	            return new Error(`Source isn't a package of protocol data.`);
+	        }
+	        if (source instanceof ArrayBuffer) {
+	            source = new Uint8Array(source);
+	        }
+	        if (source instanceof Uint8Array) {
+	            let buffer = source.slice(1, source.length);
+	            const items: Uint8Array[] = [];
+	            do {
+	                const itemLength = Json.Impls.Uint32.fromUint8(buffer.slice(0, 4));
+	                items.push(buffer.slice(4, 4 + itemLength));
+	                buffer = buffer.slice(4 + itemLength, buffer.length);
+	            } while (buffer.length > 0);
+	            return items;
+	        } else {
+	            return JSON.parse(source) as string[];
+	        }
+	    }
+	
+	    export function isPackage(source: any): boolean {
+	        if (source instanceof Uint8Array) {
+	            return source[0] === Json.Scheme.Types.array;
+	        } else if (source instanceof ArrayBuffer) {
+	            const uint8array: Uint8Array = new Uint8Array(source);
+	            return uint8array.length > 0 ? (uint8array[0] === Json.Scheme.Types.array) : false;
+	        } else if (typeof source === 'string') {
+	            try {
+	                return JSON.parse(source) instanceof Array;
+	            } catch (error) {
+	                return false;
+	            }
+	        } else {
+	            return false;
+	        }
+	    }
+	
+	}
+	
+	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	* Injection: injection.types.primitive.ts
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 	
@@ -1189,95 +1278,6 @@ export namespace Protocol {
 	    } as IPrimitiveType<string>,
 	
 	};
-	
-	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	* Injection: injection.packager.ts
-	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-	// tslint:disable:no-namespace
-	// tslint:disable:max-classes-per-file
-	// tslint:disable:object-literal-sort-keys
-	
-	// declare var Json: any;
-	
-	export namespace Packager {
-	
-	    export function join(...items: any[]): string | Uint8Array | Error {
-	        if (items instanceof Array && items.length === 1 && items[0] instanceof Array) {
-	            items = items[0];
-	        }
-	        if (!(items instanceof Array) || items.length === 0) {
-	            return new Error(`No arguments provided to join`);
-	        }
-	        const strs: any[] = [];
-	        const bytes: number[] = [];
-	        let isBinary: boolean | undefined;
-	        try {
-	            items.forEach((item: any, i: number) => {
-	                if (item instanceof Uint8Array && (isBinary === undefined || isBinary === true)) {
-	                    isBinary = true;
-	                    if (i === 0) {
-	                        // Set type as array
-	                        bytes.push(Json.Scheme.Types.array);
-	                    }
-	                    // Set length of item
-	                    bytes.push(...Json.Impls.Uint32.toUint8(item.length));
-	                    // Put item
-	                    bytes.push(...item);
-	                } else if (typeof item === 'string' && (isBinary === undefined || isBinary === false)) {
-	                    isBinary = false;
-	                    strs.push(item);
-	                } else {
-	                    throw new Error(`Only strings or Uint8Array can be joined. Each array item should be same type.`);
-	                }
-	            });
-	            if (isBinary) {
-	                return new Uint8Array(bytes);
-	            }
-	        } catch (error) {
-	            return error;
-	        }
-	        return JSON.stringify(strs);
-	    }
-	
-	    export function split(source: string | Uint8Array): string[] | Uint8Array[] | Error {
-	        if (!isPackage(source)) {
-	            return new Error(`Source isn't a package of protocol data.`);
-	        }
-	        if (source instanceof ArrayBuffer) {
-	            source = new Uint8Array(source);
-	        }
-	        if (source instanceof Uint8Array) {
-	            let buffer = source.slice(1, source.length);
-	            const items: Uint8Array[] = [];
-	            do {
-	                const itemLength = Json.Impls.Uint32.fromUint8(buffer.slice(0, 4));
-	                items.push(buffer.slice(4, 4 + itemLength));
-	                buffer = buffer.slice(4 + itemLength, buffer.length);
-	            } while (buffer.length > 0);
-	            return items;
-	        } else {
-	            return JSON.parse(source) as string[];
-	        }
-	    }
-	
-	    export function isPackage(source: any): boolean {
-	        if (source instanceof Uint8Array) {
-	            return source[0] === Json.Scheme.Types.array;
-	        } else if (source instanceof ArrayBuffer) {
-	            const uint8array: Uint8Array = new Uint8Array(source);
-	            return uint8array.length > 0 ? (uint8array[0] === Json.Scheme.Types.array) : false;
-	        } else if (typeof source === 'string') {
-	            try {
-	                return JSON.parse(source) instanceof Array;
-	            } catch (error) {
-	                return false;
-	            }
-	        } else {
-	            return false;
-	        }
-	    }
-	
-	}
 	
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	* Injection: injection.root.ts
@@ -1884,22 +1884,14 @@ export class Message extends Protocol.Root {
 		}
 	}
 	public static __signature: string = "70D1C8A2";
-	public static getSignature(): string {
-		return Message.__signature;
-	}
+	public static getSignature(): string { return Message.__signature; }
+	public static getProtocol(): any { return Protocol; }
 	public __signature: string = Message.__signature;
-	public getSignature(): string {
-		return this.__signature;
-	}
-	public static parse(str: string | object): Protocol.TTypes | Error {
-		return Protocol.parse(str, Message);
-	}
-	public stringify(): Protocol.TStringifyOutput | Error {
-		return Protocol.stringify(this, Message);
-	}
-	public static instanceOf(target: any): boolean {
-		return Protocol.isInstanceOf(Message.__signature, target);
-	}
+	public getSignature(): string { return this.__signature; }
+	public getProtocol(): any { return Protocol; }
+	public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, Message); }
+	public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, Message); }
+	public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(Message.__signature, target); }
 	public clientId: string = "";
 	public guid?: string = guid();
 
@@ -1923,22 +1915,14 @@ export namespace Message {
 			}
 		}
 		public static __signature: string = "5B342A75";
-		public static getSignature(): string {
-			return Handshake.__signature;
-		}
+		public static getSignature(): string { return Handshake.__signature; }
+		public static getProtocol(): any { return Protocol; }
 		public __signature: string = Handshake.__signature;
-		public getSignature(): string {
-			return this.__signature;
-		}
-		public static parse(str: string | object): Protocol.TTypes | Error {
-			return Protocol.parse(str, Handshake);
-		}
-		public stringify(): Protocol.TStringifyOutput | Error {
-			return Protocol.stringify(this, Handshake);
-		}
-		public static instanceOf(target: any): boolean {
-			return Protocol.isInstanceOf(Handshake.__signature, target);
-		}
+		public getSignature(): string { return this.__signature; }
+		public getProtocol(): any { return Protocol; }
+		public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, Handshake); }
+		public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, Handshake); }
+		public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(Handshake.__signature, target); }
 
 		constructor(args: { clientId: string, guid?: string }) {
 			super(Object.assign(args, {}));
@@ -1961,22 +1945,14 @@ export namespace Message {
 				}
 			}
 			public static __signature: string = "1D8E5E9C";
-			public static getSignature(): string {
-				return Response.__signature;
-			}
+			public static getSignature(): string { return Response.__signature; }
+			public static getProtocol(): any { return Protocol; }
 			public __signature: string = Response.__signature;
-			public getSignature(): string {
-				return this.__signature;
-			}
-			public static parse(str: string | object): Protocol.TTypes | Error {
-				return Protocol.parse(str, Response);
-			}
-			public stringify(): Protocol.TStringifyOutput | Error {
-				return Protocol.stringify(this, Response);
-			}
-			public static instanceOf(target: any): boolean {
-				return Protocol.isInstanceOf(Response.__signature, target);
-			}
+			public getSignature(): string { return this.__signature; }
+			public getProtocol(): any { return Protocol; }
+			public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, Response); }
+			public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, Response); }
+			public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(Response.__signature, target); }
 			public token?: string = "";
 			public reason?: Message.Handshake.Response.Reasons;
 			public error?: string = "";
@@ -2008,22 +1984,14 @@ export namespace Message {
 				}
 			}
 			public static __signature: string = "6A4CB50C";
-			public static getSignature(): string {
-				return Request.__signature;
-			}
+			public static getSignature(): string { return Request.__signature; }
+			public static getProtocol(): any { return Protocol; }
 			public __signature: string = Request.__signature;
-			public getSignature(): string {
-				return this.__signature;
-			}
-			public static parse(str: string | object): Protocol.TTypes | Error {
-				return Protocol.parse(str, Request);
-			}
-			public stringify(): Protocol.TStringifyOutput | Error {
-				return Protocol.stringify(this, Request);
-			}
-			public static instanceOf(target: any): boolean {
-				return Protocol.isInstanceOf(Request.__signature, target);
-			}
+			public getSignature(): string { return this.__signature; }
+			public getProtocol(): any { return Protocol; }
+			public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, Request); }
+			public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, Request); }
+			public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(Request.__signature, target); }
 
 			constructor(args: { clientId: string, guid?: string }) {
 				super(Object.assign(args, {}));
@@ -2044,22 +2012,14 @@ export namespace Message {
 			}
 		}
 		public static __signature: string = "35D910F1";
-		public static getSignature(): string {
-			return Hook.__signature;
-		}
+		public static getSignature(): string { return Hook.__signature; }
+		public static getProtocol(): any { return Protocol; }
 		public __signature: string = Hook.__signature;
-		public getSignature(): string {
-			return this.__signature;
-		}
-		public static parse(str: string | object): Protocol.TTypes | Error {
-			return Protocol.parse(str, Hook);
-		}
-		public stringify(): Protocol.TStringifyOutput | Error {
-			return Protocol.stringify(this, Hook);
-		}
-		public static instanceOf(target: any): boolean {
-			return Protocol.isInstanceOf(Hook.__signature, target);
-		}
+		public getSignature(): string { return this.__signature; }
+		public getProtocol(): any { return Protocol; }
+		public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, Hook); }
+		public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, Hook); }
+		public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(Hook.__signature, target); }
 
 		constructor(args: { clientId: string, guid?: string }) {
 			super(Object.assign(args, {}));
@@ -2080,22 +2040,14 @@ export namespace Message {
 				}
 			}
 			public static __signature: string = "26C80A90";
-			public static getSignature(): string {
-				return Request.__signature;
-			}
+			public static getSignature(): string { return Request.__signature; }
+			public static getProtocol(): any { return Protocol; }
 			public __signature: string = Request.__signature;
-			public getSignature(): string {
-				return this.__signature;
-			}
-			public static parse(str: string | object): Protocol.TTypes | Error {
-				return Protocol.parse(str, Request);
-			}
-			public stringify(): Protocol.TStringifyOutput | Error {
-				return Protocol.stringify(this, Request);
-			}
-			public static instanceOf(target: any): boolean {
-				return Protocol.isInstanceOf(Request.__signature, target);
-			}
+			public getSignature(): string { return this.__signature; }
+			public getProtocol(): any { return Protocol; }
+			public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, Request); }
+			public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, Request); }
+			public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(Request.__signature, target); }
 			public token: string = "";
 
 			constructor(args: { clientId: string, guid?: string, token: string }) {
@@ -2120,22 +2072,14 @@ export namespace Message {
 				}
 			}
 			public static __signature: string = "4A9F03A0";
-			public static getSignature(): string {
-				return Response.__signature;
-			}
+			public static getSignature(): string { return Response.__signature; }
+			public static getProtocol(): any { return Protocol; }
 			public __signature: string = Response.__signature;
-			public getSignature(): string {
-				return this.__signature;
-			}
-			public static parse(str: string | object): Protocol.TTypes | Error {
-				return Protocol.parse(str, Response);
-			}
-			public stringify(): Protocol.TStringifyOutput | Error {
-				return Protocol.stringify(this, Response);
-			}
-			public static instanceOf(target: any): boolean {
-				return Protocol.isInstanceOf(Response.__signature, target);
-			}
+			public getSignature(): string { return this.__signature; }
+			public getProtocol(): any { return Protocol; }
+			public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, Response); }
+			public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, Response); }
+			public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(Response.__signature, target); }
 
 			constructor(args: { clientId: string, guid?: string }) {
 				super(Object.assign(args, {}));
@@ -2156,22 +2100,14 @@ export namespace Message {
 			}
 		}
 		public static __signature: string = "3ED7382B";
-		public static getSignature(): string {
-			return Pending.__signature;
-		}
+		public static getSignature(): string { return Pending.__signature; }
+		public static getProtocol(): any { return Protocol; }
 		public __signature: string = Pending.__signature;
-		public getSignature(): string {
-			return this.__signature;
-		}
-		public static parse(str: string | object): Protocol.TTypes | Error {
-			return Protocol.parse(str, Pending);
-		}
-		public stringify(): Protocol.TStringifyOutput | Error {
-			return Protocol.stringify(this, Pending);
-		}
-		public static instanceOf(target: any): boolean {
-			return Protocol.isInstanceOf(Pending.__signature, target);
-		}
+		public getSignature(): string { return this.__signature; }
+		public getProtocol(): any { return Protocol; }
+		public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, Pending); }
+		public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, Pending); }
+		public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(Pending.__signature, target); }
 
 		constructor(args: { clientId: string, guid?: string }) {
 			super(Object.assign(args, {}));
@@ -2192,22 +2128,14 @@ export namespace Message {
 				}
 			}
 			public static __signature: string = "59648854";
-			public static getSignature(): string {
-				return Request.__signature;
-			}
+			public static getSignature(): string { return Request.__signature; }
+			public static getProtocol(): any { return Protocol; }
 			public __signature: string = Request.__signature;
-			public getSignature(): string {
-				return this.__signature;
-			}
-			public static parse(str: string | object): Protocol.TTypes | Error {
-				return Protocol.parse(str, Request);
-			}
-			public stringify(): Protocol.TStringifyOutput | Error {
-				return Protocol.stringify(this, Request);
-			}
-			public static instanceOf(target: any): boolean {
-				return Protocol.isInstanceOf(Request.__signature, target);
-			}
+			public getSignature(): string { return this.__signature; }
+			public getProtocol(): any { return Protocol; }
+			public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, Request); }
+			public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, Request); }
+			public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(Request.__signature, target); }
 			public token: string = "";
 
 			constructor(args: { clientId: string, guid?: string, token: string }) {
@@ -2231,22 +2159,14 @@ export namespace Message {
 				}
 			}
 			public static __signature: string = "2FFB32C4";
-			public static getSignature(): string {
-				return Response.__signature;
-			}
+			public static getSignature(): string { return Response.__signature; }
+			public static getProtocol(): any { return Protocol; }
 			public __signature: string = Response.__signature;
-			public getSignature(): string {
-				return this.__signature;
-			}
-			public static parse(str: string | object): Protocol.TTypes | Error {
-				return Protocol.parse(str, Response);
-			}
-			public stringify(): Protocol.TStringifyOutput | Error {
-				return Protocol.stringify(this, Response);
-			}
-			public static instanceOf(target: any): boolean {
-				return Protocol.isInstanceOf(Response.__signature, target);
-			}
+			public getSignature(): string { return this.__signature; }
+			public getProtocol(): any { return Protocol; }
+			public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, Response); }
+			public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, Response); }
+			public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(Response.__signature, target); }
 			public event?: EventDefinition;
 			public demand?: DemandDefinition;
 			public return?: DemandDefinition;
@@ -2278,22 +2198,14 @@ export class EventDefinition extends Protocol.Root {
 		}
 	}
 	public static __signature: string = "282376D8";
-	public static getSignature(): string {
-		return EventDefinition.__signature;
-	}
+	public static getSignature(): string { return EventDefinition.__signature; }
+	public static getProtocol(): any { return Protocol; }
 	public __signature: string = EventDefinition.__signature;
-	public getSignature(): string {
-		return this.__signature;
-	}
-	public static parse(str: string | object): Protocol.TTypes | Error {
-		return Protocol.parse(str, EventDefinition);
-	}
-	public stringify(): Protocol.TStringifyOutput | Error {
-		return Protocol.stringify(this, EventDefinition);
-	}
-	public static instanceOf(target: any): boolean {
-		return Protocol.isInstanceOf(EventDefinition.__signature, target);
-	}
+	public getSignature(): string { return this.__signature; }
+	public getProtocol(): any { return Protocol; }
+	public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, EventDefinition); }
+	public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, EventDefinition); }
+	public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(EventDefinition.__signature, target); }
 	public protocol: string = "";
 	public event: string = "";
 	public body: string = "";
@@ -2323,22 +2235,14 @@ export class DemandDefinition extends Protocol.Root {
 		}
 	}
 	public static __signature: string = "61578FC3";
-	public static getSignature(): string {
-		return DemandDefinition.__signature;
-	}
+	public static getSignature(): string { return DemandDefinition.__signature; }
+	public static getProtocol(): any { return Protocol; }
 	public __signature: string = DemandDefinition.__signature;
-	public getSignature(): string {
-		return this.__signature;
-	}
-	public static parse(str: string | object): Protocol.TTypes | Error {
-		return Protocol.parse(str, DemandDefinition);
-	}
-	public stringify(): Protocol.TStringifyOutput | Error {
-		return Protocol.stringify(this, DemandDefinition);
-	}
-	public static instanceOf(target: any): boolean {
-		return Protocol.isInstanceOf(DemandDefinition.__signature, target);
-	}
+	public getSignature(): string { return this.__signature; }
+	public getProtocol(): any { return Protocol; }
+	public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, DemandDefinition); }
+	public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, DemandDefinition); }
+	public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(DemandDefinition.__signature, target); }
 	public id: string = "";
 	public protocol: string = "";
 	public demand: string = "";
@@ -2371,22 +2275,14 @@ export class ConnectionError extends Protocol.Root {
 		}
 	}
 	public static __signature: string = "583DFB65";
-	public static getSignature(): string {
-		return ConnectionError.__signature;
-	}
+	public static getSignature(): string { return ConnectionError.__signature; }
+	public static getProtocol(): any { return Protocol; }
 	public __signature: string = ConnectionError.__signature;
-	public getSignature(): string {
-		return this.__signature;
-	}
-	public static parse(str: string | object): Protocol.TTypes | Error {
-		return Protocol.parse(str, ConnectionError);
-	}
-	public stringify(): Protocol.TStringifyOutput | Error {
-		return Protocol.stringify(this, ConnectionError);
-	}
-	public static instanceOf(target: any): boolean {
-		return Protocol.isInstanceOf(ConnectionError.__signature, target);
-	}
+	public getSignature(): string { return this.__signature; }
+	public getProtocol(): any { return Protocol; }
+	public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, ConnectionError); }
+	public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, ConnectionError); }
+	public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(ConnectionError.__signature, target); }
 	public reason: ConnectionError.Reasons;
 	public message: string = "";
 
@@ -2420,22 +2316,14 @@ export class Disconnect extends Protocol.Root {
 		}
 	}
 	public static __signature: string = "71280621";
-	public static getSignature(): string {
-		return Disconnect.__signature;
-	}
+	public static getSignature(): string { return Disconnect.__signature; }
+	public static getProtocol(): any { return Protocol; }
 	public __signature: string = Disconnect.__signature;
-	public getSignature(): string {
-		return this.__signature;
-	}
-	public static parse(str: string | object): Protocol.TTypes | Error {
-		return Protocol.parse(str, Disconnect);
-	}
-	public stringify(): Protocol.TStringifyOutput | Error {
-		return Protocol.stringify(this, Disconnect);
-	}
-	public static instanceOf(target: any): boolean {
-		return Protocol.isInstanceOf(Disconnect.__signature, target);
-	}
+	public getSignature(): string { return this.__signature; }
+	public getProtocol(): any { return Protocol; }
+	public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, Disconnect); }
+	public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, Disconnect); }
+	public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(Disconnect.__signature, target); }
 	public reason: Disconnect.Reasons;
 	public message?: string = "";
 

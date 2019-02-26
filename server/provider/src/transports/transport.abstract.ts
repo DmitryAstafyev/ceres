@@ -29,6 +29,12 @@ export default abstract class ATransport<ConnectionParameters, Middleware> exten
         destroyed: 'destroyed',
 
         /**
+         * @event connected Client is connected
+         * @argument clientId {string} ID of conneted client
+         */
+        connected: 'connected',
+
+        /**
          * @event disconnected Client is disconnected
          * @argument clientId {string} ID of disconneted client
          */

@@ -1,60 +1,84 @@
 import Transport, { ConnectionParameters }  from 'ceres.provider.node.ws';
 import Provider from 'ceres.provider';
-// Attach protocol
 import * as Protocol from '../protocol/protocol.chat';
 
-const transport = new Transport(new ConnectionParameters({
-    port: 3005
-}));
+class ChatServer {
 
-const provider = new Provider(transport);
-
-// Make subscription to requests
-provider.subscribeToRequest(
-    Protocol,                       // Reference to our protocol
-    Protocol.Requests.GetChannels,  // Reference to request, which we would like to process
-    { 
-        type: 'available'           // Query. Basicaly it's a filter, which allow us make process same requests, but with different nature. 
-    },                              // For example "available" means all channels with users; but also we can add "offline" - all empty channels and so on.
-    onRequestGetChannels            // Our handler for request
-);
-
-function onRequestGetChannels(
-    demand: Protocol.Requests.GetChannels,                                              // As first argument we will get body of request (demand)
-    callback: (error: Error | null, results: Protocol.Responses.ChannelsList) => any    // As second - callback to send our response
-) {
-    callback(null, new Protocol.Responses.ChannelsList({
-        channels: [
-            new Protocol.Channel({ name: 'channel #1', created: new Date() }),
-            new Protocol.Channel({ name: 'channel #2', created: new Date() }),
-            new Protocol.Channel({ name: 'channel #3', created: new Date() }),
-        ]
+    private transport: Transport = new Transport(new ConnectionParameters({
+        port: 3005
     }));
-}
+    private provider: Provider;
+    private users: { [key: string]: string } = {};
 
-provider.subscribeToRequest(
-    Protocol,                               
-    Protocol.Requests.GetUsersInChannel,
-    { type: 'all' },                                      
-    onRequestGetUsersInChannel                    
-);
+    constructor() {
+        this.provider = new Provider(this.transport);
+        // Listen request GetUsers
+        this.provider.listenRequest(
+            Protocol.Requests.GetUsers,         // Reference to request, which we would like to process
+            this.onGetUsersRequest.bind(this)   // Our handler for request
+        );
+        // Listen request AddUser
+        this.provider.listenRequest(
+            Protocol.Requests.AddUser,         
+            this.onAddUserRequest.bind(this) 
+        );
+        // Listen connect/disconnect events (when client connects/disconnects)
+        this.provider.on(Provider.Events.connected, this.onNewClientConnected.bind(this));
+        this.provider.on(Provider.Events.disconnected, this.onNewClientDisconnected.bind(this));
+    }
 
-function onRequestGetUsersInChannel(
-    demand: Protocol.Requests.GetUsersInChannel,                                              
-    callback: (error: Error | null, results: Protocol.Responses.ChannelUsersList) => any
-) {
-    /*
-    // Do something with request
-    const users = DB.get({ channel: demand.channelId });
-    */
+    private onGetUsersRequest(
+        demand: Protocol.Requests.GetUsers,
+        clientId: string,
+        callback: (error: Error | null, results: Protocol.Responses.UsersList) => any 
+    ) {
+        const users: Protocol.User[] = Object.keys(this.users).map((nickname: string) => {
+            return new Protocol.User({ nickname: nickname });
+        });
+        callback(null, new Protocol.Responses.UsersList({ users: users }));
+    }
 
-    callback(null, new Protocol.Responses.ChannelUsersList({
-        channelId: demand.channelId,
-        users: [
-            new Protocol.User({ nickname: 'user #1', firstName: 'fakename', lastName: 'fakename'}),
-            new Protocol.User({ nickname: 'user #2', firstName: 'fakename', lastName: 'fakename'}),
-            new Protocol.User({ nickname: 'user #3', firstName: 'fakename', lastName: 'fakename'}),
-            new Protocol.User({ nickname: 'user #4', firstName: 'fakename', lastName: 'fakename'}),
-        ]
-    }));
-}
+    private onAddUserRequest(
+        demand: Protocol.Requests.AddUser,
+        clientId: string,
+        callback: (error: Error | null, results: Protocol.Responses.AddUserResult) => any 
+    ) {
+        if (this.users[demand.user.nickname] !== void 0) {
+            return callback(null, new Protocol.Responses.AddUserResult({ error: 'user already exist' }));
+        }
+        // Add user to list
+        this.users[demand.user.nickname] = clientId;
+        // Send response
+        callback(null, new Protocol.Responses.AddUserResult({ }));
+        // Broadcast actual users list
+        this.broadcastUsersList();
+    }
+
+    private onNewClientConnected(clientId: string) {
+        console.log(`New client ${clientId} is connected`);
+    }
+
+    private onNewClientDisconnected(clientId: string) {
+        // Remove user
+        Object.keys(this.users).forEach((nickname: string) => {
+            if (this.users[nickname] === clientId) {
+                delete this.users[nickname];
+            }
+        });
+        // Broadcast actual users list
+        this.broadcastUsersList();
+    }
+
+    private broadcastUsersList() {
+        this.provider.emit(new Protocol.Events.UsersListUpdated({
+            users: Object.keys(this.users).map((nickname: string) => {
+                return new Protocol.User({ nickname: nickname });
+            })
+        })).catch((error: Error) => {
+            console.log(`Fail to emit event UsersListUpdated due error: ${error.message}`);
+        });
+    }
+
+ }
+
+(new ChatServer());

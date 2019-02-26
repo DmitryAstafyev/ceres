@@ -9,7 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "ceres.provider": "^1.0.2",
-    "ceres.provider.node.ws": "^1.0.0"
+    "ceres.provider": "latest",
+    "ceres.provider.node.ws": "latest"
   }
 }

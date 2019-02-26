@@ -9,6 +9,6 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "ceres.protocol": "^1.0.33"
+    "ceres.protocol": "latest"
   }
 }

@@ -1,9 +1,0 @@
-{
-  "server": {
-    "port": 3000,
-    "baseDir": "./build",
-    "routes": {
-      "/node_modules": "node_modules"
-    }
-  }
-}

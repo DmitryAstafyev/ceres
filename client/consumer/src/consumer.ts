@@ -20,7 +20,7 @@ export interface IDemandOptions {
     scope?: Protocol.Message.Demand.Options.Scope;
 }
 
-export default class Consumer extends Tools.EventEmitter {
+export default class Consumer {
 
     public static Events = {
         connected: 'connected',
@@ -50,9 +50,9 @@ export default class Consumer extends Tools.EventEmitter {
     private _pendingDemands:    Tools.PromisesHolder    = new Tools.PromisesHolder();
     private _transport:         ATransport<any, any>;
     private _destroyed:         boolean                 = false;
+    private _emitter:           Tools.EventEmitter      = new Tools.EventEmitter();
 
     constructor(transport: ATransport<any, any>) {
-        super();
         this._transport = transport;
         // Subscribe
         this._onError = this._onError.bind(this);
@@ -74,6 +74,7 @@ export default class Consumer extends Tools.EventEmitter {
     public destroy(): Promise<void> {
         this._destroyed = true;
         return new Promise((resolve) => {
+            this._emitter.unsubscribeAll();
             this._drop().then(() => {
                 this._clear().then(resolve);
             });
@@ -81,26 +82,59 @@ export default class Consumer extends Tools.EventEmitter {
     }
 
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	 * Events: Public
+	 * Consumer events
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+    /**
+     * Subscribe to consumer event
+     * @param event {any} event from Consumer.Events
+     * @param handler {Function} handler of event
+     * @returns {boolean}
+     */
+    public on(event: any, handler: (...args: any[]) => any): boolean {
+        return this._emitter.subscribe(event, handler);
+    }
+
+    /**
+     * Unsubscribe from consumer event
+     * @param event {any} event from Consumer.Events
+     * @param handler {Function} handler of event
+     * @returns {boolean}
+     */
+    public removeListener(event: any, handler: (...args: any[]) => any): boolean {
+        return this._emitter.unsubscribe(event, handler);
+    }
+
+    /**
+     * Remove all handlers for Consumer.Events event
+     * @param event {any} event from Consumer.Events
+     * @returns {void}
+     */
+    public removeAllListeners(event?: any): void {
+        return this._emitter.unsubscribeAll(event);
+    }
+
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	 * Protocol events
+	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
     /**
      * Emit event
      * @param event {any} implementation of event
-     * @param protocol {Protocol} implementation of event's protocol
      * @returns Promise
      */
-    public eventEmit(event: any, protocol: any, aliases: TClientAlias = {}): Promise<Protocol.Message.Event.Response> {
+    public emit(event: any, aliases: TClientAlias = {}): Promise<Protocol.Message.Event.Response> {
         return new Promise((resolve, reject) => {
             if (this._transport.getState() !== ATransport.STATES.connected) {
                 return reject(new Error(`Cannot do operation: client isn't connected.`));
             }
-            const protocolSignature = this._getEntitySignature(protocol);
-            if (protocolSignature instanceof Error) {
-                return reject(protocolSignature);
-            }
             const eventSignature = this._getEntitySignature(event);
             if (eventSignature instanceof Error) {
                 return reject(eventSignature);
+            }
+            const protocolSignature = this._getEntitySignature(event.getProtocol());
+            if (protocolSignature instanceof Error) {
+                return reject(protocolSignature);
             }
             const _aliases: Protocol.KeyValue[] = [];
             try {
@@ -141,7 +175,7 @@ export default class Consumer extends Tools.EventEmitter {
                     return reject(new Error(`Unexpected server response (expected "Protocol.Message.Event.Response"): ${message.stringify()}`));
                 }
                 this._logger.env(`For event found ${message.subscribers} subscribers.`);
-                this.emit(Consumer.Events.eventSent, message);
+                this._emitter.emit(Consumer.Events.eventSent, message);
                 resolve(message);
             }).catch((error: Error) => {
                 this._logger.env(`Error emit event: ${error.message}.`);
@@ -153,26 +187,25 @@ export default class Consumer extends Tools.EventEmitter {
     /**
      * Subscribe handler to event
      * @param event {any} implementation of event
-     * @param protocol {Protocol} implementation of event's protocol
      * @param handler {Function} handler
      * @returns Promise
      */
-    public subscribeEvent(event: any, protocol: any, handler: (...args: any[]) => any): Promise<Protocol.Message.Subscribe.Response> {
+    public subscribe(event: any, handler: (...args: any[]) => any): Promise<Protocol.Message.Subscribe.Response> {
         // TODO: subscription is already exist. Server doesn't allow subscribe twice. If user need it, he can do it by himself, but server should have only one subscription
         // TODO: restore subscription after reconnection. Server unsubscribe all if client was disconnected
         return new Promise((resolve, reject) => {
             if (this._transport.getState() !== ATransport.STATES.connected) {
                 return reject(new Error(`Cannot do operation: client isn't connected.`));
             }
-            const protocolSignature = this._getEntitySignature(protocol);
-            if (protocolSignature instanceof Error) {
-                return reject(protocolSignature);
-            }
             const eventSignature = this._getEntitySignature(event);
             if (eventSignature instanceof Error) {
                 return reject(eventSignature);
             }
-            // Register implementation of protocol
+            const protocol = event.getProtocol();
+            const protocolSignature = this._getEntitySignature(protocol);
+            if (protocolSignature instanceof Error) {
+                return reject(protocolSignature);
+            }            // Register implementation of protocol
             this._protocols.add(protocol)
                 .then(() => {
                     const subscription = this._subscriptions.subscribe(protocolSignature, eventSignature, handler);
@@ -200,7 +233,7 @@ export default class Consumer extends Tools.EventEmitter {
                             return reject(this._logger.env(`Subscription to protocol ${protocolSignature}, event ${eventSignature} wasn't done.`));
                         }
                         this._logger.env(`Subscription from protocol ${protocolSignature}, event ${eventSignature} has status: ${message.status}.`);
-                        this.emit(Consumer.Events.subscriptionDone, message);
+                        this._emitter.emit(Consumer.Events.subscriptionDone, message);
                         resolve(message);
                     }).catch((error: Error) => {
                         this._logger.env(`Error subscribe event: ${error.message}`);
@@ -218,21 +251,20 @@ export default class Consumer extends Tools.EventEmitter {
     /**
      * Unsubscribe from event
      * @param event {any} implementation of event
-     * @param protocol {Protocol} implementation of event's protocol
      * @returns Promise
      */
-    public unsubscribeEvent(event: any, protocol: any): Promise<Protocol.Message.Unsubscribe.Response> {
+    public unsubscribe(event: any): Promise<Protocol.Message.Unsubscribe.Response> {
         return new Promise((resolve, reject) => {
             if (this._transport.getState() !== ATransport.STATES.connected) {
                 return reject(new Error(`Cannot do operation: client isn't connected.`));
             }
-            const protocolSignature = this._getEntitySignature(protocol);
-            if (protocolSignature instanceof Error) {
-                return reject(protocolSignature);
-            }
             const eventSignature = this._getEntitySignature(event);
             if (eventSignature instanceof Error) {
                 return reject(eventSignature);
+            }
+            const protocolSignature = this._getEntitySignature(event.getProtocol());
+            if (protocolSignature instanceof Error) {
+                return reject(protocolSignature);
             }
             this._transport.send((new Protocol.Message.Unsubscribe.Request({
                 clientId: this._transport.getClientId(),
@@ -254,7 +286,7 @@ export default class Consumer extends Tools.EventEmitter {
                 }
                 this._logger.env(`Unsubscription from protocol ${protocolSignature}, event ${eventSignature} has status: ${message.status}.`);
                 this._subscriptions.unsubscribe(protocolSignature, eventSignature);
-                this.emit(Consumer.Events.unsubscriptionDone, message);
+                this._emitter.emit(Consumer.Events.unsubscriptionDone, message);
                 resolve(message);
             }).catch((error: Error) => {
                 this._logger.env(`Error unsubscribe event: ${error.message}`);
@@ -268,7 +300,7 @@ export default class Consumer extends Tools.EventEmitter {
      * @param protocol {Protocol} implementation of event's protocol
      * @returns Promise
      */
-    public unsubscribeAllEvents(protocol: any): Promise<Protocol.Message.UnsubscribeAll.Response> {
+    public unsubscribeAll(protocol: any): Promise<Protocol.Message.UnsubscribeAll.Response> {
         return new Promise((resolve, reject) => {
             if (this._transport.getState() !== ATransport.STATES.connected) {
                 return reject(new Error(`Cannot do operation: client isn't connected.`));
@@ -296,7 +328,7 @@ export default class Consumer extends Tools.EventEmitter {
                 }
                 this._logger.env(`Unsubscription from all events in scope of protocol ${protocolSignature} has status: ${message.status}.`);
                 this._subscriptions.unsubscribe(protocolSignature);
-                this.emit(Consumer.Events.unsubscriptionAllDone, message);
+                this._emitter.emit(Consumer.Events.unsubscriptionAllDone, message);
                 resolve(message);
             }).catch((error: Error) => {
                 this._logger.env(`Error unsubscribe all: ${error.message}.`);
@@ -349,7 +381,7 @@ export default class Consumer extends Tools.EventEmitter {
                 }
                 this._logger.env(`Registration of client has status: ${message.status}.`);
                 this._aliases = Object.assign({}, aliases);
-                this.emit(Consumer.Events.referenceAccepted, aliases);
+                this._emitter.emit(Consumer.Events.referenceAccepted, aliases);
                 resolve(message);
             }).catch((error: Error) => {
                 this._logger.env(`Error registration of client: ${error.message}.`);
@@ -363,28 +395,27 @@ export default class Consumer extends Tools.EventEmitter {
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
     /**
      * Register as respondent: bind handler with protocol / demand (request)
-     * @param protocol {Protocol} implementation of demand's protocol
-     * @param demand {Demand | string} reference to demand class or signature of demand class
+     * @param demand {any} reference to demand class
      * @param query {TQuery} query, which will used for calls to respondent
      * @param handler {Function} handler to process income request (demand)
      * @returns Promise
      */
-    public subscribeToRequest(protocol: any, demand: Protocol.IClass | string, query: TQuery, handler: THandler): Promise<Protocol.Message.Respondent.Bind.Response> {
+    public listenRequest(demand: any, handler: THandler, query: TQuery): Promise<Protocol.Message.Respondent.Bind.Response> {
         return new Promise((resolve, reject) => {
-            protocol = protocol as Protocol.IImplementation;
             if (this._transport.getState() !== ATransport.STATES.connected) {
                 return reject(new Error(this._logger.verbose(`Cannot do operation: client isn't connected.`)));
             }
             if (Tools.getTypeOf(handler) !== Tools.EPrimitiveTypes.function) {
                 return reject(new Error(this._logger.verbose(`As handler can be used only function: Promise<results>.`)));
             }
+            const demandSignature = this._getEntitySignature(demand);
+            if (demandSignature instanceof Error) {
+                return reject(demandSignature);
+            }
+            const protocol = demand.getProtocol();
             const protocolSignature = this._getEntitySignature(protocol);
             if (protocolSignature instanceof Error) {
                 return reject(protocolSignature);
-            }
-            const demandSignature = typeof demand === 'string' ? demand : this._getEntitySignature(demand);
-            if (demandSignature instanceof Error) {
-                return reject(demandSignature);
             }
             if (this._demands.has(protocolSignature, demandSignature)) {
                 return reject(new Error(this._logger.verbose(`Protocol and demand "${protocolSignature}/${demandSignature}" is already bound with handler.`)));
@@ -406,9 +437,11 @@ export default class Consumer extends Tools.EventEmitter {
             if (!valid) {
                 return reject(new Error(this._logger.verbose(`As query can be used only object { [key: string]: string }. Some of values of target isn't a {string}.`)));
             }
+            /*
             if (queryArray.length === 0) {
                 return reject(new Error(this._logger.verbose(`Query can not be empty. Define at least one property.`)));
             }
+            */
             // Register protocol implementation
             this._protocols.add(protocol).then(() => {
                 // Send request to server
@@ -432,7 +465,7 @@ export default class Consumer extends Tools.EventEmitter {
                     this._logger.env(`Registration of client has status: ${message.status}.`);
                     // Save handler
                     this._demands.add(protocolSignature, demandSignature, handler);
-                    this.emit(Consumer.Events.subscriptionToRequestDone, message);
+                    this._emitter.emit(Consumer.Events.subscriptionToRequestDone, message);
                     resolve(message);
                 }).catch((error: Error) => {
                     this._logger.env(`Error binding of client to demand "${protocolSignature}/${demandSignature}": ${error.message}.`);
@@ -447,21 +480,18 @@ export default class Consumer extends Tools.EventEmitter {
 
     /**
      * Unregister as respondent: unbind handler with protocol / demand (request)
-     * @param protocol {Protocol} implementation of demand's protocol
-     * @param demand {Demand | string} reference to demand class or signature of demand class
-     * @param query {TQuery} query, which will used for calls to respondent
-     * @param handler {Function} handler to process income request (demand)
+     * @param demand {any} reference to demand class
      * @returns Promise
      */
-    public unsubscribeToRequest(protocol: any, demand: Protocol.IClass | string): Promise<Protocol.Message.Respondent.Unbind.Response | null> {
+    public removeRequestListener(demand: any): Promise<Protocol.Message.Respondent.Unbind.Response | null> {
         return new Promise((resolve, reject) => {
-            const protocolSignature = this._getEntitySignature(protocol);
-            if (protocolSignature instanceof Error) {
-                return reject(protocolSignature);
-            }
-            const demandSignature = typeof demand === 'string' ? demand : this._getEntitySignature(demand);
+            const demandSignature = this._getEntitySignature(demand);
             if (demandSignature instanceof Error) {
                 return reject(demandSignature);
+            }
+            const protocolSignature = this._getEntitySignature(demand.getProtocol());
+            if (protocolSignature instanceof Error) {
+                return reject(protocolSignature);
             }
             if (!this._demands.has(protocolSignature, demandSignature)) {
                 return reject(new Error(`Protocol and demand "${protocolSignature}/${demandSignature}" is already unbound with handler.`));
@@ -490,7 +520,7 @@ export default class Consumer extends Tools.EventEmitter {
                     return reject(this._logger.env(`Unbinding client with "${protocolSignature}/${demandSignature}" wasn't done.`));
                 }
                 this._logger.env(`Registration of client has status: ${message.status}.`);
-                this.emit(Consumer.Events.unsubscriptionToRequestDone, message);
+                this._emitter.emit(Consumer.Events.unsubscriptionToRequestDone, message);
                 resolve(message);
             }).catch((error: Error) => {
                 if (this._transport.getState() !== ATransport.STATES.connected) {
@@ -503,27 +533,34 @@ export default class Consumer extends Tools.EventEmitter {
         });
     }
 
-    public demand(
-        protocol: any,
-        demand: Protocol.IImplementation,
-        expected: Protocol.IClass | string,
-        query: TQuery,
+    /**
+     * Sends request
+     * @param demand {any} instance of demand class
+     * @param expected {any} ref to class of expected response
+     * @param query {TQuery} query, which will used for calls to respondent
+     * @param options {IDemandOptions} options for request
+     * @returns Promise
+     */
+    public request(
+        demand: any,
+        expected: any,
+        query: TQuery = {},
         options: IDemandOptions = {},
     ): Promise<any> {
         return new Promise((resolve, reject) => {
-            protocol = protocol as Protocol.IImplementation;
             if (this._transport.getState() !== ATransport.STATES.connected) {
                 return reject(new Error(`Cannot do operation: client isn't connected.`));
-            }
-            const protocolSignature = this._getEntitySignature(protocol);
-            if (protocolSignature instanceof Error) {
-                return reject(protocolSignature);
             }
             const demandSignature = this._getEntitySignature(demand);
             if (demandSignature instanceof Error) {
                 return reject(demandSignature);
             }
-            const expectedSignature = typeof expected === 'string' ? expected : this._getEntitySignature(expected);
+            const protocol = demand.getProtocol();
+            const protocolSignature = this._getEntitySignature(protocol);
+            if (protocolSignature instanceof Error) {
+                return reject(protocolSignature);
+            }
+            const expectedSignature = this._getEntitySignature(expected);
             if (expectedSignature instanceof Error) {
                 return reject(demandSignature);
             }
@@ -545,9 +582,11 @@ export default class Consumer extends Tools.EventEmitter {
             if (!valid) {
                 return reject(new Error(this._logger.verbose(`As query can be used only object { [key: string]: string }. Some of values of target isn't a {string}.`)));
             }
+            /*
             if (queryArray.length === 0) {
                 return reject(new Error(this._logger.verbose(`Query can not be empty. Define at least one property.`)));
             }
+            */
             // Register protocol implementation
             const demandBody: string | Uint8Array | Error = demand.stringify();
             if (demandBody instanceof Error) {
@@ -563,7 +602,7 @@ export default class Consumer extends Tools.EventEmitter {
                         bodyStr: typeof demandBody === 'string' ? demandBody : '',
                         demand: demandSignature,
                         expected: expectedSignature,
-                        id: '',                                                                 // ID will be defined on server
+                        id: '', // ID will be defined by provider
                         pending: typeof options.pending === 'boolean' ? options.pending : false,
                         protocol: protocolSignature,
                     })),
@@ -584,7 +623,7 @@ export default class Consumer extends Tools.EventEmitter {
                     this._logger.env(`Demand's request "${protocolSignature}/${demandSignature}" was sent. Server answers: ${message.state}`);
                     // Save resolver & rejector
                     this._pendingDemands.add(message.id, resolve, reject);
-                    this.emit(Consumer.Events.demandSent, message);
+                    this._emitter.emit(Consumer.Events.demandSent, message);
                 }).catch((error: Error) => {
                     this._logger.env(`Error with sending demand's request "${protocolSignature}/${demandSignature}": ${error.message}.`);
                     reject(error);
@@ -610,7 +649,7 @@ export default class Consumer extends Tools.EventEmitter {
         }
         this._transport.connect().catch((error: Error) => {
             this._logger.warn(`Error of connection on start due error: ${error.message}`);
-            this.emit(Consumer.Events.error, error);
+            this._emitter.emit(Consumer.Events.error, error);
             this._reconnect();
         });
     }
@@ -629,16 +668,16 @@ export default class Consumer extends Tools.EventEmitter {
     }
 
     @Tools.EventHandler() private _onConnected() {
-        this.emit(Consumer.Events.connected);
+        this._emitter.emit(Consumer.Events.connected);
     }
 
     @Tools.EventHandler() private _onDisconnected(error: Error) {
-        this.emit(Consumer.Events.disconnected, error);
+        this._emitter.emit(Consumer.Events.disconnected, error);
         this._reconnect();
     }
 
     @Tools.EventHandler() private _onError(error: Error) {
-        this.emit(Consumer.Events.error, error);
+        this._emitter.emit(Consumer.Events.error, error);
         this._reconnect();
     }
 
@@ -648,6 +687,7 @@ export default class Consumer extends Tools.EventEmitter {
      */
     private _drop(): Promise<void> {
         return new Promise((resolve) => {
+            this._transport.unsubscribeAll();
             this._transport.disconnect();
             resolve();
         });

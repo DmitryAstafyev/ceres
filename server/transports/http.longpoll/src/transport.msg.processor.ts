@@ -14,6 +14,6 @@ export abstract class TransportMessageProcessor<T> extends Tools.EventEmitter {
         this.transport = transport;
     }
 
-    public abstract process(connection: Connection, message: T): Promise<void>;
+    public abstract process(connection: Connection, message: T): Promise<any>;
 
 }

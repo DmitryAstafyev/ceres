@@ -275,7 +275,9 @@ export default class WebsocketTransport extends ATransport<ConnectionParameters,
             }
             // Authorization
             if (TransportProtocol.Message.Handshake.Request.instanceOf(message)) {
-                return this._messageHandshakeProcessor.process(connection, message).catch((connectionError: Error) => {
+                return this._messageHandshakeProcessor.process(connection, message).then((validClientId: string) => {
+                    this.emit(ATransport.EVENTS.connected, validClientId);
+                }).catch((connectionError: Error) => {
                     this._logger.env(`Authorization of connection for ${message.clientId} is failed die error: ${connectionError.message}`);
                 });
             }

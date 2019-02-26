@@ -10,7 +10,7 @@ export class MessageHandshakeProcessor extends TransportMessageProcessor<Transpo
         super('Handshake', transport);
     }
 
-    public process(connection: Connection, message: TransportProtocol.Message.Handshake.Request): Promise<void> {
+    public process(connection: Connection, message: TransportProtocol.Message.Handshake.Request): Promise<string> {
         return new Promise((resolveProcess, rejectProcess) => {
             // Always generate new client guid.
             const clientId = this.transport.generateClientGuid();
@@ -22,7 +22,7 @@ export class MessageHandshakeProcessor extends TransportMessageProcessor<Transpo
                     token: this.transport.setClientToken(clientId),
                 })).stringify() as Protocol.Protocol.TStringifyOutput).then(() => {
                     this._logger.env(`Authorization of connection for ${clientId} is done.`);
-                    resolveProcess();
+                    resolveProcess(clientId);
                 }).catch((error: Error) => {
                     rejectProcess(new Error(this._logger.warn(`Fail to close connection ${clientId} due error: ${error.message}`)));
                 });

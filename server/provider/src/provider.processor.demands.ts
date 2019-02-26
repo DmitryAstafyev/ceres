@@ -210,6 +210,7 @@ export class ProcessorDemands {
         body: string | Uint8Array,
         expected: string,
         respondentId: string,
+        expectantId: string,
     ): Promise<string> {
         return new Promise((resolve, reject) => {
             this.state.protocols.parse(protocol, body).then((demandImpl: Protocol.IImplementation) => {
@@ -220,7 +221,7 @@ export class ProcessorDemands {
                 if (handler === undefined) {
                     return reject(new Error(this._logger.warn(`Cannot find server's hander for demand: "${protocol}" / "${demand}".`)));
                 }
-                handler(demandImpl, (error: Error | null, results: any) => {
+                handler(demandImpl, expectantId, (error: Error | null, results: any) => {
                     if (error instanceof Error) {
                         return reject(error);
                     }
@@ -258,6 +259,7 @@ export class ProcessorDemands {
                 body,
                 expected,
                 respondentId,
+                expectantId,
             ).then((response: string) => {
                 this.sendDemandResponse(
                     protocol,

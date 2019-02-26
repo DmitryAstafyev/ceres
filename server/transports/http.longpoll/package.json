@@ -1,6 +1,6 @@
 {
   "name": "ceres.provider.node.longpoll",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "description": "Long polling transport for ceres.provider based on nodejs",
   "main": "./dist/transport.js",
   "types": "./dist/transport.d.ts",

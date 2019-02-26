@@ -232,7 +232,7 @@ export class ProcessorEvents {
             this.state.protocols.parse(protocolSignature, body).then((eventImpl: any) => {
                 handlers.forEach((handler: THandler) => {
                     try {
-                        handler(eventImpl);
+                        handler(eventImpl, emitterId);
                     } catch (executeError) {
                         this._logger.error(`Error during executing event's handler (${protocolSignature}/${eventSignature}). \nEvent: ${body}. \nError: ${executeError.message}`);
                     }

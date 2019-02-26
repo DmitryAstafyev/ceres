@@ -1,6 +1,6 @@
 /* tslint:disable */
 /*
-* This file generated automaticaly (Sun Feb 24 2019 00:53:46 GMT+0100 (CET))
+* This file generated automaticaly (Tue Feb 26 2019 17:26:52 GMT+0100 (CET))
 * Do not remove or change this code.
 * Protocol version: 0.0.1
 */
@@ -10,18 +10,17 @@ export namespace Protocol {
 	* Injection: map of types
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 	export type TTypes = 
-		Requests.GetUsersInChannel |
+		Requests.AddUser |
 		Events |
 		Events.NewMessage |
-		Events.RemovedMessage |
+		Events.UsersListUpdated |
 		Requests |
-		Requests.GetChannels |
+		Requests.GetUsers |
 		Responses |
-		Responses.ChannelUsersList |
-		Responses.ChannelsList |
+		Responses.UsersList |
+		Responses.AddUserResult |
 		ChatMessage |
 		User |
-		Channel |
 		Request |
 		Response;
 
@@ -29,47 +28,36 @@ export namespace Protocol {
 	* Injection: map of types
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 	export const KeysMapLeft: {[key: string]: any} = {
-		"3661859": {
-			channelId: "a",
+		"30105987": {
+			user: "a",
 		},
 		"D7E6E2": {
 		},
 		"4C177D37": {
-			channelId: "a",
-			message: "b",
+			message: "a",
 		},
 		"71D3EB56": {
-			id: "a",
-			channelId: "b",
-			nickname: "c",
-			message: "d",
-			created: "e",
+			nickname: "a",
+			message: "b",
+			created: "c",
 		},
-		"3083FE77": {
-			channelId: "a",
-			messageId: "b",
-		},
-		"527E5577": {
-		},
-		"4EFB1ABF": {
-		},
-		"6482822D": {
-		},
-		"54A4AAC4": {
-			channelId: "a",
-			users: "b",
+		"6F3BAE05": {
+			users: "a",
 		},
 		"3B609EF0": {
 			nickname: "a",
-			firstName: "b",
-			lastName: "c",
 		},
-		"4B5A7131": {
-			channels: "a",
+		"527E5577": {
 		},
-		"63F2459E": {
-			name: "a",
-			created: "b",
+		"6E8A55C9": {
+		},
+		"6482822D": {
+		},
+		"151BAFDB": {
+			users: "a",
+		},
+		"4C6DCAD8": {
+			error: "a",
 		},
 		"7935BB2A": {
 		},
@@ -77,47 +65,36 @@ export namespace Protocol {
 		},
 	};
 	export const KeysMapRight: {[key: string]: any} = {
-		"3661859": {
-			a: "channelId",
+		"30105987": {
+			a: "user",
 		},
 		"D7E6E2": {
 		},
 		"4C177D37": {
-			a: "channelId",
-			b: "message",
+			a: "message",
 		},
 		"71D3EB56": {
-			a: "id",
-			b: "channelId",
-			c: "nickname",
-			d: "message",
-			e: "created",
+			a: "nickname",
+			b: "message",
+			c: "created",
 		},
-		"3083FE77": {
-			a: "channelId",
-			b: "messageId",
-		},
-		"527E5577": {
-		},
-		"4EFB1ABF": {
-		},
-		"6482822D": {
-		},
-		"54A4AAC4": {
-			a: "channelId",
-			b: "users",
+		"6F3BAE05": {
+			a: "users",
 		},
 		"3B609EF0": {
 			a: "nickname",
-			b: "firstName",
-			c: "lastName",
 		},
-		"4B5A7131": {
-			a: "channels",
+		"527E5577": {
 		},
-		"63F2459E": {
-			a: "name",
-			b: "created",
+		"6E8A55C9": {
+		},
+		"6482822D": {
+		},
+		"151BAFDB": {
+			a: "users",
+		},
+		"4C6DCAD8": {
+			a: "error",
 		},
 		"7935BB2A": {
 		},
@@ -128,60 +105,46 @@ export namespace Protocol {
 	* Injection: typed map
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 	export const TypedEntitiesMap: {[key: string]: any} = {
-		"3661859": {
-			a: "int16",
+		"30105987": {
+			a: {
+				a: "asciiString",
+			},
 		},
 		"D7E6E2": {
 		},
 		"4C177D37": {
-			a: "int16",
-			b: {
-				a: "int16",
-				b: "int16",
-				c: "asciiString",
-				d: "utf8String",
-				e: "datetime",
+			a: {
+				a: "asciiString",
+				b: "utf8String",
+				c: "datetime",
 			},
 		},
-		"3083FE77": {
-			a: "int16",
-			b: "int16",
+		"6F3BAE05": {
+			a: [{
+				a: "asciiString",
+			}],
 		},
 		"527E5577": {
 		},
-		"4EFB1ABF": {
+		"6E8A55C9": {
 		},
 		"6482822D": {
 		},
-		"54A4AAC4": {
-			a: "int16",
-			b: [{
+		"151BAFDB": {
+			a: [{
 				a: "asciiString",
-				b: "utf8String",
-				c: "utf8String",
 			}],
 		},
-		"4B5A7131": {
-			a: [{
-				a: "utf8String",
-				b: "datetime",
-			}],
+		"4C6DCAD8": {
+			a: "asciiString",
 		},
 		"71D3EB56": {
-			a: "int16",
-			b: "int16",
-			c: "asciiString",
-			d: "utf8String",
-			e: "datetime",
+			a: "asciiString",
+			b: "utf8String",
+			c: "datetime",
 		},
 		"3B609EF0": {
 			a: "asciiString",
-			b: "utf8String",
-			c: "utf8String",
-		},
-		"63F2459E": {
-			a: "utf8String",
-			b: "datetime",
 		},
 		"7935BB2A": {
 		},
@@ -1753,18 +1716,17 @@ export namespace Protocol {
 	export let ConvertedTypedEntitiesMap: {[key: string]: any} = {};
 	export let ReferencesMap: {[key: string]: any} = {};
 	export function init(){
-		ReferencesMap["3661859"] = Requests.GetUsersInChannel;
+		ReferencesMap["30105987"] = Requests.AddUser;
 		ReferencesMap["D7E6E2"] = Events;
 		ReferencesMap["4C177D37"] = Events.NewMessage;
-		ReferencesMap["3083FE77"] = Events.RemovedMessage;
+		ReferencesMap["6F3BAE05"] = Events.UsersListUpdated;
 		ReferencesMap["527E5577"] = Requests;
-		ReferencesMap["4EFB1ABF"] = Requests.GetChannels;
+		ReferencesMap["6E8A55C9"] = Requests.GetUsers;
 		ReferencesMap["6482822D"] = Responses;
-		ReferencesMap["54A4AAC4"] = Responses.ChannelUsersList;
-		ReferencesMap["4B5A7131"] = Responses.ChannelsList;
+		ReferencesMap["151BAFDB"] = Responses.UsersList;
+		ReferencesMap["4C6DCAD8"] = Responses.AddUserResult;
 		ReferencesMap["71D3EB56"] = ChatMessage;
 		ReferencesMap["3B609EF0"] = User;
-		ReferencesMap["63F2459E"] = Channel;
 		ReferencesMap["7935BB2A"] = Request;
 		ReferencesMap["4F56A0FA"] = Response;
 		ConvertedTypedEntitiesMap = convertTypesToStandard(TypedEntitiesMap);
@@ -1774,7 +1736,7 @@ export namespace Protocol {
 	* Injection: protocol signature
 	* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 	export function getSignature() {
-		return "5E8183B8";
+		return "5B4BF013";
 	}
 
 }
@@ -1803,22 +1765,14 @@ export class Events extends Protocol.Root {
 		}
 	}
 	public static __signature: string = "D7E6E2";
-	public static getSignature(): string {
-		return Events.__signature;
-	}
+	public static getSignature(): string { return Events.__signature; }
+	public static getProtocol(): any { return Protocol; }
 	public __signature: string = Events.__signature;
-	public getSignature(): string {
-		return this.__signature;
-	}
-	public static parse(str: string | object): Protocol.TTypes | Error {
-		return Protocol.parse(str, Events);
-	}
-	public stringify(): Protocol.TStringifyOutput | Error {
-		return Protocol.stringify(this, Events);
-	}
-	public static instanceOf(target: any): boolean {
-		return Protocol.isInstanceOf(Events.__signature, target);
-	}
+	public getSignature(): string { return this.__signature; }
+	public getProtocol(): any { return Protocol; }
+	public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, Events); }
+	public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, Events); }
+	public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(Events.__signature, target); }
 
 	constructor() {
 		super();
@@ -1829,33 +1783,22 @@ export namespace Events {
 	export class NewMessage extends Events {
 		static getDescription(): {[key: string]: Protocol.IProperty } {
 			return {
-				channelId: { name: "channelId", value: "int16", type: Protocol.EEntityType.primitive, optional: false }, 
 				message: { name: "message", value: ChatMessage, type: Protocol.EEntityType.reference, optional: false }, 
 			}
 		}
 		public static __signature: string = "4C177D37";
-		public static getSignature(): string {
-			return NewMessage.__signature;
-		}
+		public static getSignature(): string { return NewMessage.__signature; }
+		public static getProtocol(): any { return Protocol; }
 		public __signature: string = NewMessage.__signature;
-		public getSignature(): string {
-			return this.__signature;
-		}
-		public static parse(str: string | object): Protocol.TTypes | Error {
-			return Protocol.parse(str, NewMessage);
-		}
-		public stringify(): Protocol.TStringifyOutput | Error {
-			return Protocol.stringify(this, NewMessage);
-		}
-		public static instanceOf(target: any): boolean {
-			return Protocol.isInstanceOf(NewMessage.__signature, target);
-		}
-		public channelId: number = -1;
+		public getSignature(): string { return this.__signature; }
+		public getProtocol(): any { return Protocol; }
+		public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, NewMessage); }
+		public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, NewMessage); }
+		public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(NewMessage.__signature, target); }
 		public message: ChatMessage;
 
-		constructor(args: { channelId: number, message: ChatMessage }) {
+		constructor(args: { message: ChatMessage }) {
 			super();
-			this.channelId = args.channelId;
 			this.message = args.message;
 			const errors: Error[] = Protocol.validateParams(args, NewMessage);
 			if (errors.length > 0) {
@@ -1864,40 +1807,29 @@ export namespace Events {
 
 		}
 	}
-	export class RemovedMessage extends Events {
+	export class UsersListUpdated extends Events {
 		static getDescription(): {[key: string]: Protocol.IProperty } {
 			return {
-				channelId: { name: "channelId", value: "int16", type: Protocol.EEntityType.primitive, optional: false }, 
-				messageId: { name: "messageId", value: "int16", type: Protocol.EEntityType.primitive, optional: false }, 
+				users: { name: "users", value: User, type: Protocol.EEntityType.repeated, optional: false }, 
 			}
 		}
-		public static __signature: string = "3083FE77";
-		public static getSignature(): string {
-			return RemovedMessage.__signature;
-		}
-		public __signature: string = RemovedMessage.__signature;
-		public getSignature(): string {
-			return this.__signature;
-		}
-		public static parse(str: string | object): Protocol.TTypes | Error {
-			return Protocol.parse(str, RemovedMessage);
-		}
-		public stringify(): Protocol.TStringifyOutput | Error {
-			return Protocol.stringify(this, RemovedMessage);
-		}
-		public static instanceOf(target: any): boolean {
-			return Protocol.isInstanceOf(RemovedMessage.__signature, target);
-		}
-		public channelId: number = -1;
-		public messageId: number = -1;
+		public static __signature: string = "6F3BAE05";
+		public static getSignature(): string { return UsersListUpdated.__signature; }
+		public static getProtocol(): any { return Protocol; }
+		public __signature: string = UsersListUpdated.__signature;
+		public getSignature(): string { return this.__signature; }
+		public getProtocol(): any { return Protocol; }
+		public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, UsersListUpdated); }
+		public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, UsersListUpdated); }
+		public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(UsersListUpdated.__signature, target); }
+		public users: Array<User> = [];
 
-		constructor(args: { channelId: number, messageId: number }) {
+		constructor(args: { users: Array<User> }) {
 			super();
-			this.channelId = args.channelId;
-			this.messageId = args.messageId;
-			const errors: Error[] = Protocol.validateParams(args, RemovedMessage);
+			this.users = args.users;
+			const errors: Error[] = Protocol.validateParams(args, UsersListUpdated);
 			if (errors.length > 0) {
-				throw new Error(`Cannot create class of "RemovedMessage" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+				throw new Error(`Cannot create class of "UsersListUpdated" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
 			}
 
 		}
@@ -1909,22 +1841,14 @@ export class Requests extends Protocol.Root {
 		}
 	}
 	public static __signature: string = "527E5577";
-	public static getSignature(): string {
-		return Requests.__signature;
-	}
+	public static getSignature(): string { return Requests.__signature; }
+	public static getProtocol(): any { return Protocol; }
 	public __signature: string = Requests.__signature;
-	public getSignature(): string {
-		return this.__signature;
-	}
-	public static parse(str: string | object): Protocol.TTypes | Error {
-		return Protocol.parse(str, Requests);
-	}
-	public stringify(): Protocol.TStringifyOutput | Error {
-		return Protocol.stringify(this, Requests);
-	}
-	public static instanceOf(target: any): boolean {
-		return Protocol.isInstanceOf(Requests.__signature, target);
-	}
+	public getSignature(): string { return this.__signature; }
+	public getProtocol(): any { return Protocol; }
+	public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, Requests); }
+	public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, Requests); }
+	public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(Requests.__signature, target); }
 
 	constructor() {
 		super();
@@ -1932,66 +1856,50 @@ export class Requests extends Protocol.Root {
 	}
 }
 export namespace Requests {
-	export class GetUsersInChannel extends Requests {
-		static getDescription(): {[key: string]: Protocol.IProperty } {
-			return {
-				channelId: { name: "channelId", value: "int16", type: Protocol.EEntityType.primitive, optional: false }, 
-			}
-		}
-		public static __signature: string = "3661859";
-		public static getSignature(): string {
-			return GetUsersInChannel.__signature;
-		}
-		public __signature: string = GetUsersInChannel.__signature;
-		public getSignature(): string {
-			return this.__signature;
-		}
-		public static parse(str: string | object): Protocol.TTypes | Error {
-			return Protocol.parse(str, GetUsersInChannel);
-		}
-		public stringify(): Protocol.TStringifyOutput | Error {
-			return Protocol.stringify(this, GetUsersInChannel);
-		}
-		public static instanceOf(target: any): boolean {
-			return Protocol.isInstanceOf(GetUsersInChannel.__signature, target);
-		}
-		public channelId: number = -1;
-
-		constructor(args: { channelId: number }) {
-			super();
-			this.channelId = args.channelId;
-			const errors: Error[] = Protocol.validateParams(args, GetUsersInChannel);
-			if (errors.length > 0) {
-				throw new Error(`Cannot create class of "GetUsersInChannel" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
-			}
-
-		}
-	}
-	export class GetChannels extends Requests {
+	export class GetUsers extends Requests {
 		static getDescription(): {[key: string]: Protocol.IProperty } {
 			return {
 			}
 		}
-		public static __signature: string = "4EFB1ABF";
-		public static getSignature(): string {
-			return GetChannels.__signature;
-		}
-		public __signature: string = GetChannels.__signature;
-		public getSignature(): string {
-			return this.__signature;
-		}
-		public static parse(str: string | object): Protocol.TTypes | Error {
-			return Protocol.parse(str, GetChannels);
-		}
-		public stringify(): Protocol.TStringifyOutput | Error {
-			return Protocol.stringify(this, GetChannels);
-		}
-		public static instanceOf(target: any): boolean {
-			return Protocol.isInstanceOf(GetChannels.__signature, target);
-		}
+		public static __signature: string = "6E8A55C9";
+		public static getSignature(): string { return GetUsers.__signature; }
+		public static getProtocol(): any { return Protocol; }
+		public __signature: string = GetUsers.__signature;
+		public getSignature(): string { return this.__signature; }
+		public getProtocol(): any { return Protocol; }
+		public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, GetUsers); }
+		public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, GetUsers); }
+		public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(GetUsers.__signature, target); }
 
 		constructor() {
 			super();
+
+		}
+	}
+	export class AddUser extends Requests {
+		static getDescription(): {[key: string]: Protocol.IProperty } {
+			return {
+				user: { name: "user", value: User, type: Protocol.EEntityType.reference, optional: false }, 
+			}
+		}
+		public static __signature: string = "30105987";
+		public static getSignature(): string { return AddUser.__signature; }
+		public static getProtocol(): any { return Protocol; }
+		public __signature: string = AddUser.__signature;
+		public getSignature(): string { return this.__signature; }
+		public getProtocol(): any { return Protocol; }
+		public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, AddUser); }
+		public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, AddUser); }
+		public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(AddUser.__signature, target); }
+		public user: User;
+
+		constructor(args: { user: User }) {
+			super();
+			this.user = args.user;
+			const errors: Error[] = Protocol.validateParams(args, AddUser);
+			if (errors.length > 0) {
+				throw new Error(`Cannot create class of "AddUser" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+			}
 
 		}
 	}
@@ -2002,22 +1910,14 @@ export class Responses extends Protocol.Root {
 		}
 	}
 	public static __signature: string = "6482822D";
-	public static getSignature(): string {
-		return Responses.__signature;
-	}
+	public static getSignature(): string { return Responses.__signature; }
+	public static getProtocol(): any { return Protocol; }
 	public __signature: string = Responses.__signature;
-	public getSignature(): string {
-		return this.__signature;
-	}
-	public static parse(str: string | object): Protocol.TTypes | Error {
-		return Protocol.parse(str, Responses);
-	}
-	public stringify(): Protocol.TStringifyOutput | Error {
-		return Protocol.stringify(this, Responses);
-	}
-	public static instanceOf(target: any): boolean {
-		return Protocol.isInstanceOf(Responses.__signature, target);
-	}
+	public getSignature(): string { return this.__signature; }
+	public getProtocol(): any { return Protocol; }
+	public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, Responses); }
+	public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, Responses); }
+	public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(Responses.__signature, target); }
 
 	constructor() {
 		super();
@@ -2025,75 +1925,56 @@ export class Responses extends Protocol.Root {
 	}
 }
 export namespace Responses {
-	export class ChannelUsersList extends Responses {
+	export class UsersList extends Responses {
 		static getDescription(): {[key: string]: Protocol.IProperty } {
 			return {
-				channelId: { name: "channelId", value: "int16", type: Protocol.EEntityType.primitive, optional: false }, 
 				users: { name: "users", value: User, type: Protocol.EEntityType.repeated, optional: false }, 
 			}
 		}
-		public static __signature: string = "54A4AAC4";
-		public static getSignature(): string {
-			return ChannelUsersList.__signature;
-		}
-		public __signature: string = ChannelUsersList.__signature;
-		public getSignature(): string {
-			return this.__signature;
-		}
-		public static parse(str: string | object): Protocol.TTypes | Error {
-			return Protocol.parse(str, ChannelUsersList);
-		}
-		public stringify(): Protocol.TStringifyOutput | Error {
-			return Protocol.stringify(this, ChannelUsersList);
-		}
-		public static instanceOf(target: any): boolean {
-			return Protocol.isInstanceOf(ChannelUsersList.__signature, target);
-		}
-		public channelId: number = -1;
+		public static __signature: string = "151BAFDB";
+		public static getSignature(): string { return UsersList.__signature; }
+		public static getProtocol(): any { return Protocol; }
+		public __signature: string = UsersList.__signature;
+		public getSignature(): string { return this.__signature; }
+		public getProtocol(): any { return Protocol; }
+		public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, UsersList); }
+		public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, UsersList); }
+		public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(UsersList.__signature, target); }
 		public users: Array<User> = [];
 
-		constructor(args: { channelId: number, users: Array<User> }) {
+		constructor(args: { users: Array<User> }) {
 			super();
-			this.channelId = args.channelId;
 			this.users = args.users;
-			const errors: Error[] = Protocol.validateParams(args, ChannelUsersList);
+			const errors: Error[] = Protocol.validateParams(args, UsersList);
 			if (errors.length > 0) {
-				throw new Error(`Cannot create class of "ChannelUsersList" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+				throw new Error(`Cannot create class of "UsersList" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
 			}
 
 		}
 	}
-	export class ChannelsList extends Responses {
+	export class AddUserResult extends Responses {
 		static getDescription(): {[key: string]: Protocol.IProperty } {
 			return {
-				channels: { name: "channels", value: Channel, type: Protocol.EEntityType.repeated, optional: false }, 
+				error: { name: "error", value: "asciiString", type: Protocol.EEntityType.primitive, optional: true }, 
 			}
 		}
-		public static __signature: string = "4B5A7131";
-		public static getSignature(): string {
-			return ChannelsList.__signature;
-		}
-		public __signature: string = ChannelsList.__signature;
-		public getSignature(): string {
-			return this.__signature;
-		}
-		public static parse(str: string | object): Protocol.TTypes | Error {
-			return Protocol.parse(str, ChannelsList);
-		}
-		public stringify(): Protocol.TStringifyOutput | Error {
-			return Protocol.stringify(this, ChannelsList);
-		}
-		public static instanceOf(target: any): boolean {
-			return Protocol.isInstanceOf(ChannelsList.__signature, target);
-		}
-		public channels: Array<Channel> = [];
+		public static __signature: string = "4C6DCAD8";
+		public static getSignature(): string { return AddUserResult.__signature; }
+		public static getProtocol(): any { return Protocol; }
+		public __signature: string = AddUserResult.__signature;
+		public getSignature(): string { return this.__signature; }
+		public getProtocol(): any { return Protocol; }
+		public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, AddUserResult); }
+		public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, AddUserResult); }
+		public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(AddUserResult.__signature, target); }
+		public error?: string = "";
 
-		constructor(args: { channels: Array<Channel> }) {
+		constructor(args: { error?: string }) {
 			super();
-			this.channels = args.channels;
-			const errors: Error[] = Protocol.validateParams(args, ChannelsList);
+			args.error !== void 0 && (this.error = args.error);
+			const errors: Error[] = Protocol.validateParams(args, AddUserResult);
 			if (errors.length > 0) {
-				throw new Error(`Cannot create class of "ChannelsList" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
+				throw new Error(`Cannot create class of "AddUserResult" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
 			}
 
 		}
@@ -2102,40 +1983,26 @@ export namespace Responses {
 export class ChatMessage extends Protocol.Root {
 	static getDescription(): {[key: string]: Protocol.IProperty } {
 		return {
-			id: { name: "id", value: "int16", type: Protocol.EEntityType.primitive, optional: false }, 
-			channelId: { name: "channelId", value: "int16", type: Protocol.EEntityType.primitive, optional: false }, 
 			nickname: { name: "nickname", value: "asciiString", type: Protocol.EEntityType.primitive, optional: false }, 
 			message: { name: "message", value: "utf8String", type: Protocol.EEntityType.primitive, optional: false }, 
 			created: { name: "created", value: "datetime", type: Protocol.EEntityType.primitive, optional: false }, 
 		}
 	}
 	public static __signature: string = "71D3EB56";
-	public static getSignature(): string {
-		return ChatMessage.__signature;
-	}
+	public static getSignature(): string { return ChatMessage.__signature; }
+	public static getProtocol(): any { return Protocol; }
 	public __signature: string = ChatMessage.__signature;
-	public getSignature(): string {
-		return this.__signature;
-	}
-	public static parse(str: string | object): Protocol.TTypes | Error {
-		return Protocol.parse(str, ChatMessage);
-	}
-	public stringify(): Protocol.TStringifyOutput | Error {
-		return Protocol.stringify(this, ChatMessage);
-	}
-	public static instanceOf(target: any): boolean {
-		return Protocol.isInstanceOf(ChatMessage.__signature, target);
-	}
-	public id: number = -1;
-	public channelId: number = -1;
+	public getSignature(): string { return this.__signature; }
+	public getProtocol(): any { return Protocol; }
+	public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, ChatMessage); }
+	public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, ChatMessage); }
+	public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(ChatMessage.__signature, target); }
 	public nickname: string = "";
 	public message: string = "";
 	public created: Date = new Date();
 
-	constructor(args: { id: number, channelId: number, nickname: string, message: string, created: Date }) {
+	constructor(args: { nickname: string, message: string, created: Date }) {
 		super();
-		this.id = args.id;
-		this.channelId = args.channelId;
 		this.nickname = args.nickname;
 		this.message = args.message;
 		this.created = args.created;
@@ -2150,77 +2017,25 @@ export class User extends Protocol.Root {
 	static getDescription(): {[key: string]: Protocol.IProperty } {
 		return {
 			nickname: { name: "nickname", value: "asciiString", type: Protocol.EEntityType.primitive, optional: false }, 
-			firstName: { name: "firstName", value: "utf8String", type: Protocol.EEntityType.primitive, optional: false }, 
-			lastName: { name: "lastName", value: "utf8String", type: Protocol.EEntityType.primitive, optional: false }, 
 		}
 	}
 	public static __signature: string = "3B609EF0";
-	public static getSignature(): string {
-		return User.__signature;
-	}
+	public static getSignature(): string { return User.__signature; }
+	public static getProtocol(): any { return Protocol; }
 	public __signature: string = User.__signature;
-	public getSignature(): string {
-		return this.__signature;
-	}
-	public static parse(str: string | object): Protocol.TTypes | Error {
-		return Protocol.parse(str, User);
-	}
-	public stringify(): Protocol.TStringifyOutput | Error {
-		return Protocol.stringify(this, User);
-	}
-	public static instanceOf(target: any): boolean {
-		return Protocol.isInstanceOf(User.__signature, target);
-	}
+	public getSignature(): string { return this.__signature; }
+	public getProtocol(): any { return Protocol; }
+	public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, User); }
+	public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, User); }
+	public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(User.__signature, target); }
 	public nickname: string = "";
-	public firstName: string = "";
-	public lastName: string = "";
 
-	constructor(args: { nickname: string, firstName: string, lastName: string }) {
+	constructor(args: { nickname: string }) {
 		super();
 		this.nickname = args.nickname;
-		this.firstName = args.firstName;
-		this.lastName = args.lastName;
 		const errors: Error[] = Protocol.validateParams(args, User);
 		if (errors.length > 0) {
 			throw new Error(`Cannot create class of "User" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
-		}
-
-	}
-}
-export class Channel extends Protocol.Root {
-	static getDescription(): {[key: string]: Protocol.IProperty } {
-		return {
-			name: { name: "name", value: "utf8String", type: Protocol.EEntityType.primitive, optional: false }, 
-			created: { name: "created", value: "datetime", type: Protocol.EEntityType.primitive, optional: false }, 
-		}
-	}
-	public static __signature: string = "63F2459E";
-	public static getSignature(): string {
-		return Channel.__signature;
-	}
-	public __signature: string = Channel.__signature;
-	public getSignature(): string {
-		return this.__signature;
-	}
-	public static parse(str: string | object): Protocol.TTypes | Error {
-		return Protocol.parse(str, Channel);
-	}
-	public stringify(): Protocol.TStringifyOutput | Error {
-		return Protocol.stringify(this, Channel);
-	}
-	public static instanceOf(target: any): boolean {
-		return Protocol.isInstanceOf(Channel.__signature, target);
-	}
-	public name: string = "";
-	public created: Date = new Date();
-
-	constructor(args: { name: string, created: Date }) {
-		super();
-		this.name = args.name;
-		this.created = args.created;
-		const errors: Error[] = Protocol.validateParams(args, Channel);
-		if (errors.length > 0) {
-			throw new Error(`Cannot create class of "Channel" due error(s):\n${errors.map((error: Error) => { return `\t- ${error.message}`; }).join('\n')}`);
 		}
 
 	}
@@ -2231,22 +2046,14 @@ export class Request extends Protocol.Root {
 		}
 	}
 	public static __signature: string = "7935BB2A";
-	public static getSignature(): string {
-		return Request.__signature;
-	}
+	public static getSignature(): string { return Request.__signature; }
+	public static getProtocol(): any { return Protocol; }
 	public __signature: string = Request.__signature;
-	public getSignature(): string {
-		return this.__signature;
-	}
-	public static parse(str: string | object): Protocol.TTypes | Error {
-		return Protocol.parse(str, Request);
-	}
-	public stringify(): Protocol.TStringifyOutput | Error {
-		return Protocol.stringify(this, Request);
-	}
-	public static instanceOf(target: any): boolean {
-		return Protocol.isInstanceOf(Request.__signature, target);
-	}
+	public getSignature(): string { return this.__signature; }
+	public getProtocol(): any { return Protocol; }
+	public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, Request); }
+	public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, Request); }
+	public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(Request.__signature, target); }
 
 	constructor() {
 		super();
@@ -2259,22 +2066,14 @@ export class Response extends Protocol.Root {
 		}
 	}
 	public static __signature: string = "4F56A0FA";
-	public static getSignature(): string {
-		return Response.__signature;
-	}
+	public static getSignature(): string { return Response.__signature; }
+	public static getProtocol(): any { return Protocol; }
 	public __signature: string = Response.__signature;
-	public getSignature(): string {
-		return this.__signature;
-	}
-	public static parse(str: string | object): Protocol.TTypes | Error {
-		return Protocol.parse(str, Response);
-	}
-	public stringify(): Protocol.TStringifyOutput | Error {
-		return Protocol.stringify(this, Response);
-	}
-	public static instanceOf(target: any): boolean {
-		return Protocol.isInstanceOf(Response.__signature, target);
-	}
+	public getSignature(): string { return this.__signature; }
+	public getProtocol(): any { return Protocol; }
+	public static parse(str: string | object): Protocol.TTypes | Error { return Protocol.parse(str, Response); }
+	public stringify(): Protocol.TStringifyOutput | Error { return Protocol.stringify(this, Response); }
+	public static instanceOf(target: any): boolean { return Protocol.isInstanceOf(Response.__signature, target); }
 
 	constructor() {
 		super();

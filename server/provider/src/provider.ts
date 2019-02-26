@@ -25,9 +25,13 @@ const ServerDemandHandlerSignature: string = '__ServerDemandHandlerSignature';
 const ServerEventHandlerSignature: string = '__ServerEventHandlerSignature';
 
 export default class Provider {
+    public static Events = {
+        connected: 'connected',
+        disconnected: 'disconnected',
+    };
 
     private _logger: Tools.Logger = new Tools.Logger('Provider');
-
+    private _emitter: Tools.EventEmitter = new Tools.EventEmitter();
     private _messageEventProcessor: MessageEventProcessor;
     private _messageReconnectionProcessor: MessageReconnectionProcessor;
     private _messageRegistrationProcessor: MessageRegistrationProcessor;
@@ -58,6 +62,7 @@ export default class Provider {
         this._messageDemandFromRespondentProcessor = new MessageDemandFromRespondentProcessor(this._state);
         // Subscribe to messages
         transport.subscribe(ATransport.EVENTS.message, this._onClientMessage.bind(this));
+        transport.subscribe(ATransport.EVENTS.connected, this._onClientConnected.bind(this));
         transport.subscribe(ATransport.EVENTS.disconnected, this._onClientDisconnect.bind(this));
         transport.subscribe(ATransport.EVENTS.updated, this._onClientUpdated.bind(this));
         // Create transport
@@ -67,6 +72,35 @@ export default class Provider {
         }).catch((error: Error) => {
             this._logger.error(`Fail to create transport due error: ${error.message}`);
         });
+    }
+
+    /**
+     * Subscribe to provider event
+     * @param event {any} event from Provider.Events
+     * @param handler {Function} handler of event
+     * @returns {boolean}
+     */
+    public on(event: any, handler: (...args: any[]) => any): boolean {
+        return this._emitter.subscribe(event, handler);
+    }
+
+    /**
+     * Unsubscribe from provider event
+     * @param event {any} event from Provider.Events
+     * @param handler {Function} handler of event
+     * @returns {boolean}
+     */
+    public removeListener(event: any, handler: (...args: any[]) => any): boolean {
+        return this._emitter.unsubscribe(event, handler);
+    }
+
+    /**
+     * Remove all handlers for Provider.Events event
+     * @param event {any} event from Provider.Events
+     * @returns {void}
+     */
+    public removeAllListeners(event?: any): void {
+        return this._emitter.unsubscribeAll(event);
     }
 
     /**
@@ -89,20 +123,32 @@ export default class Provider {
         });
     }
 
-    public subscribeToRequest(protocol: any, demand: Protocol.IClass | string, query: TQuery, handler: THandler): void | Error {
+    /**
+     * Register as respondent: bind handler with protocol / demand (request)
+     * @param demand {any} reference to demand class
+     * @param query {TQuery} query, which will used for calls to respondent
+     * @param handler {Function} handler to process income request (demand)
+     * @returns { void | Error }
+     */
+    public listenRequest(
+        demand: any,
+        handler: (demand: any, clientId: string, callback: (error: Error | null, results: any) => any) => any,
+        query: TQuery = {},
+    ): void | Error {
         // Check handler
         if ((handler as any)[ServerDemandHandlerSignature] !== void 0) {
             return new Error(`Handler is already subscribed`);
         }
         // Create subscription
         const guid: string = `${Tools.guid()}-${Tools.guid()}`;
+        const demandSignature = this._getEntitySignature(demand);
+        if (demandSignature instanceof Error) {
+            return demandSignature;
+        }
+        const protocol = demand.getProtocol();
         const protocolSignature = this._getEntitySignature(protocol);
         if (protocolSignature instanceof Error) {
             return protocolSignature;
-        }
-        const demandSignature = typeof demand === 'string' ? demand : this._getEntitySignature(demand);
-        if (demandSignature instanceof Error) {
-            return demandSignature;
         }
         (handler as any)[ServerDemandHandlerSignature] = guid;
         // Add handler
@@ -113,14 +159,19 @@ export default class Provider {
         this._state.demands.subscribe(protocolSignature, demandSignature, guid, query);
     }
 
-    public unsubscribeFromRequest(protocol: any, demand: Protocol.IClass | string): void | Error {
-        const protocolSignature = this._getEntitySignature(protocol);
-        if (protocolSignature instanceof Error) {
-            return protocolSignature;
-        }
-        const demandSignature = typeof demand === 'string' ? demand : this._getEntitySignature(demand);
+    /**
+     * Unregister as respondent: unbind handler with protocol / demand (request)
+     * @param demand {any} reference to demand class
+     * @returns { void | Error }
+     */
+    public removeRequestListener(demand: any): void | Error {
+        const demandSignature = this._getEntitySignature(demand);
         if (demandSignature instanceof Error) {
             return demandSignature;
+        }
+        const protocolSignature = this._getEntitySignature(demand.getProtocol());
+        if (protocolSignature instanceof Error) {
+            return protocolSignature;
         }
         const subscriptions: string[] | Error = this._state.demands.getSubscriptions(protocolSignature, demandSignature);
         if (subscriptions instanceof Error) {
@@ -131,20 +182,27 @@ export default class Provider {
         });
     }
 
-    public subscribeToEvent(protocol: any, event: Protocol.IClass | string, handler: THandler): void | Error {
+    /**
+     * Subscribe handler to event
+     * @param event {any} implementation of event
+     * @param handler {Function} handler
+     * @returns { void | Error }
+     */
+    public subscribe(event: any, handler: (event: any) => any): void | Error {
         // Check handler
         if ((handler as any)[ServerEventHandlerSignature] !== void 0) {
             return new Error(`Handler is already subscribed`);
         }
         // Create subscription
         const guid: string = `${Tools.guid()}-${Tools.guid()}`;
+        const eventSignature = this._getEntitySignature(event);
+        if (eventSignature instanceof Error) {
+            return eventSignature;
+        }
+        const protocol = event.getProtocol();
         const protocolSignature = this._getEntitySignature(protocol);
         if (protocolSignature instanceof Error) {
             return protocolSignature;
-        }
-        const eventSignature = typeof event === 'string' ? event : this._getEntitySignature(event);
-        if (eventSignature instanceof Error) {
-            return eventSignature;
         }
         (handler as any)[ServerEventHandlerSignature] = guid;
         // Add protocol
@@ -153,18 +211,20 @@ export default class Provider {
         this._state.events.subscribeHandler(protocolSignature, eventSignature, handler);
     }
 
-    public unsubscribeFromEvent(protocol: any, event?: Protocol.IClass | string, handler?: THandler): void | Error {
-        const protocolSignature = this._getEntitySignature(protocol);
-        if (protocolSignature instanceof Error) {
-            return protocolSignature;
-        }
-        if (event === undefined) {
-            this._state.events.unsubscribeHandler(protocolSignature);
-            return;
-        }
-        const eventSignature = typeof event === 'string' ? event : this._getEntitySignature(event);
+    /**
+     * Unsubscribe from event
+     * @param event {any} implementation of event
+     * @param handler {function} listener of event
+     * @returns { void | Error }
+     */
+    public unsubscribe(event: any, handler?: THandler): void | Error {
+        const eventSignature = this._getEntitySignature(event);
         if (eventSignature instanceof Error) {
             return eventSignature;
+        }
+        const protocolSignature = this._getEntitySignature(event.getProtocol());
+        if (protocolSignature instanceof Error) {
+            return protocolSignature;
         }
         if (handler === undefined) {
             this._state.events.unsubscribeHandler(protocolSignature, eventSignature);
@@ -173,23 +233,23 @@ export default class Provider {
         this._state.events.unsubscribeHandler(protocolSignature, eventSignature, handler);
     }
 
-    public refEventAliases(alias: TAlias): Error | void {
+    public ref(alias: TAlias): Error | void {
         return this._state.events.refAlias(alias);
     }
 
-    public unrefEventAliases(): void {
+    public unref(): void {
         this._state.events.unrefAlias();
     }
 
-    public emitEvent(protocol: any, event: any, aliases?: TAlias, options?: Protocol.Message.Event.Options): Promise<number> {
+    public emit(event: any, aliases?: TAlias, options?: Protocol.Message.Event.Options): Promise<number> {
         return new Promise((resolve, reject) => {
-            const protocolSignature = this._getEntitySignature(protocol);
-            if (protocolSignature instanceof Error) {
-                return reject(protocolSignature);
-            }
             const eventSignature = this._getEntitySignature(event);
             if (eventSignature instanceof Error) {
                 return reject(eventSignature);
+            }
+            const protocolSignature = this._getEntitySignature(event.getProtocol());
+            if (protocolSignature instanceof Error) {
+                return reject(protocolSignature);
             }
             const _aliases: Protocol.KeyValue[] = [];
             if (typeof aliases !== 'undefined') {
@@ -292,6 +352,10 @@ export default class Provider {
         }
     }
 
+    private _onClientConnected(clientId: string) {
+        this._emitter.emit(Provider.Events.connected, clientId);
+    }
+
     private _onClientDisconnect(clientId: string) {
         Promise.all([
             this._state.events.disconnect(clientId),
@@ -299,6 +363,7 @@ export default class Provider {
         ]).then(() => {
             this._state.tasks.drop(clientId);
             this._state.aliases.unref(clientId);
+            this._emitter.emit(Provider.Events.disconnected, clientId);
         }).catch((error: Error) => {
             this._logger.error(`Fail to disconnect client correctly due error: ${error.message}`);
         });
