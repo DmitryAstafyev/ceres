@@ -4,6 +4,7 @@
 Network transport/protocol "**Ceres**"
 
 # Self-explained example
+<a name="self-explained-example"></a>
 Let's create a communication mechanism for simple web-chat.
 
 > Note. We are not talking about HTML/CSS and chat functionality - just about communication.
@@ -240,7 +241,7 @@ Let's take a look closer to handler of request. For example, listener of request
         clientId: string,
         callback: (error: Error | null, results: Protocol.Responses.AddUserResult) => any 
     ) {
-        // Do magin here;
+        // Do magic here;
     }
 ```
 
@@ -522,7 +523,7 @@ All available events are listed in static property of class **Consumer**.
 **Note 2**. To subscribe to chat events, we should use method `subscribe`:
 ```typescript
     this.consumer.subscribe(Protocol.Events.NewMessage, this.onNewMessage.bind(this)).then(() => {
-        // Do magin here
+        // Do magic here
     });
 ```
 **Note 3**. To send request to provider we are using method `request`. As first argument we should use request body (demand), as second - reference to class of expected response. This is important - ceres will check result before resolve promise; if result is expected (response instance of defined reference) promise will be resolved; if not - rejected.
@@ -571,5 +572,193 @@ Network transport/protocol **Ceres** includes next components:
 - **Protocol generator**. Ceres works based on ceres.protocol - JavaScript protocol generated from the scheme (scheme is presented as JSON file). More information about protocol is [here](https://github.com/DmitryAstafyev/ceres.protocol).
 - **Transport implementations**. Not consumer, not provider doesn't have transport implementation. Implementation of transport should be delivered to provider and consumer. 
 
-# API
+# Provider
+Provider functionality:
+- manage connections form consumers
+- emit/trigger events
+- process requests (demands)
+
+## Creating
+To create provider developer should install package **ceres.provider**. Also provider needs a transport.
+
+Available transports for provider
+
+| Package name (npm) | Platform | Description | Related consumer <br/> transports (npm) |
+| --- | --- | --- | --- |
+| ceres.provider.node.longpoll | node | Implements connections using long polling technology | ceres.consumer.browser.longpoll |
+| ceres.provider.node.ws | node | Implements connections using Web Socket technology. This transport uses WebSocket as primiry way of communition, but if size of single package is too big, it send data using http(s) requests to client | ceres.consumer.browser.ws |
+
+Example of provider creating
+
+```typescript
+import Transport, { ConnectionParameters }  from 'ceres.provider.node.ws';
+import Provider from 'ceres.provider';
+
+// Create transport
+const transport: Transport = new Transport(new ConnectionParameters({
+    port: 3005
+}));
+
+// Create provider
+const provider: Provider = new Provider(transport);
+```
+Provider as it is doesn't require any parameter to be created. Only transport expected some parameters to set up server.
+
+## Destroy
+
+To destroy provider developer should use next method:
+
+```typescript
+provider.destroy(): Promise<void>;
+```
+
+Provider will:
+- disconnect all consumers; 
+- clear all pending tasks and not resolved requests (demands);
+- remove all event listeners;
+
+## Provider events
+**Attaching listener**
+```typescript
+provider.on(event: any, handler: (...args: any[]) => any): boolean;
+```
+
+Provider emit next events
+- connected. Triggered if new consumer was connected.
+- disconnected. Triggered if new consumer was disconnected.
+
+List of provider's events are available as static property **Provider.Events**.
+
+```typescript
+provider.on(Provider.Events.connected, (clientId: string) => {
+    // To do something
+});
+
+provider.on(Provider.Events.disconnected, (clientId: string) => {
+    // To do something
+});
+
+```
+
+**Remove listener**
+```typescript
+provider.removeListener(event: any, handler: (...args: any[]) => any): boolean
+```
+
+**Remove all listeners**
+```typescript
+provider.removeAllListeners(event?: any): void
+```
+
+## Works with consumers
+**Listening requests from consumers**
+
+To start listen any request from consumer, provider should subscribe on it.
+
+```typescript
+provider.listenRequest(
+        demand  : any,
+        handler : ( demand  : any, 
+                    clientId: string, 
+                    callback: ( error   : Error | null, 
+                                results : any ) => any ) => any,
+        query   : TQuery = {},
+    ): void | Error
+```
+- **demand** reference to class of request, which should be listen (protocol implementation with such kind of classes should generated using library **ceres.protocol**. To get more details see an [example](#self-explained-example))
+- **handler** handler, which will be called with income request.
+- **query** Optional query, which can be used to order income requests (demands)
+
+Handler will have next arguments:
+- **demand** instance of request's class. *Note* handler will not be called, if request data isn't valid. So, handler always gets correct and valid data.
+- **clientId** unique ID of consumer, who sent request
+- **callback** callback to send results of request to consumer back. As the fisrt argument should be defined error; as second instance of result's class. To avoid error, should be used **null** instead. As result can be used only instance of class from same protocol as demand was generated. Using as result any other data will make an exception.
+
+Optionaly developer can define **query**. This is simple javascript object:
+
+```javascript
+{
+    firstname: "Brad",
+    lastname: "Pitt"
+}
+```
+
+If **query** is defined, handler of request (demand) will be called only in case of match query of listener and query of sender (consumer).
+
+**Stop listening requests from consumers**
+
+```typescript
+provider.removeRequestListener(demand: any): void | Error
+```
+
+To stop listening some kind of request, should provided reference to class of request.
+
+> Note. If developer defined a few listeners (for example with several quiries), method **removeRequestListener** will remove all listener for defined request (demand).
+
+**Listening events from consumers**
+
+```typescript
+provider.subscribe(event: any, handler: (event: any) => any): void | Error
+```
+
+- **event** reference to class of event, which should be listen (protocol implementation with such kind of classes should generated using library **ceres.protocol**. To get more details see an [example](#self-explained-example))
+- **handler** handler, which will be called with income event. As single argument handler will get instance of event's class. Because it's event, no way to send response.
+
+**Stop listening events from consumers**
+
+```typescript
+provider.unsubscribe(event: any, handler?: THandler): void | Error
+```
+
+- **event** reference to class of event
+- **handler** handler, which was defined as listener. If handler will not be defined - will be removed all listeners of defined event.
+
+**Emiting/sending events to consumers**
+```typescript
+provider.emit(event: any, aliases?: TAlias, options?: Protocol.Message.Event.Options): Promise<number>
+```
+- **event** instance of event's class.
+- **aliases** can be used to define one or limited group of consumers, which should receive event. 
+- **options** options to define nature of receivers
+
+Optionaly developer can define **aliases**. This is simple javascript object:
+
+```javascript
+{
+    group: "A"
+}
+```
+As result event will be gotten only by consumers, which registred itself with alias `{ group: "A" }`, all other consumers will not get event.
+
+**Aliases of provider**
+
+Provider can set up own aliases for income events. 
+
+```typescript
+provider.ref(alias: TAlias): Error | void
+```
+
+Or remove existin aliases
+
+```typescript
+provider.unref(): void
+```
+
+For example,
+
+```typescript
+provider.ref({ who: 'server', region: 'UK' });
+```
+
+From now consumers are able to send direct events to this server using alias `{ who: 'server', region: 'UK' }`.
+
+> **Note**. Aliases on provider was included as experemental functionlity. Full support of this feature on provider will be available after developing of *ceres.proxy* will be finished. But on consumer level aliases works as well.
+
+
+
+
+
+
+
+
 
