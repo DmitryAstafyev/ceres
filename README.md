@@ -1,3 +1,4 @@
+<a name="start"></a>
 Network transport/protocol "**Ceres**"
 
 # Self-explained example
@@ -675,7 +676,7 @@ provider.listenRequest(
         query   : { [key: string]: string } = {},
     ): void | Error
 ```
-- **demand** reference to class of request, which should be listen (protocol implementation with such kind of classes should generated using library **ceres.protocol**. To get more details see an [example](#self-explained-example))
+- **demand** reference to class of request, which should be listen (protocol implementation with such kind of classes should generated using library **ceres.protocol**. To get more details see an [example](#self-explained-example)
 - **handler** handler, which will be called with income request.
 - **query** Optional query, which can be used to order income requests (demands)
 
