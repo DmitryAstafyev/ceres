@@ -1,6 +1,3 @@
-> README IN PROGRESS...
-
-
 Network transport/protocol "**Ceres**"
 
 # Self-explained example
@@ -10,7 +7,7 @@ Let's create a communication mechanism for simple web-chat.
 > Note. We are not talking about HTML/CSS and chat functionality - just about communication.
 
 ## Step 1. Think about communication scheme
-Would be nice, before to do something - think how our chat should work, which kind of messages server/client should exchange with each other.
+Would be nice, before to do something to think how our chat should work, which kind of messages server/client should exchange with each other.
 As usual this is all about protocol.
 Let's describe out protocol as JSON format.
 ```
@@ -316,7 +313,7 @@ A few extra actions before creating client class. Let's create folder **build** 
 
 Also you can add some CSS and save it in *chat/client/build/styles.css*.
 
-But main part for sure, it's client's class. Create folder "src" (chat/client/src) and put there out main file - **main.ts**.
+But main part for sure, it's client's class. Create folder "src" (chat/client/src) and put there our main file - **main.ts**.
 
 
 ```typescript
@@ -514,6 +511,7 @@ window.addEventListener('load', () => {
 ```
 
 A few comments to code of client's class:
+
 **Note 1**. To subscribe to such events like connect/disconnect and other simular events (better say - transport events), developer should use method `on`: 
 ```typescript
     this.consumer.on(Consumer.Events.connected, () => {});
@@ -538,6 +536,18 @@ All available events are listed in static property of class **Consumer**.
         // Fail. Could be a few reasons, include: response is NOT an instance of UsersList
     });
 ```
+
+**Note 4**. Even we are using transport based on WebSocket we still have to define two kind of address
+```typescript
+    // Create transport
+    this.transport = new Transport(new ConnectionParameters({
+        host: 'http://localhost',
+        port: 3005,
+        wsHost: 'ws://localhost',
+        wsPort: 3005,
+    }));
+```
+This is because WebSocket uses as major way of communiction, but "big" packages will be sent using XMLHTTPRequest in any way to keep stable work of connection and do not "break" stream of events.
 
 ## Step 5. Time to test
 
@@ -624,8 +634,8 @@ provider.on(event: any, handler: (...args: any[]) => any): boolean;
 ```
 
 Provider emit next events
-- connected. Triggered if new consumer was connected.
-- disconnected. Triggered if new consumer was disconnected.
+- **connected**. Triggered if new consumer was connected.
+- **disconnected**. Triggered if new consumer was disconnected.
 
 List of provider's events are available as static property **Provider.Events**.
 
@@ -662,7 +672,7 @@ provider.listenRequest(
                     clientId: string, 
                     callback: ( error   : Error | null, 
                                 results : any ) => any ) => any,
-        query   : TQuery = {},
+        query   : { [key: string]: string } = {},
     ): void | Error
 ```
 - **demand** reference to class of request, which should be listen (protocol implementation with such kind of classes should generated using library **ceres.protocol**. To get more details see an [example](#self-explained-example))
@@ -735,7 +745,7 @@ As result event will be gotten only by consumers, which registred itself with al
 Provider can set up own aliases for income events. 
 
 ```typescript
-provider.ref(alias: TAlias): Error | void
+provider.ref(alias: { [key: string]: string }): Error | void
 ```
 
 Or remove existin aliases
@@ -754,11 +764,273 @@ From now consumers are able to send direct events to this server using alias `{ 
 
 > **Note**. Aliases on provider was included as experemental functionlity. Full support of this feature on provider will be available after developing of *ceres.proxy* will be finished. But on consumer level aliases works as well.
 
+# Consumer
+Consumer functionality:
+- connect to provider
+- trigger events
+- sending requests (demands)
+
+## Creating
+
+To create consumer developer should install package **ceres.consumer**. Also consumer needs a transport.
+
+Available transports for consumer
+
+| Package name (npm) | Platform | Description | Related consumer <br/> transports (npm) |
+| --- | --- | --- | --- |
+| ceres.consumer.browser.longpoll | browser | Implements connections using long polling technology | ceres.provider.node.longpoll |
+| ceres.consumer.browser.ws | browser | Implements connections using Web Socket technology. This transport uses WebSocket as primiry way of communition, but if size of single package is too big, it send data using http(s) requests to client | ceres.provider.node.ws |
+
+Example of consumer creating
+
+```typescript
+import * as Protocol from '../../protocol/protocol.chat';
+import Transport, { ConnectionParameters } from 'ceres.consumer.browser.ws';
+
+// Create transport
+const transport: Transport = new Transport(new ConnectionParameters({
+    host: 'http://localhost',
+    port: 3005,
+    wsHost: 'ws://localhost',
+    wsPort: 3005,
+}));
+// Create consumer
+const consumer: Consumer = new Consumer(transport);
+```
+Consumer as it is doesn't require any parameter to be created. Only transport expected some parameters to create connection to provider.
+
+## Destroy
+
+To destroy consumer developer should use next method:
+
+```typescript
+consumer.destroy(): Promise<void>;
+```
+
+Consumer will:
+- close all open connections to provider (as usual it will not be one connection); 
+- clear all pending tasks and not resolved requests (demands);
+- remove all event listeners;
+
+## Consumer events
+**Attaching listener**
+```typescript
+consumer.on(event: any, handler: (...args: any[]) => any): boolean;
+```
+
+Consumer emit next events
+- **connected**. Triggered if new consumer was connected.
+- **disconnected**. Triggered if new consumer was disconnected.
+- **demandSent**. Triggered after request (demand) was sent to provider and provider accept it. At this moment response isn't yet gotten.
+- **error**. Error of connection.
+- **eventSent**. Triggered after event was sent to provider and provider accept it.
+- **referenceAccepted**. Triggered after consumer alias was accepted by provider.
+- **subscriptionDone**. Triggered after subscription on event was accepted by provider.
+- **subscriptionToRequestDone**. Triggered after consumer was accepted as respondent (of demand/request) by provider.
+- **unsubscriptionAllDone**. Triggered after all subscriptions of consumer were dropped by provider.
+- **unsubscriptionDone**. Triggered after defined subscription of consumer was dropped by provider.
+- **unsubscriptionToRequestDone**. Triggered after provider remove role "respondent" of consumer.
+
+List of consumer's events are available as static property **Consumer.Events**.
+
+```typescript
+consumer.on(Consumer.Events.connected, () => {
+    // To do something
+});
+
+consumer.on(Consumer.Events.disconnected, () => {
+    // To do something
+});
+
+consumer.on(Consumer.Events.error, (error: Error) => {
+    // To do something
+});
+
+consumer.on(Consumer.Events.eventSent, (event: any) => {
+    // To do something
+});
+
+consumer.on(Consumer.Events.referenceAccepted, (aliases: { [key: string]: string  }) => {
+    // To do something
+});
+
+consumer.on(Consumer.Events.subscriptionDone, (event: any) => {
+    // To do something
+});
+
+consumer.on(Consumer.Events.subscriptionToRequestDone, (providerResponse: any) => {
+    // To do something
+});
+
+consumer.on(Consumer.Events.unsubscriptionAllDone, (providerResponse: any) => {
+    // To do something
+});
+
+consumer.on(Consumer.Events.unsubscriptionToRequestDone, (providerResponse: any) => {
+    // To do something
+});
+```
+
+**Remove listener**
+```typescript
+consumer.removeListener(event: any, handler: (...args: any[]) => any): boolean
+```
+
+**Remove all listeners**
+```typescript
+consumer.removeAllListeners(event?: any): void
+```
+
+## Works with provider and other consumers
+**Listening events from provider/consumers**
+
+```typescript
+consumer.subscribe(event: any, handler: (event: any) => any): Promise<ProviderResponse>
+```
+
+- **event** reference to class of event, which should be listen (protocol implementation with such kind of classes should generated using library **ceres.protocol**. To get more details see an [example](#self-explained-example))
+- **handler** handler, which will be called with income event. As single argument handler will get instance of event's class. Because it's event, no way to send response.
+
+Method **subscribe** will be resolved if subscription was accepted by provider. In all other cases - rejected.
+
+**Stop listening events**
+
+```typescript
+consumer.unsubscribe(event: any): Promise<ProviderResponse>
+```
+
+- **event** reference to class of event
+
+```typescript
+consumer.unsubscribeAll(protocol: any): Promise<ProviderResponse>
+```
+
+- **protocol** reference to protocol. All events related to this protocol will be unsubscribed
+
+ 
+Method **unsubscribe** and **unsubscribeAll** will be resolved if subscription was dropped by provider. In all other cases - rejected.
+
+**Aliases of consumer**
+
+Consumer can set up own aliases for income events. 
+
+```typescript
+consumer.ref(alias: { [key: string]: string }): Promise<ProviderResponse>
+```
+
+> Note. To remove/drop aliases, just do `consumer.ref({});`
+
+For example,
+
+```typescript
+consumer.ref({ myId: 'R2D2', myGroup: 'FarFar' });
+```
+
+From now this consumer is able to get "private" events, which was triggered with aliases `{ myId: 'R2D2', myGroup: 'FarFar' }`. Also this consumer will "catch" event for `{ myId: 'R2D2' }` or `{ myGroup: 'FarFar' }`, but will not for `{ myId: 'R2D2', myGroup: 'FarFar', state: 'updated' }`, because property "state" isn't defined in aliases of consumer.
 
 
+**Emiting/sending events to consumers/provider**
 
+```typescript
+consumer.emit(event: any, aliases: { [key: string]: string } = {}): Promise<ProviderResponse>;
+```
 
+- **event**. Instance of event's class
+- **aliases**. Optional. To make event available only for defined group of consumers (or for one consumer), could be defined aliases.
 
+Method **emit** will be resolver if provider accepted event; in all other cases - rejected.
 
+**Sending requests/demands**
 
+```typescript
+consumer.request(demand: any,
+                 expected: any,
+                 query: { [key: string]: string } = {},
+                 options: IDemandOptions = {}): Promise<any>;
+```
+- **demand**. Instance of request's class.
+- **expected**. Reference to class of expected response. If response will not be an instance of expected class, method will be rejected.
+- **query**. Optional query, which can be used to target request
+- **options**. Addition options of request
 
+Method **request** doesn't have timeout. It will be resolved only in one case - when expected response will be gotten. In all other cases (include connection errors) - rejected.
+
+Example of query could be:
+
+```
+{
+    location: "London"
+}
+```
+
+In this case event will be sent only to consumers, "who" defined its location as "London"
+
+**Listening requests/demands**
+
+>**Note**. Not only provider can listen income requests, but also consumer can. 
+
+```typescript
+consumer.listenRequest( demand : any, 
+                        handler: (  demand  : any, 
+                                    callback: ( error   : Error | null, 
+                                                results : any ) => any ) => any,
+                        query  : { [key: string]: string }): Promise<ProviderResponse>;
+```
+
+- **demand** reference to class of request, which should be listen (protocol implementation with such kind of classes should generated using library **ceres.protocol**. To get more details see an [example](#self-explained-example))
+- **handler** handler, which will be called with income request.
+- **query** Optional query, which can be used to order income requests (demands)
+
+Handler will have next arguments:
+- **demand** instance of request's class. *Note* handler will not be called, if request data isn't valid. So, handler always gets correct and valid data.
+- **callback** callback to send results of request back. As the fisrt argument should be defined error; as second instance of result's class. To avoid error, should be used **null** instead. As result can be used only instance of class from same protocol as demand was generated. Using as result any other data will make an exception.
+
+Optionaly developer can define **query**. For example to process only requests/demands for US language:
+
+```javascript
+{
+    language: "US"
+}
+```
+
+Method **listenRequest** will be resolved after provider will accept consumer as respondent of defined request; in all other cases - rejected.
+
+**Stop processing requests/demands**
+
+```typescript
+consumer.removeRequestListener(demand: any): Promise<ProviderResponse>;
+```
+
+- **demand**. Reference to class of demand (request), which should not be processed any more.
+
+Method **removeRequestListener** will be resolved after provider will drop role of consumer as respondent for defined request; in all other cases - rejected.
+
+## Connection / reconnection
+
+Consumer automatically starts connecting to provider from moment it was created.
+
+```typescript
+const consumer: Consumer = new Consumer(transport);
+```
+
+On fail of connection, consumer will made attempt to reconnect. But all subscriptions will be dropped. To keep it under controll, developer would reconnect consumer manualy: destroy and create:
+
+```typescript
+let consumer: Consumer | undefined;
+
+function connect() {
+    if (consumer !== undefined) {
+        // Destroy instance of consumer
+        consumer.destroy();
+    }
+    // Create
+    consumer = new Consumer(transport);
+    consumer.on('error', (error: Error) => {
+        // This is connection error. Consumer is already disconnected.
+        // Do reconnection.
+        setTimeout(connect, 1000);
+    });
+    // Do subscriptions
+    // ...
+}
+```
