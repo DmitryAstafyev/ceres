@@ -1034,3 +1034,29 @@ function connect() {
     // ...
 }
 ```
+
+# Other
+## Debug
+Default level of logs (for provider, consumer and transports) is 0 (ERROR). Available leveles:
+- 0: ERROR
+- 1: WARNINGS
+- 2: DEBUG
+- 3: INFO
+- 4: ENV
+- 5: VERBOS
+
+To change log level on **consumer** 
+```javascript
+// Set global variable as soon as possible
+window.CERES_LOGS_LEVEL = 2;
+```
+
+To change log level on **provider** add environment variable CERES_LOGS_LEVEL with value you want. Also you can just run it
+
+```
+CERES_LOGS_LEVEL=3 node myapp.js
+
+# or if you have fish
+
+env CERES_LOGS_LEVEL=3 node myapp.js
+```

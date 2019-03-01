@@ -1,13 +1,49 @@
-const DEFAUT_ALLOWED_CONSOLE = {
-    DEBUG: true,
-    ENV: true,
-    ERROR: true,
-    INFO: true,
-    VERBOS: false,
-    WARNING: true,
-};
+// tslint:disable:object-literal-sort-keys
 
 export type TOutputFunc = (...args: any[]) => any;
+
+export function getDefaultLogLevel(): { [key: string]: boolean } {
+    const levels: { [key: string]: boolean } = {
+        ERROR: true,
+        WARNING: false,
+        DEBUG: false,
+        INFO: false,
+        ENV: false,
+        VERBOS: false,
+    };
+    let level: any = 0;
+    if (typeof process !== 'undefined' && process !== null && typeof process.env === 'object' && process.env !== null && process.env.CERES_LOGS_LEVEL !== void 0) {
+        level = process.env.CERES_LOGS_LEVEL;
+    } else if (typeof window !== 'undefined' && window !== null && (window as any).CERES_LOGS_LEVEL !== void 0) {
+        level = (window as any).CERES_LOGS_LEVEL;
+    }
+    switch (level) {
+        case 0:
+        case '0':
+            break;
+        case 1:
+        case '1':
+            levels.WARNING = true;
+            break;
+        case 2:
+        case '2':
+            levels.WARNING = true; levels.DEBUG = true;
+            break;
+        case 3:
+        case '3':
+            levels.WARNING = true; levels.DEBUG = true; levels.INFO = true;
+            break;
+        case 4:
+        case '4':
+            levels.WARNING = true; levels.DEBUG = true; levels.INFO = true; levels.ENV = true;
+            break;
+        case 5:
+        case '5':
+            levels.WARNING = true; levels.DEBUG = true; levels.INFO = true; levels.ENV = true; levels.VERBOS = true;
+            break;
+        }
+    return levels;
+}
 
 /**
  * @class
@@ -27,7 +63,7 @@ export class LoggerParameters {
         {
             console         = true,
             output          = null,
-            allowedConsole  = DEFAUT_ALLOWED_CONSOLE,
+            allowedConsole  = getDefaultLogLevel(),
         }: {
             console?: boolean,
             output?: TOutputFunc | null,
