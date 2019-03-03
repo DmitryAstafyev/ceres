@@ -11,3 +11,4 @@
 .vscode
 !webpack.config.js
 TODO.md
+excluded/**
