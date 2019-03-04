@@ -1,6 +1,31 @@
 <a name="start"></a>
 Network transport/protocol "**Ceres**"
 
+# Table of content
+- [Self-explained example](#self-explained-example)
+  - [Step 1. Think about communication scheme](#step-1-think-about-communication-scheme)
+  - [Step 2. Create/generate protocol](#step-2-creategenerate-protocol)
+  - [Step 3. Create chat server](#step-3-create-chat-server)
+  - [Step 4. Create chat client](#step-4-create-chat-client)
+  - [Step 5. Time to test](#step-5-time-to-test)
+- [Components](#components)
+- [Provider](#provider)
+  - [Creating](#creating)
+  - [Destroy](#destroy)
+  - [Provider events](#provider-events)
+  - [Works with consumers](#works-with-consumers)
+- [Consumer](#consumer)
+  - [Creating](#creating-1)
+  - [Destroy](#destroy-1)
+  - [Consumer events](#consumer-events)
+  - [Works with provider and other consumers](#works-with-provider-and-other-consumers)
+  - [Connection / reconnection](#connection--reconnection)
+- [Security & authorization](#security--authorization)
+  - [Consumer](#consumer-1)
+  - [Provider](#provider-1)
+- [Other](#other)
+  - [Debug](#debug)
+
 # Self-explained example
 <a name="self-explained-example"></a>
 Let's create a communication mechanism for simple web-chat.
@@ -573,8 +598,6 @@ cd chat/server
 npm run build
 node ./build/server/server.js
 ```
-# Table of content
-
 
 # Components
 Network transport/protocol **Ceres** includes next components:
