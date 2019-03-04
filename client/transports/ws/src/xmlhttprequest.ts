@@ -26,7 +26,7 @@ export interface IEventDone {
 export const ContentType = {
     binary: 'application/octet-stream',
     text: 'text/plain',
-}
+};
 
 export default class ImpXMLHTTPRequest {
 
@@ -72,7 +72,7 @@ export default class ImpXMLHTTPRequest {
 	 * Public
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-    public send(): Promise<string | Uint8Array> {
+    public send(modificator?: (request: XMLHttpRequest) => XMLHttpRequest): Promise<string | Uint8Array> {
         return new Promise((resolve: TCallback, reject: TCallback) => {
             if (this._requestPost instanceof Uint8Array) {
                 this._httpRequest.responseType = "arraybuffer";
@@ -82,6 +82,9 @@ export default class ImpXMLHTTPRequest {
             this._httpRequest.open(this._method, this._url, true);
             this._httpRequest.timeout = this._timeout;
             this._setRequestHeaders();
+            if (typeof modificator === 'function') {
+                this._httpRequest = modificator(this._httpRequest);
+            }
             this._httpRequest.send(this._requestPost);
         });
     }
@@ -147,7 +150,7 @@ export default class ImpXMLHTTPRequest {
                     return this._onerror(event);
                 }
                 const contentType = this._getContentType();
-                switch(contentType) {
+                switch (contentType) {
                     case ContentType.text:
                         this._resolveRequest(this._httpRequest.responseText, this._getResponseHeaders());
                         break;
@@ -155,14 +158,14 @@ export default class ImpXMLHTTPRequest {
                         if (!(this._httpRequest.response instanceof ArrayBuffer)) {
                             return this._rejectRequest(
                                 new Error(this._logger.env(`Request to url "${this._url}" finished with error: for binary data expected ArrayBuffer, but response has type: ${typeof this._httpRequest.response}`)),
-                            ); 
+                            );
                         }
                         this._resolveRequest(new Uint8Array(this._httpRequest.response), this._getResponseHeaders());
                         break;
                     default:
                         this._rejectRequest(
                             new Error(this._logger.env(`Request to url "${this._url}" finished with error: unsupported content type: ${contentType}`)),
-                        ); 
+                        );
                         break;
                 }
         }

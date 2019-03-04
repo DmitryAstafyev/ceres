@@ -6,4 +6,5 @@ export interface IConnectionParameters {
     CORS?: boolean;
     wsPackageMaxSize?: number;
     wsProtocol?: string;
+    allowedHeaders?: string[];
 }

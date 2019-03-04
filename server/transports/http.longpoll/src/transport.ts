@@ -36,7 +36,7 @@ type TTransportRequests =
 
 type TRequests = TClientRequests | TTransportRequests;
 
-export { Middleware, ConnectionParameters };
+export { Middleware, ConnectionParameters, Connection };
 
 export default class LongpollTransport extends ATransport<ConnectionParameters, Middleware<Connection>> {
     public static Middleware = Middleware;
@@ -152,7 +152,7 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
     }
 
     private _onRequest(httpRequest: HTTP.IncomingMessage, httpResponse: HTTP.ServerResponse) {
-        const connection = new Connection(httpRequest, httpResponse, this.parameters.getMaxSize(), this.parameters.getCORS());
+        const connection = new Connection(httpRequest, httpResponse, this.parameters.getMaxSize(), this.parameters.getCORS(), this.parameters.getAllowedHeaders());
         connection.getRequest().then((request: string | Uint8Array) => {
             // Parse request
             let post;

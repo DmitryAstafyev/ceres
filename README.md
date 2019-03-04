@@ -1035,6 +1035,103 @@ function connect() {
     // ...
 }
 ```
+# Security & authorization
+
+Developer can define a middleware to secure / authorize connections. This happens on transport level.
+
+## Consumer
+Both transport implementations (**ceres.consumer.browser.ws**, **ceres.consumer.browser.longpoll**) for consumer allows defined middleware class.
+
+```typescript
+import Transport, { ConnectionParameters } from 'ceres.consumer.browser.ws';
+import Consumer from 'ceres.consumer';
+
+// This method will be called before consumer will make the first request to provider.
+// This is good chance to setup for example some token.
+function touch(request: XMLHttpRequest): XMLHttpRequest {
+    // Set up extra header for authorization
+    request.setRequestHeader('x-sec-token', 'xxx-xxx-xxx-xxx');
+    // modified XMLHttpRequest should be returned
+    return request;
+}
+
+// This method will be called with the first response on provider
+function connecting(response: XMLHttpRequest, message: any): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+        // Validate server response
+        resolve();
+    });
+};
+
+// Create middleware instance
+const middleware: Middleware = new Middleware({
+    connecting: connecting,
+    touch: touch
+});
+
+// Create transport
+const transport: Transport = new Transport(new ConnectionParameters({
+    host: 'http://localhost',
+    port: 3005,
+    wsHost: 'ws://localhost',
+    wsPort: 3005,
+}), middleware);
+
+// Create consumer
+const consumer = new Consumer(transport);
+```
+
+> Pay you attention, to allow custom headers (like "*x-sec-token*") in example, provider transport should allow it. It's quite easy to do:
+
+
+```typescript
+import Transport, { ConnectionParameters, Middleware, Connection }  from 'ceres.provider.node.ws';
+import Provider from 'ceres.provider';
+
+const transport: Transport = new Transport(new ConnectionParameters({
+    port: 3005,
+    allowedHeaders: ['x-sec-token'] // Allow custom header from consumer
+}));
+
+const provider: Provider = new Provider(transport);
+
+```
+
+## Provider
+Both transport implementations (**ceres.provider.node.ws**, **ceres.provider.node.longpoll**) for provider allows defined middleware methods.
+
+```typescript
+import Transport, { ConnectionParameters, Middleware, Connection }  from 'ceres.provider.node.ws';
+import Provider from 'ceres.provider';
+
+// Create handler for authorization
+function auth(clientId: string, request: Connection): Promise<void> {
+    return new Promise((resolve, reject) => {
+        // Here we have access to original request. For example we can check here HEADERS of request.
+        // We can accept connection and resolve
+        // Or we can deny connection and reject
+        return resolve();
+    });
+};
+
+// Create instance of middleware
+const middleware: Middleware<Connection> = new Middleware({ auth: auth });
+
+// Create transport
+const transport: Transport = new Transport(new ConnectionParameters({
+    port: 3005
+}), middleware);
+
+// Create provider
+const provider = new Provider(transport);
+
+```
+
+
+| Package name (npm) | Platform | Description | Related consumer <br/> transports (npm) |
+| --- | --- | --- | --- |
+| ceres.provider.node.longpoll | node | Implements connections using long polling technology | ceres.consumer.browser.longpoll |
+| ceres.provider.node.ws | node | Implements connections using Web Socket technology. This transport uses WebSocket as primiry way of communition, but if size of single package is too big, it send data using http(s) requests to client | ceres.consumer.browser.ws |
 
 # Other
 ## Debug
@@ -1061,3 +1158,4 @@ CERES_LOGS_LEVEL=3 node myapp.js
 
 env CERES_LOGS_LEVEL=3 node myapp.js
 ```
+

@@ -10,7 +10,7 @@ import { Request                            } from './transport.request.connecti
 
 export { ConnectionParameters, Middleware };
 
-const MAX_LIFE_WS_RESOLVER = 1000 * 60 * 10; //ms
+const MAX_LIFE_WS_RESOLVER = 1000 * 60 * 10; // ms
 
 export default class LongpollTransport extends ATransport<ConnectionParameters, Middleware> {
     public static Middleware = Middleware;
@@ -168,7 +168,9 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
             // Save request
             this._requests.set(request.getId(), request);
             // Send request
-            request.send().then((response: string | Uint8Array) => {
+            request.send(
+                connecting ? (this.middleware as Middleware).touch : undefined,
+            ).then((response: string | Uint8Array) => {
                 const next = new Promise((resolveNext, rejectNext) => {
                     if (connecting) {
                         (this.middleware as Middleware).connecting(request.getXMLHttpRequest(), response).then(() => {
@@ -235,11 +237,11 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
         return new Promise((resolve, reject) => {
             function bind() {
                 socket.addEventListener('open', onOpen);
-                socket.addEventListener('error', onError);    
+                socket.addEventListener('error', onError);
             }
             function unbind() {
                 socket.removeEventListener('open', onOpen);
-                socket.removeEventListener('error', onError);    
+                socket.removeEventListener('error', onError);
             }
             const onOpen = function() {
                 unbind();

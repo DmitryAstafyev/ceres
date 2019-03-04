@@ -4,4 +4,5 @@ export interface IConnectionParameters {
     maxSize?: number;
     tokenLife?: number;
     CORS?: boolean;
+    allowedHeaders?: string[];
 }

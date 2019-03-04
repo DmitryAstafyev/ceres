@@ -107,7 +107,9 @@ export default class LongpollTransport extends ATransport<ConnectionParameters, 
             // Save request
             this._requests.set(request.getId(), request);
             // Send request
-            request.send().then((response: string | Uint8Array) => {
+            request.send(
+                connecting ? (this.middleware as Middleware).touch : undefined,
+            ).then((response: string | Uint8Array) => {
                 const next = new Promise((resolveNext, rejectNext) => {
                     if (connecting) {
                         (this.middleware as Middleware).connecting(request.getXMLHttpRequest(), response).then(() => {

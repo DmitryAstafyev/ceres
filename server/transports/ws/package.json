@@ -1,6 +1,6 @@
 {
   "name": "ceres.provider.node.ws",
-  "version": "1.0.4",
+  "version": "1.0.8",
   "description": "Web Socket transport for ceres.provider based on nodejs",
   "main": "./dist/transport.js",
   "types": "./dist/transport.d.ts",

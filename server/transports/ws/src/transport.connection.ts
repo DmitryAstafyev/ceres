@@ -15,14 +15,16 @@ export class Connection extends Tools.EventEmitter {
     private _maxSize: number;
     private _CORS: boolean;
     private _clientGUID: string | null = null;
+    private _allowedHeaders: string[];
 
-    constructor(request: HTTP.IncomingMessage, response: HTTP.ServerResponse, maxSize: number, CORS: boolean) {
+    constructor(request: HTTP.IncomingMessage, response: HTTP.ServerResponse, maxSize: number, CORS: boolean, allowedHeaders: string[] | undefined) {
         super({ strict: true });
         this._request = request;
         this._response = response;
         this._maxSize = maxSize;
         this._CORS = CORS;
         this._onAborted = this._onAborted.bind(this);
+        this._allowedHeaders = allowedHeaders instanceof Array ? allowedHeaders : [];
         this._request.on('aborted', this._onAborted);
     }
 
@@ -100,6 +102,9 @@ export class Connection extends Tools.EventEmitter {
         const headers: THeaders = {
             "Content-Type": binary ? "application/octet-stream" : "text/plain",
         };
+        if (this._allowedHeaders.length > 0) {
+            headers['Access-Control-Allow-Headers'] = `${this._allowedHeaders.join(',')}`;
+        }
         if (this._CORS) {
             headers['Access-Control-Allow-Origin'] = '*';
         }

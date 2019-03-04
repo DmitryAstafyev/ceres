@@ -37,8 +37,8 @@ export class Request {
 		this._destroy();
 	}
 
-	public send(): Promise<string | Uint8Array> {
-		return this._request.send();
+	public send(modificator?: (request: XMLHttpRequest) => XMLHttpRequest): Promise<string | Uint8Array> {
+		return this._request.send(modificator);
 	}
 
 	private _destroy() {

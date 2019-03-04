@@ -4,6 +4,7 @@ import { Tools } from 'ceres.provider';
 
 const DEFAULTS = {
     CORS: true,
+    allowedHeaders: [],
     maxSize: 1024 * 100, // 100 kB
     port: 3000,
     tokenLife: 1000 * 60 * 60 * 1, // 1 h
@@ -11,24 +12,26 @@ const DEFAULTS = {
 
 export class ConnectionParameters implements IConnectionParameters {
 
-    public port:        number | undefined;
-    public maxSize:     number | undefined;
-    public tokenLife:   number | undefined;
-    public CORS:        boolean | undefined;
+    public port:            number | undefined;
+    public maxSize:         number | undefined;
+    public tokenLife:       number | undefined;
+    public CORS:            boolean | undefined;
+    public allowedHeaders:  string[] | undefined;
 
     constructor( connection: IConnectionParameters ) {
 
-        connection = Tools.objectValidate(connection, {
+        const _connection = Tools.objectValidate(connection, {
             CORS: DEFAULTS.CORS,
             maxSize: DEFAULTS.maxSize,
             port: DEFAULTS.port,
             tokenLife: DEFAULTS.tokenLife,
         }) as IConnectionParameters;
 
-        this.port = connection.port;
-        this.maxSize = connection.maxSize;
-        this.tokenLife = connection.tokenLife;
-        this.CORS = connection.CORS;
+        this.port = _connection.port;
+        this.maxSize = _connection.maxSize;
+        this.tokenLife = _connection.tokenLife;
+        this.CORS = _connection.CORS;
+        this.allowedHeaders = connection.allowedHeaders instanceof Array ? connection.allowedHeaders : DEFAULTS.allowedHeaders;
     }
 
     public getPort(): number {
@@ -45,6 +48,10 @@ export class ConnectionParameters implements IConnectionParameters {
 
     public getCORS(): boolean {
         return this.CORS as boolean;
+    }
+
+    public getAllowedHeaders(): string[] | undefined {
+        return this.allowedHeaders;
     }
 
 }

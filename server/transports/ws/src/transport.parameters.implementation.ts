@@ -4,6 +4,7 @@ import { Tools } from 'ceres.provider';
 
 const DEFAULTS = {
     CORS: true,
+    allowedHeaders: [],
     maxSize: 1024 * 100, // 100 kB
     port: 3000,
     tokenLife: 1000 * 60 * 60 * 1, // 1 h
@@ -19,10 +20,11 @@ export class ConnectionParameters implements IConnectionParameters {
     public CORS:                boolean | undefined;
     public wsProtocol:          string | undefined;
     public wsPackageMaxSize:    number | undefined;
+    public allowedHeaders:      string[] | undefined;
 
     constructor( connection: IConnectionParameters ) {
 
-        connection = Tools.objectValidate(connection, {
+        const _connection = Tools.objectValidate(connection, {
             CORS: DEFAULTS.CORS,
             maxSize: DEFAULTS.maxSize,
             port: DEFAULTS.port,
@@ -31,12 +33,13 @@ export class ConnectionParameters implements IConnectionParameters {
             wsProtocol: DEFAULTS.wsProtocol,
         }) as IConnectionParameters;
 
-        this.port = connection.port;
-        this.maxSize = connection.maxSize;
-        this.tokenLife = connection.tokenLife;
-        this.CORS = connection.CORS;
-        this.wsPackageMaxSize = connection.wsPackageMaxSize;
-        this.wsProtocol = connection.wsProtocol;
+        this.port = _connection.port;
+        this.maxSize = _connection.maxSize;
+        this.tokenLife = _connection.tokenLife;
+        this.CORS = _connection.CORS;
+        this.wsPackageMaxSize = _connection.wsPackageMaxSize;
+        this.wsProtocol = _connection.wsProtocol;
+        this.allowedHeaders = connection.allowedHeaders instanceof Array ? connection.allowedHeaders : DEFAULTS.allowedHeaders;
     }
 
     public getPort(): number {
@@ -53,6 +56,10 @@ export class ConnectionParameters implements IConnectionParameters {
 
     public getCORS(): boolean {
         return this.CORS as boolean;
+    }
+
+    public getAllowedHeaders(): string[] | undefined {
+        return this.allowedHeaders;
     }
 
 }
