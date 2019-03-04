@@ -1098,7 +1098,7 @@ const provider: Provider = new Provider(transport);
 ```
 
 ## Provider
-Both transport implementations (**ceres.provider.node.ws**, **ceres.provider.node.longpoll**) for provider allows defined middleware methods.
+Both transport implementations (**ceres.provider.node.ws**, **ceres.provider.node.longpoll**) for provider allows to defined middleware methods.
 
 ```typescript
 import Transport, { ConnectionParameters, Middleware, Connection }  from 'ceres.provider.node.ws';
@@ -1126,12 +1126,6 @@ const transport: Transport = new Transport(new ConnectionParameters({
 const provider = new Provider(transport);
 
 ```
-
-
-| Package name (npm) | Platform | Description | Related consumer <br/> transports (npm) |
-| --- | --- | --- | --- |
-| ceres.provider.node.longpoll | node | Implements connections using long polling technology | ceres.consumer.browser.longpoll |
-| ceres.provider.node.ws | node | Implements connections using Web Socket technology. This transport uses WebSocket as primiry way of communition, but if size of single package is too big, it send data using http(s) requests to client | ceres.consumer.browser.ws |
 
 # Other
 ## Debug
