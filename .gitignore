@@ -12,3 +12,13 @@
 !webpack.config.js
 TODO.md
 excluded/**
+client/consumer/src/platform
+client/consumer/src/protocols
+server/provider/src/platform
+server/provider/src/protocols
+server/transports/http.longpoll/src/protocols
+server/transports/ws/src/protocols
+client/transports/http.longpoll/src/protocols
+client/transports/ws/src/protocols
+common/protocols/**/*.ts
+playground/protocol/*.ts
