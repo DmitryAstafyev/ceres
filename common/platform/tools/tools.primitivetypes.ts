@@ -19,7 +19,7 @@ export function getTypeOf(smth: any) {
     } else if (smth === null) {
         return ETypes.null;
     } else if (smth.constructor !== void 0 && typeof smth.constructor.name === ETypes.string) {
-        return ETypes[smth.constructor.name.toLowerCase()] !== void 0 ? smth.constructor.name.toLowerCase() : smth.constructor.name;
+        return (ETypes as any)[smth.constructor.name.toLowerCase()] !== void 0 ? smth.constructor.name.toLowerCase() : smth.constructor.name;
     } else {
         return (typeof smth);
     }
