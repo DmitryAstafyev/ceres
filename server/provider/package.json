@@ -5,8 +5,8 @@
   "main": "./dist/provider.js",
   "types": "./dist/provider.d.ts",
   "scripts": {
-    "build": "tsc -p ./tsconfig.json",
-    "build:watch": "tsc -p ./tsconfig.json -w",
+    "build-ts": "tsc -p ./tsconfig.json",
+    "build-ts:watch": "tsc -p ./tsconfig.json -w",
     "test:unit": "./node_modules/.bin/jasmine-ts",
     "tslint": "./node_modules/.bin/tslint -c tslint.json './src/**/*{.ts,.tsx}'"
   },
