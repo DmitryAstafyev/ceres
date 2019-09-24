@@ -1,7 +1,7 @@
 import { ATransport, Tools, Protocol, Token } from 'ceres.consumer';
 import Middleware from './consumer.middleware.implementation';
 
-import * as TransportProtocol from './protocols/protocol.transport.ws';
+import * as TransportProtocol from './protocols/transports/ws/protocol.transport.ws';
 
 import { SubdomainsController               } from './subdomains';
 import { ConnectionParameters               } from './transport.parameters.implementation';

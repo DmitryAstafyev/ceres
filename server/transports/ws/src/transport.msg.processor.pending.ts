@@ -1,5 +1,5 @@
 import { Tools } from 'ceres.provider';
-import * as TransportProtocol from './protocols/protocol.transport.ws';
+import * as TransportProtocol from './protocols/transports/ws/protocol.transport.ws';
 import Transport from './transport';
 import { Connection } from './transport.connection';
 import { TransportMessageProcessor } from './transport.msg.processor';

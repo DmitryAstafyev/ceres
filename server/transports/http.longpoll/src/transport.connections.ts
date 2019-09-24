@@ -1,7 +1,7 @@
 import { Tools, Protocol } from 'ceres.provider';
 import { Connection } from './transport.connection';
 
-import * as TransportProtocol from './protocols/protocol.transport.longpoll';
+import * as TransportProtocol from './protocols/transports/httt.longpoll/protocol.transport.longpoll';
 
 export class Connections {
 

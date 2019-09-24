@@ -1,5 +1,5 @@
 import { Tools, Token } from 'ceres.consumer';
-import * as TransportProtocol from './protocols/protocol.transport.longpoll';
+import * as TransportProtocol from './protocols/transports/httt.longpoll/protocol.transport.longpoll';
 import { Pending, TPandingExpectedMessage } from './transport.pending.task';
 
 type THandler = (...args: any[]) => any;

@@ -12,7 +12,7 @@ import { MessagePendingProcessor } from './transport.msg.processor.pending';
 import { ProcessorConnections } from './transport.processor.connections';
 
 import * as HTTP from 'http';
-import * as TransportProtocol from './protocols/protocol.transport.longpoll';
+import * as TransportProtocol from './protocols/transports/httt.longpoll/protocol.transport.longpoll';
 
 const ClientRequestsTypes = [
     TransportProtocol.Message.Handshake.Request,

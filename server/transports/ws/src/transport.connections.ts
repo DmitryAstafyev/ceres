@@ -1,7 +1,7 @@
 import { Tools, Protocol } from 'ceres.provider';
 import { Connection } from './transport.connection';
 
-import * as TransportProtocol from './protocols/protocol.transport.ws';
+import * as TransportProtocol from './protocols/transports/ws/protocol.transport.ws';
 
 export class Connections {
 

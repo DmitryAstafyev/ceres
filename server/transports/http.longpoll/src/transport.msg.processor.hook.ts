@@ -1,5 +1,5 @@
 import { Tools } from 'ceres.provider';
-import * as TransportProtocol from './protocols/protocol.transport.longpoll';
+import * as TransportProtocol from './protocols/transports/httt.longpoll/protocol.transport.longpoll';
 import LongpollTransport from './transport';
 import { Connection } from './transport.connection';
 import { TransportMessageProcessor } from './transport.msg.processor';

@@ -1,5 +1,5 @@
 import { Protocol } from 'ceres.consumer';
-import * as TransportProtocol from './protocols/protocol.transport.ws';
+import * as TransportProtocol from './protocols/transports/ws/protocol.transport.ws';
 
 import { Request } from './transport.request.connection';
 

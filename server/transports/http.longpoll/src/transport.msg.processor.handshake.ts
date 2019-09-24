@@ -1,4 +1,4 @@
-import * as TransportProtocol from './protocols/protocol.transport.longpoll';
+import * as TransportProtocol from './protocols/transports/httt.longpoll/protocol.transport.longpoll';
 import LongpollTransport from './transport';
 import { Protocol } from 'ceres.provider';
 import { Connection } from './transport.connection';

@@ -1,7 +1,7 @@
 import { ATransport, Tools, Protocol, Token } from 'ceres.consumer';
 import Middleware from './consumer.middleware.implementation';
 
-import * as TransportProtocol from './protocols/protocol.transport.longpoll';
+import * as TransportProtocol from './protocols/transports/httt.longpoll/protocol.transport.longpoll';
 
 import { SubdomainsController               } from './subdomains';
 import { Hook                               } from './transport.hook';

@@ -1,5 +1,5 @@
 import { Protocol } from 'ceres.consumer';
-import * as TransportProtocol from './protocols/protocol.transport.longpoll';
+import * as TransportProtocol from './protocols/transports/httt.longpoll/protocol.transport.longpoll';
 
 import { Request } from './transport.request.connection';
 

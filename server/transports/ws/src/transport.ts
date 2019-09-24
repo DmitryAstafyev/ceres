@@ -12,7 +12,7 @@ import { ProcessorConnections } from './transport.processor.connections';
 
 import * as HTTP from 'http';
 import * as WebSocket from 'ws';
-import * as TransportProtocol from './protocols/protocol.transport.ws';
+import * as TransportProtocol from './protocols/transports/ws/protocol.transport.ws';
 
 const ClientRequestsTypes = [
     TransportProtocol.Message.Handshake.Request,
