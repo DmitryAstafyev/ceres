@@ -109,3 +109,58 @@ task :install do
     Rake::Task["build"].invoke
 
 end
+
+desc "Playground install"
+task :playground_install do
+  npm_install = [
+    "playground/client.0",
+    "playground/client.1",
+    "playground/server"
+  ]
+  i = 0;
+  while i < npm_install.length
+    path = npm_install[i]
+    puts "Installing: #{path}"
+    cd path do
+      sh "npm install"
+    end
+    i += 1
+  end
+end
+
+desc "Playground build"
+task :playground_build do
+  Rake::Task["protocols"].invoke
+  npm_build = [
+    "playground/client.0",
+    "playground/client.1",
+    "playground/server"
+  ]
+  i = 0;
+  while i < npm_build.length
+    path = npm_build[i]
+    puts "Building: #{path}"
+    cd path do
+      sh "npm run build"
+    end
+    i += 1
+  end
+end
+
+desc "Playground client 0 start"
+task :playground_client_0 do
+  sh "npm start --prefix playground/client.0"
+end
+
+desc "Playground client 1 start"
+task :playground_client_1 do
+  sh "npm start --prefix playground/client.1"
+end
+
+desc "Playground server start"
+task :playground_server do
+  sh "node playground/server/build/playground/server/src/main.js"
+end
+
+desc "Start playground"
+multitask :playground_run => [ 'playground_server', 'playground_client_0', 'playground_client_1' ]
