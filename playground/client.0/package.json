@@ -37,7 +37,7 @@
   },
   "dependencies": {
     "ceres.consumer": "latest",
-    "ceres.consumer.browser.ws": "latest",
-    "ceres.consumer.browser.longpoll": "latest"
+    "ceres.consumer.browser.longpoll": "latest",
+    "ceres.consumer.browser.ws": "latest"
   }
 }

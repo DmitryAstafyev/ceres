@@ -1,6 +1,6 @@
 {
   "name": "ceres.consumer",
-  "version": "1.0.14",
+  "version": "1.0.17",
   "description": "Provider for network framework ceres. Used with ceres.protocol.",
   "main": "./dist/consumer.js",
   "types": "./dist/consumer.d.ts",
