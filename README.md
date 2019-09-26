@@ -2,6 +2,7 @@
 Network transport/protocol "**Ceres**"
 
 # Table of content
+- [Table of content](#table-of-content)
 - [Self-explained example](#self-explained-example)
   - [Step 1. Think about communication scheme](#step-1-think-about-communication-scheme)
   - [Step 2. Create/generate protocol](#step-2-creategenerate-protocol)
@@ -25,6 +26,7 @@ Network transport/protocol "**Ceres**"
   - [Provider](#provider-1)
 - [Other](#other)
   - [Debug](#debug)
+- [Developing / How to use this repo](#developing--how-to-use-this-repo)
 
 # Self-explained example
 <a name="self-explained-example"></a>
@@ -1176,3 +1178,39 @@ CERES_LOGS_LEVEL=3 node myapp.js
 env CERES_LOGS_LEVEL=3 node myapp.js
 ```
 
+# Developing / How to use this repo
+To start play around with this repo you should do a few simple steps:
+
+> Note. You should have installed: ruby, node, typescript (globaly)
+
+```
+# Clone repo
+git clone https://github.com/DmitryAstafyev/ceres.git
+# Go into project's folder
+cd ceres
+# Install it (you need to do it once)
+rake install
+```
+
+`rake install` will install all you need. After it will be finished, you are able to start test playground. 
+
+Prepare playground first (needs once)
+```
+rake playground_install
+rake playground_build
+```
+
+Now you can start two client and server:
+```
+cd playground/client.0
+npm start
+
+# In new terminal
+cd playground/client.1
+npm start
+
+# In new terminal
+cd playground/server
+npm run build-ts
+node playground/server/build/playground/server/src/main.js
+```
