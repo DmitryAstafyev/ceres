@@ -103,18 +103,18 @@ export default class Test {
         if (this._consumer === undefined) {
             return;
         }
-        this._consumer.subscribe(Consumer.Events.connected, this._onConnected);
-        this._consumer.subscribe(Consumer.Events.disconnected, this._onDisconnected);
-        this._consumer.subscribe(Consumer.Events.error, this._onError);
+        this._consumer.on(Consumer.Events.connected, this._onConnected);
+        this._consumer.on(Consumer.Events.disconnected, this._onDisconnected);
+        this._consumer.on(Consumer.Events.error, this._onError);
     }
 
     private _unsubsribeTransportEvents(){
         if (this._consumer === undefined) {
             return;
         }
-        this._consumer.unsubscribe(Consumer.Events.connected, this._onConnected);
-        this._consumer.unsubscribe(Consumer.Events.disconnected, this._onDisconnected);
-        this._consumer.unsubscribe(Consumer.Events.error, this._onError);
+        this._consumer.removeListener(Consumer.Events.connected, this._onConnected);
+        this._consumer.removeListener(Consumer.Events.disconnected, this._onDisconnected);
+        this._consumer.removeListener(Consumer.Events.error, this._onError);
     }
     
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -159,7 +159,7 @@ export default class Test {
             if (this._consumer === undefined) {
                 return;
             }
-            this._consumer.eventEmit(greeting, Protocol)
+            this._consumer.emit(greeting)
                 .then((res) => {
                     this._output.add(`Event sent: ${Tools.inspect(res)}`, { color: 'rgb(200,200,200)'});
                     this._sendGreetingMessage();
@@ -201,7 +201,7 @@ export default class Test {
             if (this._consumer === undefined) {
                 return;
             }
-            this._consumer.eventEmit(greeting, Protocol, { name: aliases.name, group: aliases.group})
+            this._consumer.emit(greeting, { name: aliases.name, group: aliases.group})
                 .then((res) => {
                     this._output.add(`Event sent for "${aliases.name} / ${aliases.group}": ${Tools.inspect(res)}`, { color: 'rgb(200,200,200)'});
                     this._sendTargetMessage();
@@ -236,7 +236,7 @@ export default class Test {
             if (this._consumer === undefined) {
                 return;
             }
-            this._consumer.eventEmit(serverEvent, Protocol)
+            this._consumer.emit(serverEvent)
                 .then((res) => {
                     this._output.add(`Event sent: ${Tools.inspect(res)}`, { color: 'rgb(200,214,141)'});
                     this._sendServerEvent();
@@ -278,7 +278,7 @@ export default class Test {
             if (this._consumer === undefined) {
                 return;
             }
-            this._consumer.demand(Protocol, demand, Protocol.Requests.IsOnlineClient.Response, { type: 'online'}, { pending: true, scope: Consumer.DemandOptions.scope.clients })
+            this._consumer.request(demand, Protocol.Requests.IsOnlineClient.Response, { type: 'online'}, { pending: true, scope: Consumer.DemandOptions.scope.clients })
                 .then((response: Protocol.Requests.IsOnlineClient.Response) => {
                     clearTimeout(failtimer);
                     this._output.add(`On client request has gotten response: ${Tools.inspect(response)}`, { color: 'rgb(100,250,70)'});
@@ -320,7 +320,7 @@ export default class Test {
             if (this._consumer === undefined) {
                 return;
             }
-            this._consumer.demand(Protocol, demand, Protocol.Requests.IsOnlineServer.Response, { type: 'online'}, { pending: true, scope: Consumer.DemandOptions.scope.hosts })
+            this._consumer.request(demand, Protocol.Requests.IsOnlineServer.Response, { type: 'online'}, { pending: true, scope: Consumer.DemandOptions.scope.hosts })
                 .then((response: Protocol.Requests.IsOnlineServer.Response) => {
                     clearTimeout(failtimer);
                     this._output.add(`On server request has gotten response: ${Tools.inspect(response)}`, { color: 'rgb(100,250,250)'});

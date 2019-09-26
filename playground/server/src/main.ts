@@ -20,23 +20,23 @@ export default function test(){
 
     const provider = new Provider(transport);
 
-    provider.subscribeToRequest(
-        Protocol,
+    provider.listenRequest(
         Protocol.Requests.IsOnlineServer.Request,
+        processDemand,
         { 
-            type: 'online'
+            type: 'online',
         },
-        processDemand
     );
 
     logger.info(`Provider is created on: "localhost:${parameters.port}".`);
 
-    provider.subscribeToEvent(Protocol, Protocol.Events.EventToServer, (event: Protocol.Events.EventToServer) => {
+    provider.subscribe(Protocol.Events.EventToServer, (event: Protocol.Events.EventToServer) => {
         logger.info(`Provider has gotten event: ${event.stringify()}`);
     });
 
     function processDemand(
         demand: Protocol.Requests.IsOnlineServer.Request,
+        clientId: string,
         callback: (error: Error | null, results: Protocol.Requests.IsOnlineServer.Response) => any
     ) {
         logger.info(`Client has gotten a demand: ${Tools.inspect(demand.getSignature())}`);
@@ -48,7 +48,7 @@ export default function test(){
     }
 
     function sendServerEvent() {
-        provider.emitEvent(Protocol, new Protocol.Events.EventFromServer({
+        provider.emit(new Protocol.Events.EventFromServer({
             timestamp: new Date(),
             message: 'This is event from serve'
         })).then((count: number) => {

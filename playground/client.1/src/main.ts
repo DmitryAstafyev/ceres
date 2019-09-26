@@ -114,18 +114,18 @@ export default class Test {
         if (this._consumer === undefined) {
             return;
         }
-        this._consumer.subscribe(Consumer.Events.connected, this._onConnected);
-        this._consumer.subscribe(Consumer.Events.disconnected, this._onDisconnected);
-        this._consumer.subscribe(Consumer.Events.error, this._onError);
+        this._consumer.on(Consumer.Events.connected, this._onConnected);
+        this._consumer.on(Consumer.Events.disconnected, this._onDisconnected);
+        this._consumer.on(Consumer.Events.error, this._onError);
     }
 
     private _unsubsribeTransportEvents(){
         if (this._consumer === undefined) {
             return;
         }
-        this._consumer.unsubscribe(Consumer.Events.connected, this._onConnected);
-        this._consumer.unsubscribe(Consumer.Events.disconnected, this._onDisconnected);
-        this._consumer.unsubscribe(Consumer.Events.error, this._onError);
+        this._consumer.removeListener(Consumer.Events.connected, this._onConnected);
+        this._consumer.removeListener(Consumer.Events.disconnected, this._onDisconnected);
+        this._consumer.removeListener(Consumer.Events.error, this._onError);
     }
     
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -173,7 +173,7 @@ export default class Test {
         if (this._consumer === undefined) {
             return;
         }
-        this._consumer.subscribeEvent(Protocol.Events.Ping, Protocol, this._onTestProtocolGreeting)
+        this._consumer.subscribe(Protocol.Events.Ping, this._onTestProtocolGreeting)
             .then((res) => {
                 this._testDoneHandler(EClientTests.subscribeBroadcastEvent);
                 this._output.add(`Subscription to ${Protocol.Events.Ping.name} was done. Subscription response: ${Tools.inspect(res)}`, { color: 'rgb(200,200,200)'});
@@ -191,7 +191,7 @@ export default class Test {
         if (this._consumer === undefined) {
             return;
         }
-        this._consumer.unsubscribeEvent(Protocol.Events.Ping, Protocol)
+        this._consumer.unsubscribe(Protocol.Events.Ping)
             .then((res) => {
                 this._testDoneHandler(EClientTests.unsubscribeBroadcastEvent);
                 this._output.add(`Unsubscription from ${Protocol.Events.Ping.name} was done. Unsubscription response: ${Tools.inspect(res)}`, { color: 'rgb(50,50,250)'});
@@ -206,7 +206,7 @@ export default class Test {
         if (this._consumer === undefined) {
             return;
         }
-        this._consumer.subscribeEvent(Protocol.Events.TargetedPing, Protocol, this._onTargetedTestProtocolGreeting)
+        this._consumer.subscribe(Protocol.Events.TargetedPing, this._onTargetedTestProtocolGreeting)
             .then((res) => {
                 this._testDoneHandler(EClientTests.subscribeTargetedEvent);
                 this._output.add(`Subscription to ${Protocol.Events.TargetedPing.name} was done. Subscription response: ${Tools.inspect(res)}`, { color: 'rgb(200,200,200)'});
@@ -224,7 +224,7 @@ export default class Test {
         if (this._consumer === undefined) {
             return;
         }
-        this._consumer.unsubscribeEvent(Protocol.Events.TargetedPing, Protocol)
+        this._consumer.unsubscribe(Protocol.Events.TargetedPing)
             .then((res) => {
                 this._testDoneHandler(EClientTests.unsubscribeTargetedEvent);
                 this._output.add(`Unsubscription from ${Protocol.Events.TargetedPing.name} was done. Unsubscription response: ${Tools.inspect(res)}`, { color: 'rgb(50,50,250)'});
@@ -239,7 +239,7 @@ export default class Test {
         if (this._consumer === undefined) {
             return;
         }
-        this._consumer.subscribeEvent(Protocol.Events.EventFromServer, Protocol, this._onServerEvent)
+        this._consumer.subscribe(Protocol.Events.EventFromServer, this._onServerEvent)
             .then((res) => {
                 this._testDoneHandler(EClientTests.subscribeServerEvent);
                 this._output.add(`Subscription to ${Protocol.Events.EventFromServer.name} was done. Subscription response: ${Tools.inspect(res)}`, { color: 'rgb(200,222,222)'});
@@ -257,7 +257,7 @@ export default class Test {
         if (this._consumer === undefined) {
             return;
         }
-        this._consumer.unsubscribeEvent(Protocol.Events.EventFromServer, Protocol)
+        this._consumer.unsubscribe(Protocol.Events.EventFromServer)
             .then((res) => {
                 this._testDoneHandler(EClientTests.unsubscribeServerEvent);
                 this._output.add(`Unsubscription from ${Protocol.Events.EventFromServer.name} was done. Unsubscription response: ${Tools.inspect(res)}`, { color: 'rgb(50,50,250)'});
@@ -330,7 +330,7 @@ export default class Test {
         if (this._consumer === undefined) {
             return;
         }
-        this._consumer.subscribeToRequest(Protocol, Protocol.Requests.IsOnlineClient.Request, { type: 'online'}, this._demandOnlineHandler).then(() => {
+        this._consumer.listenRequest(Protocol.Requests.IsOnlineClient.Request, this._demandOnlineHandler, { type: 'online'}).then(() => {
             this._output.add(`client is subscribed as respontent to: ${Tools.inspect(Protocol.Requests.IsOnlineClient.Request.getSignature())}`, { color: 'rgb(50,50,250)' });
             this._testDoneHandler(EClientTests.subscribeAsRespondent);
             this._indicators.state(EIndicators.subscribeAsRespondent, Indicators.States.success);
@@ -346,7 +346,7 @@ export default class Test {
         if (this._consumer === undefined) {
             return;
         }
-        this._consumer.unsubscribeToRequest(Protocol, Protocol.Requests.IsOnlineClient.Request).then(() => {
+        this._consumer.removeRequestListener(Protocol.Requests.IsOnlineClient.Request).then(() => {
             this._output.add(`client is unsubscribed as respontent to: ${Tools.inspect(Protocol.Requests.IsOnlineClient.Request.getSignature())}`, { color: 'rgb(50,50,250)' });
             this._testDoneHandler(EClientTests.unsubscribeAsRespondent);
             this._indicators.state(EIndicators.unsubscribeAsRespondent, Indicators.States.success);
