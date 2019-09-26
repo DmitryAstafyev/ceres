@@ -1,10 +1,13 @@
 module.exports = {
     entry: "./src/transport.ts",
+    mode: "production",
     output: {
         filename: "transport.js",
-        path: __dirname + "/dist"
+        path: __dirname + "/dist",
+        libraryTarget: 'umd',
+        library: 'ceres.consumer.transport.ws',
+        umdNamedDefine: true
     },
-
     // Enable sourcemaps for debugging webpack's output.
     devtool: "source-map",
 

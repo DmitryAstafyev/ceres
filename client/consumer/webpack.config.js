@@ -1,10 +1,13 @@
 module.exports = {
     entry: "./src/consumer.ts",
+    mode: "production",
     output: {
         filename: "consumer.js",
-        path: __dirname + "/dist"
+        path: __dirname + "/dist",
+        libraryTarget: 'umd',
+        library: 'ceres.consumer',
+        umdNamedDefine: true
     },
-
     // Enable sourcemaps for debugging webpack's output.
     devtool: "source-map",
 
