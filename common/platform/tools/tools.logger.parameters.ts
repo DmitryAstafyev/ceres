@@ -1,4 +1,5 @@
 // tslint:disable:object-literal-sort-keys
+declare var process: any;
 
 export type TOutputFunc = (...args: any[]) => any;
 
