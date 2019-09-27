@@ -59,10 +59,6 @@ export default class Consumer {
         this._onMessage = this._onMessage.bind(this);
         this._onConnected = this._onConnected.bind(this);
         this._onDisconnected = this._onDisconnected.bind(this);
-        this._transport.subscribe(ATransport.EVENTS.error, this._onError);
-        this._transport.subscribe(ATransport.EVENTS.message, this._onMessage);
-        this._transport.subscribe(ATransport.EVENTS.connected, this._onConnected);
-        this._transport.subscribe(ATransport.EVENTS.disconnected, this._onDisconnected);
         // Connect
         this._connect();
     }
@@ -647,6 +643,10 @@ export default class Consumer {
         if (this._destroyed) {
             return;
         }
+        this._transport.subscribe(ATransport.EVENTS.error, this._onError);
+        this._transport.subscribe(ATransport.EVENTS.message, this._onMessage);
+        this._transport.subscribe(ATransport.EVENTS.connected, this._onConnected);
+        this._transport.subscribe(ATransport.EVENTS.disconnected, this._onDisconnected);
         this._transport.connect().catch((error: Error) => {
             this._logger.warn(`Error of connection on start due error: ${error.message}`);
             this._emitter.emit(Consumer.Events.error, error);
