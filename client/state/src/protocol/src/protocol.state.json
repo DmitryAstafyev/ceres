@@ -1,0 +1,34 @@
+{
+    "Events": {
+        "OnChange": {
+            "path": "asciiString",
+            "change": "Array<PropChange | ArrayChange>"
+        }
+    },
+    "PropChange": {
+        "prev": "string | number | boolean",
+        "current": "string | number | boolean"
+    },
+    "ArrayChange": {
+        "New": {
+            "before?": "number",
+            "after?": "number",
+            "value": "string | number | boolean"
+        },
+        "Delete": {
+            "from": "number",
+            "to": "number"
+        },
+        "Update": {
+            "index": "number",
+            "value": "string | number | boolean"
+        },
+        "Overwrite": {
+            "from": "number",
+            "to": "number",
+            "values": "Array<string | number | boolean>"
+        }
+    },
+    "PropType": ["primitive", "array"],
+    "version": "0.0.1"
+}

@@ -1,0 +1,76 @@
+{
+    "inputs": {
+        "userguid": "string",
+        "usertype": "string"
+    },
+    "outputs": {
+        "guid": "string",
+        "content": "string",
+        "author": "User",
+        "likes": "number",
+        "comments": "Array<Comment>",
+        "User": {
+            "guid": "string",
+            "name": "string"
+        },
+        "Comment": {
+            "guid": "string",
+            "author": "User",
+            "likes": "string",
+            "replays": "Array<Comment>"
+        }
+    },
+    "UserType": ["registred", "moderator"],
+    "Actions": {
+        "editPost": {
+            "allow": ["inputs.userguid === outputs.author.guid"]
+        },
+        "deletePost": {
+            "allow": ["inputs.userguid === outputs.author.guid"]
+        },
+        "likePost": {
+            "allow": [
+                "inputs.userguid !== outputs.author.guid",
+                "inputs.userguid !== undefined"
+            ]
+        },
+        "addComment": {
+            "allow": ["inputs.userguid !== undefined"]
+        },
+        "deleteComment": {
+            "allow": ["inputs.usertype === UserType.moderator"]
+        }
+    },
+    "": {
+        "OnChange": {
+            "path": "asciiString",
+            "change": "Array<PropChange | ArrayChange>"
+        }
+    },
+    "PropChange": {
+        "prev": "string | number | boolean",
+        "current": "string | number | boolean"
+    },
+    "ArrayChange": {
+        "New": {
+            "before?": "number",
+            "after?": "number",
+            "value": "string | number | boolean"
+        },
+        "Delete": {
+            "from": "number",
+            "to": "number"
+        },
+        "Update": {
+            "index": "number",
+            "value": "string | number | boolean"
+        },
+        "Overwrite": {
+            "from": "number",
+            "to": "number",
+            "values": "Array<string | number | boolean>"
+        }
+    },
+    "PropType": ["primitive", "array"],
+    "version": "0.0.1"
+}
